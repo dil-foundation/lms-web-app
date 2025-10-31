@@ -850,7 +850,10 @@ export default function DiscussionsPage() {
                               className="text-red-600 rounded-xl cursor-pointer hover:bg-red-50 dark:hover:bg-red-950/20"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setDiscussionToDelete(discussion);
+                                // Small delay to ensure dropdown is fully closed
+                                setTimeout(() => {
+                                  setDiscussionToDelete(discussion);
+                                }, 100);
                               }}
                             >
                               <Trash className="mr-2 h-4 w-4" />

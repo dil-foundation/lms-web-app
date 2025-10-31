@@ -72,8 +72,10 @@ interface Admin {
 }
 
 export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
-  // Check if user is admin
+  // Check if user is admin or super_user
   const isAdmin = userProfile.role === 'admin';
+  const isSuperUser = userProfile.role === 'super_user';
+  const isAdminOrSuperUser = isAdmin || isSuperUser;
   
   const [meetings, setMeetings] = useState<ZoomMeeting[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
@@ -88,11 +90,16 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
   const [activeTab, setActiveTab] = useState('upcoming');
   const [editingMeeting, setEditingMeeting] = useState<ZoomMeeting | null>(null);
 
-  // Form state
+  // Form state - Set default meeting type based on role
+  const getDefaultMeetingType = (): MeetingType => {
+    if (isAdmin || isSuperUser) return 'admin-to-teacher';
+    return '1-on-1';
+  };
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    meeting_type: (isAdmin ? 'admin-to-teacher' : '1-on-1') as MeetingType,
+    meeting_type: getDefaultMeetingType(),
     scheduled_date: '',
     scheduled_time: '',
     duration: 60,
@@ -164,7 +171,7 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
       }
 
       if (formData.meeting_type === 'admin-to-teacher' && !formData.participant_id) {
-        toast.error(isAdmin ? 'Please select a teacher' : 'Please select an admin');
+        toast.error(isAdmin ? 'Please select a teacher' : isSuperUser ? 'Please select a teacher or admin' : 'Please select an admin');
         return;
       }
 
@@ -212,7 +219,7 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
       setFormData({
         title: '',
         description: '',
-        meeting_type: isAdmin ? 'admin-to-teacher' : '1-on-1',
+        meeting_type: getDefaultMeetingType(),
         scheduled_date: '',
         scheduled_time: '',
         duration: 60,
@@ -755,6 +762,11 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
                     <>
                       <SelectItem value="admin-to-teacher">Admin-to-Teacher Meeting</SelectItem>
                     </>
+                  ) : isSuperUser ? (
+                    // Super Admin can create meetings with teachers or admins only
+                    <>
+                      <SelectItem value="admin-to-teacher">Super Admin Meeting (with Teacher or Admin)</SelectItem>
+                    </>
                   ) : (
                     // Teachers can create meetings with students, teachers, and admins
                     <>
@@ -839,7 +851,7 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
                         <SelectItem key={teacher.id} value={teacher.id}>
                           <div className="flex flex-col">
                             <span className="font-medium">{teacher.name}</span>
-                            <span className="text-xs text-muted-foreground">{teacher.email}</span>
+                            <span className="text-xs text-muted-foreground group-hover:text-foreground/70">{teacher.email}</span>
                           </div>
                         </SelectItem>
                       ))
@@ -852,20 +864,30 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
             {formData.meeting_type === 'admin-to-teacher' && (
               <div className="grid gap-2">
                 <Label htmlFor="participant">
-                  {isAdmin ? 'Select Teacher *' : 'Select Admin *'}
+                  {isAdmin ? 'Select Teacher *' : isSuperUser ? 'Select Participant (Teacher or Admin) *' : 'Select Admin *'}
                 </Label>
                 <Select
                   value={formData.participant_id}
                   onValueChange={(value) => {
+                    // For super_user, determine role based on the selected person
+                    let role: 'teacher' | 'admin' = 'teacher';
+                    if (isSuperUser) {
+                      // Check if the selected ID is in teachers or admins list
+                      const isTeacher = teachers.some(t => t.id === value);
+                      role = isTeacher ? 'teacher' : 'admin';
+                    } else {
+                      role = isAdmin ? 'teacher' : 'admin';
+                    }
+                    
                     setFormData(prev => ({ 
                       ...prev, 
                       participant_id: value,
-                      participant_role: isAdmin ? 'teacher' : 'admin'
+                      participant_role: role
                     }));
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={isAdmin ? "Select a teacher" : "Select an admin"} />
+                    <SelectValue placeholder={isAdmin ? "Select a teacher" : isSuperUser ? "Select a teacher or admin" : "Select an admin"} />
                   </SelectTrigger>
                   <SelectContent>
                     {isAdmin ? (
@@ -875,13 +897,46 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
                           <SelectItem key={teacher.id} value={teacher.id}>
                             <div className="flex flex-col">
                               <span className="font-medium">{teacher.name}</span>
-                              <span className="text-xs text-muted-foreground">{teacher.email}</span>
+                              <span className="text-xs text-muted-foreground group-hover:text-foreground/70">{teacher.email}</span>
                             </div>
                           </SelectItem>
                         ))
                       ) : (
                         <div className="px-2 py-1.5 text-sm text-muted-foreground">No teachers available</div>
                       )
+                    ) : isSuperUser ? (
+                      // Super Admin selects either a teacher or admin
+                      <>
+                        {teachers.length > 0 && (
+                          <>
+                            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Teachers</div>
+                            {teachers.map((teacher) => (
+                              <SelectItem key={teacher.id} value={teacher.id}>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{teacher.name}</span>
+                                  <span className="text-xs text-muted-foreground group-hover:text-foreground/70">{teacher.email}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+                        {admins.length > 0 && (
+                          <>
+                            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Admins</div>
+                            {admins.map((admin) => (
+                              <SelectItem key={admin.id} value={admin.id}>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{admin.name}</span>
+                                  <span className="text-xs text-muted-foreground group-hover:text-foreground/70">{admin.email}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+                        {teachers.length === 0 && admins.length === 0 && (
+                          <div className="px-2 py-1.5 text-sm text-muted-foreground">No teachers or admins available</div>
+                        )}
+                      </>
                     ) : (
                       // Teacher selects an admin
                       admins.length > 0 ? (
@@ -889,7 +944,7 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
                           <SelectItem key={admin.id} value={admin.id}>
                             <div className="flex flex-col">
                               <span className="font-medium">{admin.name}</span>
-                              <span className="text-xs text-muted-foreground">{admin.email}</span>
+                              <span className="text-xs text-muted-foreground group-hover:text-foreground/70">{admin.email}</span>
                             </div>
                           </SelectItem>
                         ))

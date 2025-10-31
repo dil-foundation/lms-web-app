@@ -87,7 +87,10 @@ export const DiscussionListView: React.FC<DiscussionListViewProps> = ({
   const handleDelete = (e: React.MouseEvent, discussionId: string) => {
     e.stopPropagation();
     if (onDelete) {
-      onDelete(discussionId);
+      // Small delay to ensure dropdown is fully closed
+      setTimeout(() => {
+        onDelete(discussionId);
+      }, 100);
     }
   };
 
