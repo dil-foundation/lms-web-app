@@ -58,6 +58,10 @@ interface User {
   grade?: string;
   teacherId?: string;
   avatar_url?: string;
+  gender?: string;
+  schoolName?: string;
+  project?: string;
+  city?: string;
 }
 
 const initialNewUserState = {
@@ -112,6 +116,12 @@ export const UsersManagement = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<any>(null);
+
+  // Bulk upload with passwords state
+  const [isBulkUploadWithPasswordsModalOpen, setIsBulkUploadWithPasswordsModalOpen] = useState(false);
+  const [uploadedPasswordFile, setUploadedPasswordFile] = useState<File | null>(null);
+  const [isUploadingWithPasswords, setIsUploadingWithPasswords] = useState(false);
+  const [uploadPasswordResult, setUploadPasswordResult] = useState<any>(null);
 
 
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -786,6 +796,172 @@ export const UsersManagement = () => {
     }
   };
 
+  const downloadPasswordTemplate = () => {
+    const xlsxUrl = import.meta.env.VITE_BULK_UPLOAD_PASSWORD_XLSX_TEMPLATE_URL;
+    
+    if (xlsxUrl) {
+      const link = document.createElement('a');
+      link.href = xlsxUrl;
+      link.download = 'bulk-upload-password-template.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      toast.error("Template not available", { description: "Password template URL not configured." });
+    }
+  };
+
+  // Bulk upload with passwords functions
+  const handlePasswordFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.name.endsWith('.xlsx')) {
+        setUploadedPasswordFile(file);
+        setUploadPasswordResult(null);
+      } else {
+        toast.error("Invalid file format", { description: "Please upload an XLSX file." });
+      }
+    }
+    // Reset the input value to allow selecting the same file again
+    event.target.value = '';
+  };
+
+  const handleBulkUploadWithPasswords = async () => {
+    if (!uploadedPasswordFile) {
+      toast.error("No file selected", { description: "Please select a file to upload." });
+      return;
+    }
+
+    setIsUploadingWithPasswords(true);
+    setUploadProgress(0);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', uploadedPasswordFile);
+
+      let responseData = null;
+      let supabaseError = null;
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('bulk-upload-users-with-passwords', {
+          body: formData,
+        });
+
+        if (error) {
+          supabaseError = error;
+        } else {
+          responseData = data;
+        }
+      } catch (caughtError: any) {
+        console.log('=== CAUGHT ERROR DEBUG (WITH PASSWORDS) ===');
+        console.log('Caught error:', caughtError);
+        console.log('Error context:', caughtError.context);
+        console.log('Error status:', caughtError.status);
+        console.log('Error response:', caughtError.response);
+        console.log('Error message:', caughtError.message);
+        console.log('=== END CAUGHT ERROR ===');
+        
+        supabaseError = caughtError;
+      }
+
+      // Process response data similar to existing bulk upload
+      if (responseData) {
+        setUploadPasswordResult(responseData);
+        
+        if (responseData.createdUsers > 0) {
+          setLoading(true);
+          setLoadingStats(true);
+          await Promise.all([fetchUsers(), fetchStats()]);
+          setTimeout(() => {
+            setLoading(false);
+            setLoadingStats(false);
+          }, 500);
+        }
+        
+        if (responseData.success === true) {
+          toast.success("Bulk upload with passwords completed!", { 
+            description: `Successfully created ${responseData.createdUsers} users with passwords. User list has been refreshed.` 
+          });
+          
+          if (currentUser) {
+            await AccessLogService.logUserManagementAction(
+              currentUser.id,
+              currentUser.email || 'unknown@email.com',
+              'user_created',
+              undefined,
+              'multiple',
+              {
+                total_rows: responseData.totalRows,
+                created_users: responseData.createdUsers,
+                file_name: uploadedPasswordFile.name,
+                upload_type: 'bulk_with_passwords'
+              }
+            );
+          }
+          
+          setIsBulkUploadWithPasswordsModalOpen(false);
+          setUploadedPasswordFile(null);
+          setUploadPasswordResult(null);
+        } else {
+          toast.error("Upload completed with errors", { 
+            description: `Created ${responseData.createdUsers} users with ${responseData.errors?.length || 0} errors.` 
+          });
+        }
+      } else if (supabaseError) {
+        // Handle error similar to existing implementation
+        try {
+          if (typeof supabaseError.context === 'string') {
+            responseData = JSON.parse(supabaseError.context);
+          } else if (supabaseError.context && typeof supabaseError.context === 'object') {
+            if (supabaseError.context instanceof Response) {
+              const responseText = await supabaseError.context.text();
+              responseData = JSON.parse(responseText);
+            } else {
+              responseData = supabaseError.context;
+            }
+          }
+        } catch (parseError) {
+          // Failed to parse error context
+        }
+        
+        if (responseData && responseData.errors) {
+          setUploadPasswordResult(responseData);
+          toast.error("Upload completed with errors", { 
+            description: `Created ${responseData.createdUsers} users with ${responseData.errors?.length || 0} errors.` 
+          });
+        } else {
+          throw supabaseError;
+        }
+      }
+    } catch (error: any) {
+      // Try to extract response data from the error
+      let responseData = null;
+      try {
+        if (error.context) {
+          if (typeof error.context === 'string') {
+            responseData = JSON.parse(error.context);
+          } else if (error.context && typeof error.context === 'object') {
+            responseData = error.context;
+          }
+        }
+      } catch (parseError) {
+        // Failed to parse error context
+      }
+      
+      if (responseData && responseData.errors) {
+        setUploadPasswordResult(responseData);
+        toast.error("Upload completed with errors", { 
+          description: `Created ${responseData.createdUsers} users with ${responseData.errors?.length || 0} errors.` 
+        });
+      } else {
+        toast.error("Upload failed", { description: error.message });
+      }
+    } finally {
+      setIsUploadingWithPasswords(false);
+      setUploadProgress(0);
+    }
+  };
+
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'admin': return 'destructive';
@@ -833,7 +1009,7 @@ export const UsersManagement = () => {
             <div className="flex gap-3">
               <Dialog open={isBulkUploadModalOpen} onOpenChange={setIsBulkUploadModalOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="h-10 px-6 rounded-xl border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
+                  <Button variant="outline" className="h-10 px-6 rounded-xl border-blue-300/50 text-blue-700 bg-white hover:bg-blue-50 hover:border-blue-400 hover:text-blue-800 focus:bg-blue-100 focus:border-blue-500 focus:text-blue-900 focus-visible:bg-blue-100 focus-visible:border-blue-500 focus-visible:text-blue-900 active:bg-blue-200 active:text-blue-900 [&:focus]:text-blue-900 [&:focus-visible]:text-blue-900 [&:active]:text-blue-900 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
                     <Upload className="mr-2 h-4 w-4" />
                     Bulk Upload
                   </Button>
@@ -1022,6 +1198,209 @@ export const UsersManagement = () => {
                       disabled={!uploadedFile || isUploading}
                     >
                       {isUploading ? "Uploading..." : "Upload Users"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={isBulkUploadWithPasswordsModalOpen} onOpenChange={setIsBulkUploadWithPasswordsModalOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="h-10 px-6 rounded-xl border-orange-300/50 text-orange-700 bg-white hover:bg-orange-50 hover:border-orange-400 hover:text-orange-800 focus:bg-orange-100 focus:border-orange-500 focus:text-orange-900 focus-visible:bg-orange-100 focus-visible:border-orange-500 focus-visible:text-orange-900 active:bg-orange-200 active:text-orange-900 [&:focus]:text-orange-900 [&:focus-visible]:text-orange-900 [&:active]:text-orange-900 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
+                    <Upload className="mr-2 h-4 w-4" />
+                    Bulk Upload with Passwords
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col">
+                  <DialogHeader>
+                    <DialogTitle>Bulk Upload Users with Passwords</DialogTitle>
+                    <DialogDescription>
+                      Upload users with predefined passwords. Users will be created as verified with the provided passwords.
+                    </DialogDescription>
+                    <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <div className="w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center mt-0.5">
+                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="text-sm text-amber-800">
+                          <p className="font-medium mb-1">Important Notes:</p>
+                          <ul className="list-disc list-inside space-y-1">
+                            <li>Maximum <strong>1000 users</strong> allowed per upload</li>
+                            <li>Users will be created as <strong>verified</strong> with provided passwords</li>
+                            <li>No email verification will be sent</li>
+                            <li>Required columns: First Name, Last Name, Email Address, Password, Role</li>
+                            <li>Optional columns: Class/Grade, Teacher ID, Gender, School Name, Project, City</li>
+                            <li>Role values: student, teacher, admin, content_creator, view_only, super_user</li>
+                            <li>Students require Class/Grade, Teachers require Teacher ID</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </DialogHeader>
+                  <div className="flex-1 overflow-y-auto pr-2">
+                    <div className="space-y-6">
+                      {/* Template Downloads */}
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium">Download Template</Label>
+                        <div className="flex gap-3">
+                          <Button 
+                            variant="outline" 
+                            onClick={downloadPasswordTemplate}
+                            className="flex-1"
+                          >
+                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                            Download Template
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* File Upload */}
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium">Upload File</Label>
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                          <input
+                            type="file"
+                            accept=".xlsx"
+                            onChange={handlePasswordFileUpload}
+                            className="hidden"
+                            id="password-file-upload"
+                          />
+                          <label htmlFor="password-file-upload" className="cursor-pointer">
+                            <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                            <p className="mt-2 text-sm text-gray-600">
+                              Click to upload or drag and drop
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              XLSX files only
+                            </p>
+                          </label>
+                        </div>
+                        {uploadedPasswordFile && (
+                          <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                              <span className="text-sm text-green-800">{uploadedPasswordFile.name}</span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setUploadedPasswordFile(null)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Upload Results */}
+                      {uploadPasswordResult && (
+                        <div className="space-y-3">
+                          <Label className="text-sm font-medium">Upload Results</Label>
+                          <div className={`p-4 rounded-lg border ${
+                            (uploadPasswordResult.success === true) ? 'bg-green-50 border-green-200' : 
+                            (uploadPasswordResult.createdUsers > 0 && (!uploadPasswordResult.errors || uploadPasswordResult.errors.length === 0)) ? 'bg-green-50 border-green-200' :
+                            uploadPasswordResult.createdUsers > 0 ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200'
+                          }`}>
+                            <div className="flex items-center gap-2 mb-3">
+                              {(uploadPasswordResult.success === true || (uploadPasswordResult.createdUsers > 0 && (!uploadPasswordResult.errors || uploadPasswordResult.errors.length === 0))) ? (
+                                <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                              ) : uploadPasswordResult.createdUsers > 0 ? (
+                                <div className="w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center">
+                                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                              ) : (
+                                <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                              )}
+                              <span className={`text-sm font-medium ${
+                                (uploadPasswordResult.success === true || (uploadPasswordResult.createdUsers > 0 && (!uploadPasswordResult.errors || uploadPasswordResult.errors.length === 0))) ? 'text-green-800' : 
+                                uploadPasswordResult.createdUsers > 0 ? 'text-yellow-800' : 'text-red-800'
+                              }`}>
+                                {uploadPasswordResult.message}
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              <div className="grid grid-cols-2 gap-4 mb-3">
+                                <div>
+                                  <span className="font-medium">Total rows:</span> {uploadPasswordResult.totalRows}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Created users:</span> {uploadPasswordResult.createdUsers}
+                                </div>
+                                {uploadPasswordResult.skippedUsers > 0 && (
+                                  <div className="col-span-2">
+                                    <span className="font-medium text-yellow-600">Skipped users:</span> {uploadPasswordResult.skippedUsers} (already exist)
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Always show errors if they exist */}
+                              {uploadPasswordResult.errors && uploadPasswordResult.errors.length > 0 && (
+                                <div className="mt-4">
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <div className="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                                      <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                      </svg>
+                                    </div>
+                                    <p className="font-medium text-red-700">Validation Errors ({uploadPasswordResult.errors.length})</p>
+                                  </div>
+                                  <div className="max-h-48 overflow-y-auto space-y-2 border border-red-200 rounded-lg p-3 bg-red-50">
+                                    {uploadPasswordResult.errors.map((error: any, index: number) => (
+                                      <div key={index} className="flex items-start gap-3 p-3 bg-white rounded border border-red-200 shadow-sm">
+                                        <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-sm font-semibold text-red-700">
+                                              Row {error.row}
+                                            </span>
+                                            <span className="text-xs text-gray-500">•</span>
+                                            <span className="text-sm font-medium text-red-600">
+                                              {error.field}
+                                            </span>
+                                          </div>
+                                          <p className="text-sm text-red-600 leading-relaxed">
+                                            {error.message}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setIsBulkUploadWithPasswordsModalOpen(false);
+                        setUploadedPasswordFile(null);
+                        setUploadPasswordResult(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleBulkUploadWithPasswords}
+                      disabled={!uploadedPasswordFile || isUploadingWithPasswords}
+                    >
+                      {isUploadingWithPasswords ? "Uploading..." : "Upload Users with Passwords"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
