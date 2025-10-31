@@ -77,7 +77,10 @@ export const DiscussionTileView: React.FC<DiscussionTileViewProps> = ({
   const handleDelete = (e: React.MouseEvent, discussionId: string) => {
     e.stopPropagation();
     if (onDelete) {
-      onDelete(discussionId);
+      // Small delay for smooth UI transition
+      setTimeout(() => {
+        onDelete(discussionId);
+      }, 100);
     }
   };
 
