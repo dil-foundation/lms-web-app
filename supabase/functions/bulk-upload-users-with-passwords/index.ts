@@ -94,11 +94,14 @@ function parseXLSX(xlsxContent: ArrayBuffer): UserDataWithPassword[] {
     }
     
     const users: UserDataWithPassword[] = [];
+    const parsingErrors: ValidationError[] = [];
     
     // Process data rows (skip header row)
     for (let i = 1; i < jsonData.length; i++) {
       const row = jsonData[i] as any[];
       if (!row || row.length === 0) continue;
+      
+      const rowNumber = i + 1; // +1 because row 1 is header, so row 2 is i=1
       
       // Create user object from row data
       const user: any = {};
@@ -106,14 +109,63 @@ function parseXLSX(xlsxContent: ArrayBuffer): UserDataWithPassword[] {
         user[header] = row[index] || '';
       });
       
-      // Only add if we have the minimum required data
+      // Extract and validate required fields
       const firstName = user[fieldHeaders.firstName]?.toString().trim();
       const lastName = user[fieldHeaders.lastName]?.toString().trim();
       const email = user[fieldHeaders.email]?.toString().trim().toLowerCase();
       const password = user[fieldHeaders.password]?.toString().trim();
       const role = user[fieldHeaders.role]?.toString().trim().toLowerCase();
       
-      if (firstName && lastName && email && password && role) {
+      // Validate required fields before adding to users array
+      let hasRequiredFields = true;
+      
+      if (!firstName || firstName === '') {
+        parsingErrors.push({
+          row: rowNumber,
+          field: 'First Name',
+          message: 'First Name is required'
+        });
+        hasRequiredFields = false;
+      }
+      
+      if (!lastName || lastName === '') {
+        parsingErrors.push({
+          row: rowNumber,
+          field: 'Last Name',
+          message: 'Last Name is required'
+        });
+        hasRequiredFields = false;
+      }
+      
+      if (!email || email === '') {
+        parsingErrors.push({
+          row: rowNumber,
+          field: 'Email Address',
+          message: 'Email Address is required'
+        });
+        hasRequiredFields = false;
+      }
+      
+      if (!password || password === '') {
+        parsingErrors.push({
+          row: rowNumber,
+          field: 'Password',
+          message: 'Password is required'
+        });
+        hasRequiredFields = false;
+      }
+      
+      if (!role || role === '') {
+        parsingErrors.push({
+          row: rowNumber,
+          field: 'Role',
+          message: 'Role is required'
+        });
+        hasRequiredFields = false;
+      }
+      
+      // Only add to users array if all required fields are present
+      if (hasRequiredFields) {
         users.push({
           firstName,
           lastName,
@@ -130,8 +182,22 @@ function parseXLSX(xlsxContent: ArrayBuffer): UserDataWithPassword[] {
       }
     }
     
+    // If there are parsing errors, throw them so they can be caught and returned
+    if (parsingErrors.length > 0) {
+      throw new Error(JSON.stringify({ parsingErrors }));
+    }
+    
     return users;
-  } catch (error) {
+  } catch (error: any) {
+    // Don't wrap parsing errors - check if error message contains parsingErrors
+    try {
+      const parsed = JSON.parse(error.message);
+      if (parsed.parsingErrors) {
+        throw error; // Re-throw the original error with parsingErrors
+      }
+    } catch {
+      // Not a parsing error, wrap it
+    }
     throw new Error(`Failed to parse XLSX file: ${error.message}`);
   }
 }
@@ -297,7 +363,49 @@ serve(async (req) => {
 
     // Parse XLSX file
     const xlsxContent = await file.arrayBuffer();
-    users = parseXLSX(xlsxContent);
+    try {
+      users = parseXLSX(xlsxContent);
+    } catch (parseError: any) {
+      // Check if this is a parsing error with validation details
+      let parsingErrors = null;
+      
+      // Try direct parse first
+      try {
+        const errorData = JSON.parse(parseError.message);
+        if (errorData.parsingErrors) {
+          parsingErrors = errorData.parsingErrors;
+        }
+      } catch {
+        // If direct parse fails, check if it's wrapped in "Failed to parse XLSX file: "
+        const wrappedMatch = parseError.message.match(/Failed to parse XLSX file: (.+)/);
+        if (wrappedMatch) {
+          try {
+            const errorData = JSON.parse(wrappedMatch[1]);
+            if (errorData.parsingErrors) {
+              parsingErrors = errorData.parsingErrors;
+            }
+          } catch {
+            // Not a parsing error
+          }
+        }
+      }
+      
+      if (parsingErrors) {
+        return new Response(JSON.stringify({
+          success: false,
+          totalRows: 0,
+          createdUsers: 0,
+          errors: parsingErrors,
+          message: 'Validation failed: Missing required fields'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        });
+      }
+      
+      // If parsing fails, it's a different error - throw it
+      throw parseError;
+    }
 
     // Check maximum users limit
     if (users.length > 1000) {
@@ -453,7 +561,45 @@ serve(async (req) => {
       status: errors.length === 0 ? 200 : 207, // 207 for partial success
     });
 
-  } catch (error) {
+  } catch (error: any) {
+    // Check if this error contains parsing errors
+    let parsingErrors = null;
+    
+    try {
+      // Try to parse the error message directly
+      const parsed = JSON.parse(error.message);
+      if (parsed.parsingErrors) {
+        parsingErrors = parsed.parsingErrors;
+      }
+    } catch {
+      // If direct parse fails, check if it's wrapped in "Failed to parse XLSX file: "
+      const wrappedMatch = error.message.match(/Failed to parse XLSX file: (.+)/);
+      if (wrappedMatch) {
+        try {
+          const nestedParsed = JSON.parse(wrappedMatch[1]);
+          if (nestedParsed.parsingErrors) {
+            parsingErrors = nestedParsed.parsingErrors;
+          }
+        } catch {
+          // Not a parsing error
+        }
+      }
+    }
+    
+    if (parsingErrors) {
+      return new Response(JSON.stringify({
+        success: false,
+        totalRows: 0,
+        createdUsers: 0,
+        errors: parsingErrors,
+        message: 'Validation failed: Missing required fields'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
+    }
+    
+    // Regular error - return as before
     return new Response(JSON.stringify({ 
       success: false,
       error: error.message 
