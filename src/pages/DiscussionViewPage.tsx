@@ -745,7 +745,12 @@ export const DiscussionViewPage = () => {
                             <Edit className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600" onClick={() => setIsDeleteDialogOpen(true)}>
+                          <DropdownMenuItem className="text-red-600" onClick={() => {
+                            // Small delay to ensure dropdown is fully closed
+                            setTimeout(() => {
+                              setIsDeleteDialogOpen(true);
+                            }, 100);
+                          }}>
                             <Trash className="mr-2 h-4 w-4" />
                             Delete
                           </DropdownMenuItem>
