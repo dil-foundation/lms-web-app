@@ -72,13 +72,18 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
   };
 
   const canDelete = (course: Course) => {
-    // Content creators cannot delete courses, only admins and teachers can
-    if (profile?.role === 'content_creator') return false;
+    if (!profile || !user) return false;
     
-    return profile && (
-      isAdmin ||
-      (profile.role === 'teacher' && course.status === 'Draft' && user?.id === course.authorId)
-    );
+    // Admins and super users can delete any course
+    if (isAdmin) return true;
+    
+    // Content creators can delete courses they authored
+    if (profile.role === 'content_creator' && user.id === course.authorId) return true;
+    
+    // Teachers can delete draft courses they authored
+    if (profile.role === 'teacher' && course.status === 'Draft' && user.id === course.authorId) return true;
+    
+    return false;
   };
 
   const handleCourseClick = (course: Course) => {

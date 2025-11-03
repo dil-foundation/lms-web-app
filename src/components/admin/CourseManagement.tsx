@@ -108,10 +108,14 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
   const isContentCreator = profile?.role === 'content_creator';
   const isTeacher = profile?.role === 'teacher';
 
-  // Content creators cannot delete courses, only admins and teachers can
-  const canDelete = profile && (
+  // Check if user can delete the course
+  // Admins/super users can delete any course
+  // Content creators can delete courses they authored
+  // Teachers can delete draft courses they authored
+  const canDelete = profile && user && (
     (profile.role === 'admin' || profile.role === 'super_user') ||
-    (profile.role === 'teacher' && course.status === 'Draft' && user?.id === course.authorId)
+    (profile.role === 'content_creator' && user.id === course.authorId) ||
+    (profile.role === 'teacher' && course.status === 'Draft' && user.id === course.authorId)
   );
 
     return (

@@ -3,10 +3,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
 import * as XLSX from 'https://esm.sh/xlsx@0.18.5';
 
-interface UserData {
+interface UserDataWithPassword {
   firstName: string;
   lastName: string;
   email: string;
+  password: string;
   role: 'student' | 'teacher' | 'admin' | 'content_creator' | 'super_user' | 'view_only';
   grade?: string;
   teacherId?: string;
@@ -34,7 +35,7 @@ interface UploadResult {
 }
 
 // Parse XLSX content using proper XLSX library
-function parseXLSX(xlsxContent: ArrayBuffer): UserData[] {
+function parseXLSX(xlsxContent: ArrayBuffer): UserDataWithPassword[] {
   try {
     // Read the workbook from the ArrayBuffer
     const workbook = XLSX.read(xlsxContent, { type: 'array' });
@@ -62,6 +63,7 @@ function parseXLSX(xlsxContent: ArrayBuffer): UserData[] {
       'firstName': ['First Name', 'FirstName', 'first_name'],
       'lastName': ['Last Name', 'LastName', 'last_name'],
       'email': ['Email Address', 'Email', 'email'],
+      'password': ['Password', 'password'],
       'role': ['Role', 'role', 'User Role', 'User_Role'],
       'grade': ['Class/Grade', 'Grade', 'Class', 'grade', 'class'],
       'teacherId': ['Teacher ID', 'TeacherID', 'teacher_id', 'TeacherId'],
@@ -83,7 +85,7 @@ function parseXLSX(xlsxContent: ArrayBuffer): UserData[] {
     }
 
     // Validate required headers
-    const requiredHeaders = ['firstName', 'lastName', 'email', 'role'];
+    const requiredHeaders = ['firstName', 'lastName', 'email', 'password', 'role'];
     for (const field of requiredHeaders) {
       if (!fieldHeaders[field]) {
         const variations = headerMap[field].join(', ');
@@ -91,7 +93,7 @@ function parseXLSX(xlsxContent: ArrayBuffer): UserData[] {
       }
     }
     
-    const users: UserData[] = [];
+    const users: UserDataWithPassword[] = [];
     const parsingErrors: ValidationError[] = [];
     
     // Process data rows (skip header row)
@@ -111,6 +113,7 @@ function parseXLSX(xlsxContent: ArrayBuffer): UserData[] {
       const firstName = user[fieldHeaders.firstName]?.toString().trim();
       const lastName = user[fieldHeaders.lastName]?.toString().trim();
       const email = user[fieldHeaders.email]?.toString().trim().toLowerCase();
+      const password = user[fieldHeaders.password]?.toString().trim();
       const role = user[fieldHeaders.role]?.toString().trim().toLowerCase();
       
       // Validate required fields before adding to users array
@@ -143,6 +146,15 @@ function parseXLSX(xlsxContent: ArrayBuffer): UserData[] {
         hasRequiredFields = false;
       }
       
+      if (!password || password === '') {
+        parsingErrors.push({
+          row: rowNumber,
+          field: 'Password',
+          message: 'Password is required'
+        });
+        hasRequiredFields = false;
+      }
+      
       if (!role || role === '') {
         parsingErrors.push({
           row: rowNumber,
@@ -158,6 +170,7 @@ function parseXLSX(xlsxContent: ArrayBuffer): UserData[] {
           firstName,
           lastName,
           email,
+          password,
           role: role as 'student' | 'teacher' | 'admin' | 'content_creator' | 'super_user' | 'view_only',
           grade: fieldHeaders.grade ? user[fieldHeaders.grade]?.toString().trim() : undefined,
           teacherId: fieldHeaders.teacherId ? user[fieldHeaders.teacherId]?.toString().trim() : undefined,
@@ -190,11 +203,11 @@ function parseXLSX(xlsxContent: ArrayBuffer): UserData[] {
 }
 
 // Validate user data
-function validateUserData(user: UserData, row: number): ValidationError[] {
+function validateUserData(user: UserDataWithPassword, row: number): ValidationError[] {
   const errors: ValidationError[] = [];
   
   // Validate first name
-  if (!user.firstName || user.firstName.trim().length < 2 || user.firstName.trim().length > 30) {
+  if (!user.firstName || user.firstName.length < 2 || user.firstName.length > 30) {
     errors.push({
       row,
       field: 'First Name',
@@ -203,7 +216,7 @@ function validateUserData(user: UserData, row: number): ValidationError[] {
   }
   
   // Validate last name
-  if (!user.lastName || user.lastName.trim().length < 2 || user.lastName.trim().length > 30) {
+  if (!user.lastName || user.lastName.length < 2 || user.lastName.length > 30) {
     errors.push({
       row,
       field: 'Last Name',
@@ -218,6 +231,15 @@ function validateUserData(user: UserData, row: number): ValidationError[] {
       row,
       field: 'Email Address',
       message: 'Please enter a valid email address'
+    });
+  }
+  
+  // Validate password
+  if (!user.password || user.password.length < 6) {
+    errors.push({
+      row,
+      field: 'Password',
+      message: 'Password must be at least 6 characters long'
     });
   }
   
@@ -333,7 +355,7 @@ serve(async (req) => {
       throw new Error('Unsupported file format. Please upload XLSX files only.');
     }
 
-    let users: UserData[] = [];
+    let users: UserDataWithPassword[] = [];
     const errors: ValidationError[] = [];
     let createdUsers = 0;
     let skippedUsers = 0;
@@ -409,7 +431,7 @@ serve(async (req) => {
       errors.push(...userErrors);
     }
 
-    // Check for duplicate emails
+    // Check for duplicate emails within the file
     const emails = users.map(u => u.email.toLowerCase());
     const duplicateEmails = emails.filter((email, index) => emails.indexOf(email) !== index);
     
@@ -443,7 +465,7 @@ serve(async (req) => {
       .from('profiles')
       .select('email')
       .in('email', emails)
-      .limit(1000); // Add limit for safety
+      .limit(1000);
 
     // Filter out existing users and count them as skipped
     if (existingEmails.data && existingEmails.data.length > 0) {
@@ -451,15 +473,13 @@ serve(async (req) => {
       users = users.filter(user => {
         if (existingEmailSet.has(user.email.toLowerCase())) {
           skippedUsers++;
-          return false; // Remove from users array
+          return false;
         }
-        return true; // Keep in users array
+        return true;
       });
     }
 
-    // Create users with sequential processing and rate limiting
-    // Respects SMTP rate limits: 100 emails/hour and 1 second minimum interval
-    const delayBetweenEmails = 1200; // 1.2 seconds between emails (respects 1 second minimum + buffer)
+    // Create users with passwords (no rate limiting needed since no emails are sent)
     let batchesProcessed = 0;
     
     for (let i = 0; i < users.length; i++) {
@@ -467,26 +487,16 @@ serve(async (req) => {
       const userIndex = i;
       
       try {
-        // Additional email validation
-        const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-        if (!emailRegex.test(user.email)) {
-          errors.push({
-            row: userIndex + 2,
-            field: 'Email Address',
-            message: `Invalid email format: ${user.email}`
-          });
-          continue;
-        }
-
+        // Create user with password
         const userMetaData: { [key: string]: any } = {
           role: user.role,
           first_name: user.firstName,
           last_name: user.lastName,
-          password_setup_required: true,
           gender: user.gender?.toLowerCase(),
           school_name: user.schoolName,
           project: user.project,
           city: user.city,
+          password_setup_required: false, // Password already set
         };
 
         // Add role-specific metadata
@@ -496,17 +506,19 @@ serve(async (req) => {
           userMetaData.teacher_id = user.teacherId;
         }
 
-        const { error } = await supabaseAdmin.auth.admin.inviteUserByEmail(user.email, {
-          data: userMetaData,
-          redirectTo: `${Deno.env.get('APP_URL')}/dashboard/profile-settings?source=reset`,
+        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+          email: user.email,
+          password: user.password,
+          email_confirm: true, // Mark email as confirmed (verified)
+          user_metadata: userMetaData
         });
 
-        if (error) {
-          console.error(`Error creating user ${user.email}:`, error);
+        if (createError) {
+          console.error(`Error creating user ${user.email}:`, createError);
           errors.push({
             row: userIndex + 2,
             field: 'Email Address',
-            message: `Failed to create user: ${error.message}`
+            message: `Failed to create user: ${createError.message}`
           });
         } else {
           console.log(`Successfully created user: ${user.email}`);
@@ -521,11 +533,6 @@ serve(async (req) => {
         });
       }
 
-      // Rate limiting delay between emails (except for the last user)
-      if (i < users.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, delayBetweenEmails));
-      }
-      
       // Track progress every 10 users
       if ((i + 1) % 10 === 0) {
         batchesProcessed++;
@@ -538,12 +545,12 @@ serve(async (req) => {
     const processingTime = Date.now() - startTime;
     const result: UploadResult = {
       success: errors.length === 0,
-      totalRows: users.length + skippedUsers, // Include skipped users in total
+      totalRows: users.length + skippedUsers,
       createdUsers,
       skippedUsers,
       errors,
       message: errors.length === 0 
-        ? `Successfully created ${createdUsers} users${skippedUsers > 0 ? `, skipped ${skippedUsers} existing users` : ''} in ${(processingTime / 1000).toFixed(2)}s` 
+        ? `Successfully created ${createdUsers} users with passwords${skippedUsers > 0 ? `, skipped ${skippedUsers} existing users` : ''} in ${(processingTime / 1000).toFixed(2)}s` 
         : `Created ${createdUsers} users${skippedUsers > 0 ? `, skipped ${skippedUsers} existing users` : ''} with ${errors.length} errors in ${(processingTime / 1000).toFixed(2)}s`,
       processingTime,
       batchesProcessed

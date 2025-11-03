@@ -6150,6 +6150,7 @@ const CourseBuilder = () => {
 
   const canDelete = user && courseData.id && courseData.authorId && (
     currentUserRole === 'admin' || currentUserRole === 'super_user' ||
+    (currentUserRole === 'content_creator' && user.id === courseData.authorId) ||
     (currentUserRole === 'teacher' && user.id === courseData.authorId && (courseData.status === 'Draft' || courseData.status === 'Rejected'))
   );
 
