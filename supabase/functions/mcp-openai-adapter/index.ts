@@ -279,16 +279,24 @@ LMS QUERIES:
 - "students in courses": Join profiles with course_members
 
 AI TUTOR QUERIES (Internal - Hide technical details from users):
-- "active users in AI tutor": SELECT DISTINCT user_id FROM ai_tutor_daily_learning_analytics WHERE sessions_count > 0
+⚠️ CRITICAL: AI Tutor analytics queries MUST ALWAYS JOIN with profiles table to include user details!
+
+- "platform usage" or "AI tutor usage": Query ai_tutor_daily_learning_analytics with MANDATORY JOIN to profiles
+  ❌ BAD: SELECT user_id, sessions_count FROM ai_tutor_daily_learning_analytics
+  ✅ GOOD: SELECT p.full_name, p.email, p.role, a.sessions_count, a.total_time_minutes, a.average_score
+           FROM ai_tutor_daily_learning_analytics a
+           JOIN profiles p ON a.user_id = p.id
+
+- "active users in AI tutor": Must include full_name, email, role from profiles table
 - "courses in AI tutor": ALWAYS means STAGES - SELECT * FROM ai_tutor_content_hierarchy WHERE level = 'stage' (NOT LMS courses!)
 - "how many courses in AI tutor": COUNT(*) FROM ai_tutor_content_hierarchy WHERE level = 'stage' AND is_active = true
 - "total courses in AI tutor": COUNT(*) FROM ai_tutor_content_hierarchy WHERE level = 'stage' AND is_active = true
 - "number of courses in AI tutor": COUNT(*) FROM ai_tutor_content_hierarchy WHERE level = 'stage' AND is_active = true
-- "AI tutor progress": Query ai_tutor_user_progress_summary
-- "learning milestones": Query ai_tutor_learning_milestones
-- "exercise completion": Query ai_tutor_user_topic_progress
-- "daily learning analytics": Query ai_tutor_daily_learning_analytics
-- "AI tutor users": Query users who have records in ai_tutor_* tables
+- "AI tutor progress": Query ai_tutor_user_progress_summary WITH JOIN to profiles
+- "learning milestones": Query ai_tutor_learning_milestones WITH JOIN to profiles
+- "exercise completion": Query ai_tutor_user_topic_progress WITH JOIN to profiles
+- "daily learning analytics": Query ai_tutor_daily_learning_analytics WITH JOIN to profiles
+- "AI tutor users": Query users WITH profiles table JOIN to get full_name, email, role
 - "stages in AI tutor": Query ai_tutor_content_hierarchy WHERE level = 'stage'
 - "topics in AI tutor": Query ai_tutor_user_topic_progress OR ai_tutor_content_hierarchy WHERE level = 'topic'
 - "exercises in AI tutor": Query ai_tutor_content_hierarchy WHERE level = 'exercise'
@@ -296,6 +304,68 @@ AI TUTOR QUERIES (Internal - Hide technical details from users):
 - "stage details": Query ai_tutor_content_hierarchy WHERE level = 'stage' for stage information with titles, descriptions, difficulty levels
 - "exercise types": Query ai_tutor_content_hierarchy WHERE level = 'exercise' for exercise details with types and metadata
 - "learning content hierarchy": Query ai_tutor_content_hierarchy for complete content structure with parent-child relationships
+
+AI TUTOR ANALYTICS QUERY TEMPLATE:
+When querying ai_tutor_daily_learning_analytics, ALWAYS use this pattern with CORRECT aggregations:
+
+⚠️ CRITICAL AGGREGATION RULES (ai_tutor_daily_learning_analytics table):
+- sessions_count → use SUM() (count per day, sum across days)
+- total_time_minutes → use SUM() (minutes per day, sum across days)
+- average_session_duration → use AVG() (already averaged per day, average across days)
+- average_score → use AVG() (already averaged per day, average across days)
+- best_score → use MAX() (best per day, get maximum across all days)
+- exercises_attempted → use SUM() (count per day, sum across days)
+- exercises_completed → use SUM() (count per day, sum across days)
+
+✅ CORRECT QUERY PATTERN - SHOW ONLY NON-ZERO COLUMNS:
+⚠️ IMPORTANT: Only select columns that have meaningful data. Omit columns that are zero or null for all users.
+
+SMART COLUMN SELECTION:
+1. First, check which columns have data by running a sample query
+2. Only include columns that show non-zero values
+3. If a metric is consistently zero, DO NOT include it in the SELECT statement
+
+MINIMAL QUERY (when many columns are zero):
+SELECT
+  p.full_name,                                    ← ALWAYS include
+  p.email,                                        ← ALWAYS include
+  p.role,                                         ← ALWAYS include
+  SUM(a.sessions_count) as total_sessions,       ← Include if > 0
+  SUM(a.total_time_minutes) as total_time        ← Include if > 0
+FROM ai_tutor_daily_learning_analytics a
+JOIN profiles p ON a.user_id = p.id
+WHERE a.analytics_date >= '2025-10-01' AND a.analytics_date <= '2025-12-31'
+GROUP BY p.id, p.full_name, p.email, p.role
+HAVING SUM(a.sessions_count) > 0                  ← Filter out users with no activity
+ORDER BY total_sessions DESC
+LIMIT 50;
+
+FULL QUERY (when all metrics have data):
+SELECT
+  p.full_name,                                    ← MANDATORY
+  p.email,                                        ← MANDATORY
+  p.role,                                         ← MANDATORY
+  SUM(a.sessions_count) as total_sessions,       ← Include if non-zero
+  SUM(a.total_time_minutes) as total_time,       ← Include if non-zero
+  AVG(a.average_session_duration) as avg_duration,  ← Include if non-zero
+  AVG(a.average_score) as avg_score,             ← Include if non-zero
+  MAX(a.best_score) as best_score,               ← Include if non-zero
+  SUM(a.exercises_attempted) as exercises_attempted,  ← Include if non-zero
+  SUM(a.exercises_completed) as exercises_completed   ← Include if non-zero
+FROM ai_tutor_daily_learning_analytics a
+JOIN profiles p ON a.user_id = p.id
+WHERE a.analytics_date >= '2025-10-01' AND a.analytics_date <= '2025-12-31'
+GROUP BY p.id, p.full_name, p.email, p.role
+HAVING SUM(a.sessions_count) > 0
+ORDER BY total_sessions DESC
+LIMIT 50;
+
+⚠️ CRITICAL RULES:
+1. Use analytics_date column for date filtering, NOT created_at!
+2. Add HAVING clause to filter out users with zero activity
+3. Only show columns with meaningful (non-zero) data
+4. If avg_duration, avg_score, or best_score are all zero for sample users, OMIT them from SELECT
+5. Always explain in response which columns were omitted and why
 
 USER-FRIENDLY RESPONSE GUIDELINES:
 When providing information about AI Tutor, use these user-friendly descriptions:
@@ -322,6 +392,223 @@ EXAMPLE QUERIES FOR AI TUTOR STAGES:
 - Query: SELECT COUNT(*) FROM ai_tutor_content_hierarchy WHERE level = 'stage' AND is_active = true;
 - Query: SELECT * FROM ai_tutor_content_hierarchy WHERE level = 'stage' AND is_active = true ORDER BY stage_order;
 - Alternative: SELECT * FROM get_all_stages_with_counts();
+
+PAGINATION GUIDELINES - CRITICAL FOR TOKEN MANAGEMENT:
+⚠️ MANDATORY: To prevent token overflow errors, ALWAYS paginate large result sets!
+
+DEFAULT PAGINATION RULES:
+- For list queries (SELECT * FROM...): ALWAYS add LIMIT 50
+- For detailed queries with text fields: ALWAYS add LIMIT 20
+- For queries returning user-generated content: ALWAYS add LIMIT 10
+- Maximum LIMIT allowed: 100 (NEVER exceed this)
+- Use ORDER BY with LIMIT for consistent results
+
+WHEN TO APPLY PAGINATION (ALWAYS):
+1. ✅ "list all students" → LIMIT 50
+2. ✅ "show all courses" → LIMIT 50
+3. ✅ "get all assignments" → LIMIT 20
+4. ✅ "all submissions" → LIMIT 10
+5. ✅ Any query without WHERE clause → LIMIT 50
+6. ✅ Any query with JOIN → LIMIT 30
+7. ❌ COUNT(*) queries → No limit needed (only returns count)
+8. ❌ Single record queries (WHERE id = X) → No limit needed
+
+TWO-STEP APPROACH FOR LARGE DATASETS:
+Step 1: Get total count first
+  SELECT COUNT(*) FROM table_name WHERE conditions;
+
+Step 2: Get paginated results
+  SELECT * FROM table_name WHERE conditions ORDER BY column LIMIT 50;
+
+PAGINATION RESPONSE FORMAT (MANDATORY):
+When returning paginated results, ALWAYS inform the user:
+
+"Found [TOTAL_COUNT] [items] in the system.
+
+Showing first [LIMIT] results:
+
+[Display table with results]
+
+📄 Showing 1-50 of [TOTAL_COUNT] total results.
+💡 To see more results, ask: 'Show next 50 [items]' or 'Show [items] 51-100'"
+
+TOKEN ESTIMATION GUIDELINES:
+Estimate tokens before querying to choose appropriate LIMIT:
+- Simple tables (profiles, courses): ~100 tokens/row → LIMIT 50
+- Text-heavy tables (assignments, submissions): ~500 tokens/row → LIMIT 10
+- Content tables (lessons, articles): ~800 tokens/row → LIMIT 5
+- If estimated total > 10,000 tokens, reduce LIMIT by 50%
+
+HANDLING PAGINATION REQUESTS:
+User says: "Show next 50 students"
+→ Extract offset: 50
+→ Query: SELECT * FROM profiles WHERE role = 'student' ORDER BY created_at LIMIT 50 OFFSET 50
+→ Response: "Showing results 51-100 of [TOTAL]"
+
+User says: "Show students 101-150"
+→ Calculate offset: 100
+→ Query: SELECT * FROM profiles WHERE role = 'student' ORDER BY created_at LIMIT 50 OFFSET 100
+→ Response: "Showing results 101-150 of [TOTAL]"
+
+TIME-BASED AND DATE-FILTERED QUERIES:
+For queries with date filters (year, quarter, month), STILL apply pagination:
+
+Q4 2025 Date Range:
+- Start: '2025-10-01'
+- End: '2025-12-31'
+
+Q1 2025 Date Range:
+- Start: '2025-01-01'
+- End: '2025-03-31'
+
+Q2 2025 Date Range:
+- Start: '2025-04-01'
+- End: '2025-06-30'
+
+Q3 2025 Date Range:
+- Start: '2025-07-01'
+- End: '2025-09-30'
+
+EXAMPLE: "Platform usage for 2025 Q4 with user names"
+Step 1: Determine relevant tables (user_sessions, access_logs, or platform-specific activity tables)
+Step 2: Get count with date filter
+Step 3: Get paginated results with date filter
+
+❌ BAD (No pagination even with date filter):
+SELECT u.full_name, COUNT(s.id) as session_count
+FROM profiles u
+JOIN user_sessions s ON u.id = s.user_id
+WHERE s.created_at >= '2025-10-01' AND s.created_at <= '2025-12-31'
+GROUP BY u.id, u.full_name;
+
+✅ GOOD (With pagination AND date filter):
+-- Step 1: Get count
+SELECT COUNT(DISTINCT u.id)
+FROM profiles u
+JOIN user_sessions s ON u.id = s.user_id
+WHERE s.created_at >= '2025-10-01' AND s.created_at <= '2025-12-31';
+
+-- Step 2: Get paginated results
+SELECT u.full_name, u.email, u.role,
+       COUNT(s.id) as session_count,
+       MIN(s.created_at) as first_session,
+       MAX(s.created_at) as last_session
+FROM profiles u
+JOIN user_sessions s ON u.id = s.user_id
+WHERE s.created_at >= '2025-10-01' AND s.created_at <= '2025-12-31'
+GROUP BY u.id, u.full_name, u.email, u.role
+ORDER BY session_count DESC
+LIMIT 30;
+
+ANALYTICS AND USAGE QUERIES:
+For analytics queries, ALWAYS include user details even if not explicitly requested:
+
+MANDATORY USER DETAILS IN ALL ANALYTICS QUERIES:
+⚠️ CRITICAL: When querying usage/analytics data, ALWAYS JOIN with profiles table to include:
+- full_name (MANDATORY - user's full name)
+- email (MANDATORY - user's email address)
+- role (MANDATORY - user's role: student, teacher, admin)
+
+NEVER return only user_id without these details!
+
+❌ BAD (Only user_id, no user details):
+SELECT user_id, session_count, total_time
+FROM ai_tutor_daily_learning_analytics
+WHERE created_at >= '2025-10-01';
+
+✅ GOOD (Includes user details via JOIN):
+SELECT
+  p.full_name,
+  p.email,
+  p.role,
+  COUNT(a.id) as session_count,
+  SUM(a.total_time_minutes) as total_time,
+  AVG(a.average_score) as avg_score
+FROM ai_tutor_daily_learning_analytics a
+JOIN profiles p ON a.user_id = p.id
+WHERE a.created_at >= '2025-10-01' AND a.created_at <= '2025-12-31'
+GROUP BY p.id, p.full_name, p.email, p.role
+ORDER BY session_count DESC
+LIMIT 50;
+
+EXAMPLE: "Platform usage for Q4 2025"
+Even though user didn't ask for names, ALWAYS include them:
+
+✅ CORRECT QUERY:
+SELECT
+  p.full_name,           ← ALWAYS include
+  p.email,               ← ALWAYS include
+  p.role,                ← ALWAYS include
+  COUNT(s.id) as sessions,
+  SUM(s.duration) as total_minutes,
+  AVG(s.score) as avg_score
+FROM user_sessions s
+JOIN profiles p ON s.user_id = p.id  ← MANDATORY JOIN
+WHERE s.created_at >= '2025-10-01' AND s.created_at <= '2025-12-31'
+GROUP BY p.id, p.full_name, p.email, p.role
+ORDER BY sessions DESC
+LIMIT 50;
+
+COLUMN SELECTION BEST PRACTICES:
+- For user data: ALWAYS include full_name, email, role (NOT passwords, tokens, or sensitive data)
+- For usage data: counts, dates, status (NOT large text fields or JSON)
+- For analytics: aggregated metrics (SUM, COUNT, AVG) + user details
+- NEVER select: password_hash, auth_tokens, api_keys, personal_data
+- NEVER return only user_id without joining profiles table
+
+EXAMPLE TRANSFORMATIONS:
+
+❌ BAD (No pagination):
+SELECT * FROM profiles WHERE role = 'student';
+
+✅ GOOD (With pagination):
+-- Step 1: Get count
+SELECT COUNT(*) FROM profiles WHERE role = 'student';
+-- Step 2: Get paginated data
+SELECT id, email, full_name, created_at FROM profiles WHERE role = 'student' ORDER BY created_at DESC LIMIT 50;
+
+❌ BAD (No pagination):
+SELECT * FROM courses;
+
+✅ GOOD (With pagination):
+SELECT COUNT(*) FROM courses;
+SELECT id, title, status, created_at FROM courses ORDER BY created_at DESC LIMIT 50;
+
+❌ BAD (Too many results):
+SELECT * FROM assignment_submissions;
+
+✅ GOOD (Appropriate limit for text-heavy):
+SELECT COUNT(*) FROM assignment_submissions;
+SELECT id, student_id, assignment_id, submitted_at, status FROM assignment_submissions ORDER BY submitted_at DESC LIMIT 10;
+
+❌ BAD (Date filter but no pagination):
+SELECT u.full_name, COUNT(*) as logins
+FROM profiles u
+JOIN access_logs a ON u.id = a.user_id
+WHERE a.created_at >= '2025-10-01'
+GROUP BY u.id, u.full_name;
+
+✅ GOOD (Date filter WITH pagination):
+-- Count first
+SELECT COUNT(DISTINCT user_id)
+FROM access_logs
+WHERE created_at >= '2025-10-01' AND created_at <= '2025-12-31';
+
+-- Paginated results
+SELECT u.full_name, u.email, COUNT(a.id) as login_count
+FROM profiles u
+JOIN access_logs a ON u.id = a.user_id
+WHERE a.created_at >= '2025-10-01' AND a.created_at <= '2025-12-31'
+GROUP BY u.id, u.full_name, u.email
+ORDER BY login_count DESC
+LIMIT 50;
+
+CRITICAL REMINDER:
+- NEVER return more than 100 rows in a single query
+- ALWAYS use LIMIT for SELECT * queries
+- ALWAYS inform users about pagination in your response
+- ALWAYS provide guidance for viewing more results
+- If you forget pagination and get a token error, apologize and retry with LIMIT
 
 Always start by calling the appropriate tool(s) to gather information, then provide a response based on the tool results.`
         },

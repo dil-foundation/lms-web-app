@@ -428,6 +428,7 @@ The project includes 35+ markdown files documenting features:
 - `OFFLINE_QUIZ_ASSIGNMENT_HIDING_FEATURE.md` - Offline behavior
 - `SUPER_USER_SETUP_GUIDE.md` - Create super user
 - `CREATE_SUPER_USER_README.md` - Super user instructions
+- `IRIS_PAGINATION_IMPLEMENTATION.md` - IRIS pagination to prevent token overflow
 
 Refer to these for detailed implementation notes on specific features.
 
