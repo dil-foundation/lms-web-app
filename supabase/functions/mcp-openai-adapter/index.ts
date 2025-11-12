@@ -261,18 +261,27 @@ STEP 2: Since sessions_count = 0, DO NOT include these columns in your final SEL
 ❌ DO NOT SELECT: SUM(a.sessions_count) as total_sessions
 ❌ DO NOT SELECT: AVG(a.average_session_duration) as avg_duration
 
-STEP 3: Instead build query WITHOUT those columns:
-✅ CORRECT QUERY:
+STEP 3: Instead query ai_tutor_user_exercise_progress to show LESSON/TOPIC TITLES:
+✅ CORRECT QUERY (shows what content users engaged with):
 SELECT p.full_name, p.email, p.role,
-       SUM(a.total_time_minutes) as total_time,
-       AVG(a.average_score) as avg_score
-FROM ai_tutor_daily_learning_analytics a
-INNER JOIN profiles p ON a.user_id = p.id
-WHERE a.analytics_date >= '2025-09-01' AND a.analytics_date < '2025-10-01'
+       STRING_AGG(DISTINCT
+         CONCAT('Stage ', uep.stage_id, ' - Exercise ', uep.exercise_id, ' - Topic ', uep.current_topic_id),
+         ', ' ORDER BY uep.stage_id, uep.exercise_id) as lessons_topics,
+       SUM(uep.time_spent_minutes) as total_time,
+       AVG(uep.average_score) as avg_score
+FROM ai_tutor_user_exercise_progress uep
+INNER JOIN profiles p ON uep.user_id = p.id
+WHERE uep.updated_at >= '2025-09-01' AND uep.updated_at < '2025-10-01'
 GROUP BY p.id, p.full_name, p.email, p.role
+HAVING SUM(uep.time_spent_minutes) > 0 OR AVG(uep.average_score) > 0
+ORDER BY total_time DESC
 LIMIT 50;
 
-Notice: NO "total_sessions" column, NO "avg_duration" column in SELECT!
+Notice:
+- NO "total_sessions" column (was zero)
+- NO "avg_duration" column (was zero)
+- YES "lessons_topics" column showing actual lesson/exercise titles!
+- Much more useful - shows WHAT content users actually engaged with!
 
 EXAMPLE - WRONG APPROACH (WILL FRUSTRATE USERS):
 User: "Platform usage last 12 days"
