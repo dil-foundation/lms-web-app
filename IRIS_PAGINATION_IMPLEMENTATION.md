@@ -227,43 +227,45 @@ Showing students 51-100 of 1,247 total:
 
 ---
 
-### Example 4: Time-Based Query with Pagination (Q4 2025)
+### Example 4: Time-Based Query with Pagination (Q4 2025) - AI Tutor Platform Usage
 
 **User:** "Can you give me platform usage for this year 2025 Q4 alone with user name?"
 
 **IRIS understands:**
 - Q4 2025 = October 1, 2025 to December 31, 2025
-- Need to find usage/activity data
+- Need to find AI Tutor usage/activity data from ai_tutor_daily_learning_analytics table
 - Include user names
 - MUST apply pagination even with date filter
 
 **Queries:**
 ```sql
 -- Step 1: Get total count of active users in Q4 2025
-SELECT COUNT(DISTINCT u.id)
-FROM profiles u
-JOIN user_sessions s ON u.id = s.user_id
-WHERE s.created_at >= '2025-10-01'
-  AND s.created_at <= '2025-12-31';
+SELECT COUNT(DISTINCT a.user_id)
+FROM ai_tutor_daily_learning_analytics a
+WHERE a.analytics_date >= '2025-10-01'
+  AND a.analytics_date <= '2025-12-31';
 -- Result: 345 users
 
--- Step 2: Get paginated usage data with user names
+-- Step 2: Get paginated usage data with user names and correct aggregations
 SELECT
-  u.full_name,
-  u.email,
-  u.role,
-  COUNT(s.id) as session_count,
-  COUNT(DISTINCT DATE(s.created_at)) as active_days,
-  MIN(s.created_at) as first_session,
-  MAX(s.created_at) as last_session
-FROM profiles u
-JOIN user_sessions s ON u.id = s.user_id
-WHERE s.created_at >= '2025-10-01'
-  AND s.created_at <= '2025-12-31'
-GROUP BY u.id, u.full_name, u.email, u.role
-ORDER BY session_count DESC
+  p.full_name,
+  p.email,
+  p.role,
+  SUM(a.sessions_count) as total_sessions,
+  SUM(a.total_time_minutes) as total_time,
+  AVG(a.average_session_duration) as avg_duration,
+  AVG(a.average_score) as avg_score,
+  MAX(a.best_score) as best_score,
+  SUM(a.exercises_attempted) as total_exercises_attempted,
+  SUM(a.exercises_completed) as total_exercises_completed
+FROM ai_tutor_daily_learning_analytics a
+JOIN profiles p ON a.user_id = p.id
+WHERE a.analytics_date >= '2025-10-01'
+  AND a.analytics_date <= '2025-12-31'
+GROUP BY p.id, p.full_name, p.email, p.role
+ORDER BY total_sessions DESC
 LIMIT 50;
--- Returns top 50 most active users
+-- Returns top 50 most active users with aggregated metrics
 ```
 
 **Response:**
@@ -272,11 +274,11 @@ Found 345 users active in Q4 2025 (October - December 2025).
 
 Showing top 50 most active users:
 
-| User Name | Email | Role | Sessions | Active Days | First Session | Last Session |
-|-----------|-------|------|----------|-------------|---------------|--------------|
-| John Doe | john@example.com | student | 145 | 42 | 2025-10-03 | 2025-12-30 |
-| Jane Smith | jane@example.com | teacher | 132 | 38 | 2025-10-01 | 2025-12-29 |
-| ... | ... | ... | ... | ... | ... | ... |
+| User Name | Email | Role | Total Sessions | Total Time (min) | Avg Duration (min) | Avg Score | Best Score |
+|-----------|-------|------|----------------|------------------|-------------------|-----------|------------|
+| John Doe | john@example.com | student | 145 | 2890 | 19.9 | 78.5 | 95 |
+| Jane Smith | jane@example.com | student | 132 | 2640 | 20.0 | 82.3 | 98 |
+| ... | ... | ... | ... | ... | ... | ... | ... |
 
 📄 Showing 1-50 of 345 total users.
 💡 To see more: 'Show next 50 users for Q4 2025' or 'Show users 51-100 for Q4 2025'
