@@ -123,7 +123,7 @@ class ReportsService {
         signal: requestSignal,
       });
 
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'No response text');
@@ -183,15 +183,22 @@ class ReportsService {
       };
 
     } catch (error: any) {
+      // Check if it's an AbortError before logging
+      if (error.name === 'AbortError') {
+        console.log('🚫 Practice stage performance request was cancelled');
+        throw error; // Re-throw so it can be handled by the caller
+      }
+
       console.error('❌ Error fetching practice stage performance:', error);
       throw new Error(`Failed to fetch practice stage performance: ${error.message}`);
     }
   }
 
-  async getUserEngagementOverview(timeRange: string = 'all_time'): Promise<UserEngagementData> {
+  async getUserEngagementOverview(timeRange: string = 'all_time', signal?: AbortSignal): Promise<UserEngagementData> {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      // Use provided signal or create a new one
+      const controller = signal ? { signal } : new AbortController();
+      const timeoutId = signal ? null : setTimeout(() => (controller as AbortController).abort(), 10000);
 
       console.log('🔍 Fetching user engagement overview data with timeRange:', timeRange);
 
@@ -204,7 +211,7 @@ class ReportsService {
         signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'No response text');
@@ -262,15 +269,22 @@ class ReportsService {
       };
 
     } catch (error: any) {
+      // Check if it's an AbortError before logging
+      if (error.name === 'AbortError') {
+        console.log('🚫 User engagement overview request was cancelled');
+        throw error; // Re-throw so it can be handled by the caller
+      }
+
       console.error('❌ Error fetching user engagement overview:', error);
       throw new Error(`Failed to fetch user engagement overview: ${error.message}`);
     }
   }
 
-  async getTimeUsagePatterns(timeRange: string = 'all_time'): Promise<TimeUsagePatternsData> {
+  async getTimeUsagePatterns(timeRange: string = 'all_time', signal?: AbortSignal): Promise<TimeUsagePatternsData> {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      // Use provided signal or create a new one
+      const controller = signal ? { signal } : new AbortController();
+      const timeoutId = signal ? null : setTimeout(() => (controller as AbortController).abort(), 10000);
 
       console.log('🔍 Fetching time usage patterns data with timeRange:', timeRange);
 
@@ -283,7 +297,7 @@ class ReportsService {
         signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'No response text');
@@ -341,15 +355,22 @@ class ReportsService {
       };
 
     } catch (error: any) {
+      // Check if it's an AbortError before logging
+      if (error.name === 'AbortError') {
+        console.log('🚫 Time usage patterns request was cancelled');
+        throw error; // Re-throw so it can be handled by the caller
+      }
+
       console.error('❌ Error fetching time usage patterns:', error);
       throw new Error(`Failed to fetch time usage patterns: ${error.message}`);
     }
   }
 
-  async getTopContentAccessed(timeRange: string = 'all_time'): Promise<TopContentData> {
+  async getTopContentAccessed(timeRange: string = 'all_time', signal?: AbortSignal): Promise<TopContentData> {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      // Use provided signal or create a new one
+      const controller = signal ? { signal } : new AbortController();
+      const timeoutId = signal ? null : setTimeout(() => (controller as AbortController).abort(), 10000);
 
       console.log('🔍 Fetching top content accessed data with timeRange:', timeRange);
 
@@ -362,7 +383,7 @@ class ReportsService {
         signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'No response text');
@@ -422,15 +443,22 @@ class ReportsService {
       };
 
     } catch (error: any) {
+      // Check if it's an AbortError before logging
+      if (error.name === 'AbortError') {
+        console.log('🚫 Top content accessed request was cancelled');
+        throw error; // Re-throw so it can be handled by the caller
+      }
+
       console.error('❌ Error fetching top content accessed:', error);
       throw new Error(`Failed to fetch top content accessed: ${error.message}`);
     }
   }
 
-  async getAnalyticsOverview(timeRange: string = 'all_time'): Promise<AnalyticsOverview> {
+  async getAnalyticsOverview(timeRange: string = 'all_time', signal?: AbortSignal): Promise<AnalyticsOverview> {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      // Use provided signal or create a new one
+      const controller = signal ? { signal } : new AbortController();
+      const timeoutId = signal ? null : setTimeout(() => (controller as AbortController).abort(), 10000);
 
       console.log('🔍 Fetching analytics overview data with timeRange:', timeRange);
 
@@ -443,7 +471,7 @@ class ReportsService {
         signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'No response text');
@@ -487,6 +515,12 @@ class ReportsService {
       };
 
     } catch (error: any) {
+      // Check if it's an AbortError before logging
+      if (error.name === 'AbortError') {
+        console.log('🚫 Analytics overview request was cancelled');
+        throw error; // Re-throw so it can be handled by the caller
+      }
+
       console.error('❌ Error fetching analytics overview:', error);
       throw new Error(`Failed to fetch analytics overview: ${error.message}`);
     }
