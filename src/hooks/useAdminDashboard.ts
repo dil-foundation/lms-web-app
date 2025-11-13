@@ -106,16 +106,15 @@ export const useAdminDashboard = (
       
     } catch (error: any) {
       if (isMountedRef.current) {
-        console.error('❌ [useAdminDashboard] Error fetching data:', error);
-        
-        // Check for AbortError specifically
+        // Check for AbortError first before logging
         if (error.name === 'AbortError') {
           console.log('🚫 [useAdminDashboard] Request was cancelled, not showing error toast');
           // Don't set error state or show toast for cancelled requests
           return;
         }
-        
-        // Handle other errors normally
+
+        // Log and handle other errors normally
+        console.error('❌ [useAdminDashboard] Error fetching data:', error);
         setError(error.message || 'Failed to load dashboard data');
         toast.error('Failed to load dashboard data', {
           description: error.message || 'Please try refreshing the page'
