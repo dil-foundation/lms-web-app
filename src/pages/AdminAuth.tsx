@@ -13,6 +13,7 @@ import { SupabaseMFAVerification } from '@/components/auth/SupabaseMFAVerificati
 import SupabaseMFAService from '@/services/supabaseMFAService';
 import { useAuth } from '@/contexts/AuthContext';
 import AccessLogService from '@/services/accessLogService';
+import { updateUserLastActive } from '@/services/userActivityService';
 
 const AdminAuth = () => {
   const navigate = useNavigate();
@@ -112,6 +113,10 @@ const AdminAuth = () => {
 
         // No MFA required, proceed with normal login
         console.log('🔐 Admin login successful (no MFA required):', user.email);
+
+        // Update last active timestamp
+        await updateUserLastActive(user.id);
+
         toast.success('Welcome back!');
         window.location.href = '/dashboard';
       }
@@ -286,7 +291,12 @@ const AdminAuth = () => {
           setShowMFAVerification(false);
           setPendingUser(null);
           setPendingMFAUser(null);
-          
+
+          // Update last active timestamp after MFA verification
+          if (pendingUser?.id) {
+            await updateUserLastActive(pendingUser.id);
+          }
+
           console.log('🔐 MFA verification successful, redirecting to dashboard...');
           toast.success('Welcome back!');
           window.location.href = '/dashboard';

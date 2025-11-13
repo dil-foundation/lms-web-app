@@ -229,7 +229,7 @@ export const UsersManagement = () => {
           role: user.role,
           status: user.email_confirmed_at ? 'active' : 'unverified',
           joinedDate: user.created_at,
-          lastActive: user.last_active_at || user.updated_at,
+          lastActive: user.last_active_at || null,
           grade: user.grade,
           teacherId: user.teacher_id,
           avatar_url: user.avatar_url,
@@ -2149,7 +2149,7 @@ export const UsersManagement = () => {
                         {new Date(user.joinedDate).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-muted-foreground">
-                        {new Date(user.lastActive).toLocaleDateString()}
+                        {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : "Never"}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
