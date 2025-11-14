@@ -22,6 +22,7 @@ import SupabaseMFAService from '@/services/supabaseMFAService';
 import { useAuth } from '@/contexts/AuthContext';
 import AccessLogService from '@/services/accessLogService';
 import LoginSecurityService from '@/services/loginSecurityService';
+import { updateUserLastActive } from '@/services/userActivityService';
 
 const TeacherAuth = () => {
   const navigate = useNavigate();
@@ -205,14 +206,17 @@ const TeacherAuth = () => {
 
         // No MFA required, proceed with normal login
         console.log('🔐 Teacher login successful (no MFA required):', user.email);
-        
+
+        // Update last active timestamp
+        await updateUserLastActive(user.id);
+
         // Handle successful login security
         await LoginSecurityService.handleSuccessfulLogin(
           user.email || loginData.email,
           undefined, // IP address (can be enhanced later)
           navigator.userAgent
         );
-        
+
         toast.success('Welcome back!');
         window.location.href = '/dashboard';
       }
@@ -745,7 +749,12 @@ const TeacherAuth = () => {
           setShowMFAVerification(false);
           setPendingUser(null);
           setPendingMFAUser(null);
-          
+
+          // Update last active timestamp after MFA verification
+          if (pendingUser?.id) {
+            await updateUserLastActive(pendingUser.id);
+          }
+
           console.log('🔐 MFA verification successful, redirecting to dashboard...');
           toast.success('Welcome back!');
           window.location.href = '/dashboard';

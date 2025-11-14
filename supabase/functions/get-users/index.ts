@@ -28,7 +28,7 @@ serve(async (req) => {
 
     let query = supabaseAdmin
       .from('profiles')
-      .select('id, first_name, last_name, email, role, grade, teacher_id, created_at, updated_at, avatar_url', { count: 'exact' });
+      .select('id, first_name, last_name, email, role, grade, teacher_id, created_at, updated_at, last_active_at, avatar_url', { count: 'exact' });
 
     if (roleFilter && roleFilter !== 'all') {
       query = query.eq('role', roleFilter);
@@ -46,6 +46,7 @@ serve(async (req) => {
 
     const { data: profiles, error: profilesError, count } = await query.range(from, to);
     console.log('🔍 get-users function: Query result - count:', count, 'profiles:', profiles?.length);
+    console.log('🔍 get-users function: First profile sample:', profiles?.[0]);
     if (profilesError) {
       console.error('❌ get-users function: Profile query error:', profilesError);
       // Return empty result instead of throwing error
@@ -87,7 +88,8 @@ serve(async (req) => {
       return {
         ...p,
         email_confirmed_at: authUser ? authUser.email_confirmed_at : null,
-        last_active_at: authUser ? authUser.last_sign_in_at : null,
+        // Use last_active_at from profiles table (falls back to last_sign_in_at if null)
+        last_active_at: p.last_active_at || (authUser ? authUser.last_sign_in_at : null),
       };
     });
 

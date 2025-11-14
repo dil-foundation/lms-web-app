@@ -60,6 +60,7 @@ export const CourseCardView: React.FC<CourseCardViewProps> = ({
   
   const isAdmin = profile?.role === 'admin' || profile?.role === 'super_user';
   const isTeacher = profile?.role === 'teacher' || profile?.role === 'content_creator';
+  const isViewOnly = profile?.role === 'view_only';
 
   const getStatusColor = (status: CourseStatus) => {
     switch (status) {
@@ -72,13 +73,18 @@ export const CourseCardView: React.FC<CourseCardViewProps> = ({
   };
 
   const canDelete = (course: Course) => {
-    // Content creators cannot delete courses, only admins and teachers can
-    if (profile?.role === 'content_creator') return false;
+    if (!profile || !user) return false;
     
-    return profile && (
-      isAdmin ||
-      (profile.role === 'teacher' && course.status === 'Draft' && user?.id === course.authorId)
-    );
+    // Admins and super users can delete any course
+    if (isAdmin) return true;
+    
+    // Content creators can delete courses they authored
+    if (profile.role === 'content_creator' && user.id === course.authorId) return true;
+    
+    // Teachers can delete draft courses they authored
+    if (profile.role === 'teacher' && course.status === 'Draft' && user.id === course.authorId) return true;
+    
+    return false;
   };
 
   const handleCourseClick = (course: Course) => {
@@ -127,40 +133,42 @@ export const CourseCardView: React.FC<CourseCardViewProps> = ({
                 >
                   {course.status}
                 </Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 w-8 p-0 hover:bg-white/20 text-white"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <MoreHorizontal className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={(e) => handleEdit(e, course)}>
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={(e) => handleView(e, course)}>
-                      <Eye className="w-4 h-4 mr-2" />
-                      View
-                    </DropdownMenuItem>
-                    {canDelete(course) && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          onClick={(e) => handleDelete(e, course)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {!isViewOnly && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 hover:bg-white/20 text-white"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={(e) => handleEdit(e, course)}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => handleView(e, course)}>
+                        <Eye className="w-4 h-4 mr-2" />
+                        View
+                      </DropdownMenuItem>
+                      {canDelete(course) && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={(e) => handleDelete(e, course)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             </CardHeader>
             

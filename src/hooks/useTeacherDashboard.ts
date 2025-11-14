@@ -88,22 +88,23 @@ export const useTeacherDashboard = (
       
     } catch (error: any) {
       if (isMountedRef.current) {
-        console.error('❌ [useTeacherDashboard] Error fetching data:', error);
-        
-        // Check for various cancellation indicators
-        const isCancelled = error.name === 'AbortError' || 
+        // Check for various cancellation indicators first before logging
+        const isCancelled = error.name === 'AbortError' ||
                            error.message === 'Request was cancelled' ||
                            error.message?.includes('cancelled') ||
                            error.message?.includes('aborted');
-        
-        if (!isCancelled) {
-          setError(error.message || 'Failed to load dashboard data');
-          toast.error('Failed to load dashboard data', {
-            description: error.message || 'Please try refreshing the page'
-          });
-        } else {
+
+        if (isCancelled) {
           console.log('🚫 [useTeacherDashboard] Request was cancelled, not showing error toast');
+          return;
         }
+
+        // Log and handle other errors normally
+        console.error('❌ [useTeacherDashboard] Error fetching data:', error);
+        setError(error.message || 'Failed to load dashboard data');
+        toast.error('Failed to load dashboard data', {
+          description: error.message || 'Please try refreshing the page'
+        });
       }
     } finally {
       if (isMountedRef.current) {

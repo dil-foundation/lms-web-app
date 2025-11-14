@@ -172,7 +172,15 @@ export const DiscussionViewPage = () => {
       
       await supabase.from('discussion_participants').delete().eq('discussion_id', discussionToUpdate.id);
       
-      const participantsToInsert = discussionToUpdate.participants.map((role: string) => ({
+      // Expand 'admin' to include both 'admin' and 'super_user' for complete access
+      const expandedParticipants = discussionToUpdate.participants.flatMap((role: string) => {
+        if (role === 'admin') {
+          return ['admin', 'super_user'];
+        }
+        return [role];
+      });
+      
+      const participantsToInsert = expandedParticipants.map((role: string) => ({
         discussion_id: discussionToUpdate.id,
         role,
       }));
@@ -724,7 +732,7 @@ export const DiscussionViewPage = () => {
                         General Discussion
                       </Badge>
                     )}
-                    {!isProfileLoading && (user?.id === discussion.creator_id || profile?.role === 'admin') && (
+                    {!isProfileLoading && (user?.id === discussion.creator_id || profile?.role === 'admin' || profile?.role === 'super_user') && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-9 w-9 p-0 rounded-lg hover:bg-accent/50 transition-all duration-300">
@@ -737,7 +745,12 @@ export const DiscussionViewPage = () => {
                             <Edit className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600" onClick={() => setIsDeleteDialogOpen(true)}>
+                          <DropdownMenuItem className="text-red-600" onClick={() => {
+                            // Small delay to ensure dropdown is fully closed
+                            setTimeout(() => {
+                              setIsDeleteDialogOpen(true);
+                            }, 100);
+                          }}>
                             <Trash className="mr-2 h-4 w-4" />
                             Delete
                           </DropdownMenuItem>
@@ -886,7 +899,7 @@ export const DiscussionViewPage = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          {!isProfileLoading && (user?.id === reply.user_id || profile?.role === 'admin') && (
+                          {!isProfileLoading && (user?.id === reply.user_id || profile?.role === 'admin' || profile?.role === 'super_user') && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="h-6 w-6 p-0 rounded-md hover:bg-accent/50 transition-all duration-300 opacity-0 group-hover:opacity-100">

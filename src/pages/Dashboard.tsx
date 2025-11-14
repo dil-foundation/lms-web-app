@@ -273,7 +273,7 @@ const Dashboard = () => {
           case 'admin': return <AIAdminDashboard userProfile={finalProfile} />;
           case 'content_creator': return <AIAdminDashboard userProfile={finalProfile} />;
           case 'super_user': return <AIAdminDashboard userProfile={finalProfile} />;
-          case 'view_only': return <AIStudentDashboard userProfile={finalProfile} />;
+          case 'view_only': return <AIAdminDashboard userProfile={finalProfile} />;
           default: return <RolePlaceholder title="AI Dashboard" description="Welcome to AI Mode" icon={BookOpen} />;
         }
       } else {
@@ -283,7 +283,7 @@ const Dashboard = () => {
         case 'admin': return <AdminDashboard userProfile={finalProfile} />;
         case 'content_creator': return <AdminDashboard userProfile={finalProfile} />;
         case 'super_user': return <AdminDashboard userProfile={finalProfile} />;
-        case 'view_only': return <StudentDashboard userProfile={finalProfile} />;
+        case 'view_only': return <AdminDashboard userProfile={finalProfile} />;
         default: return <RolePlaceholder title="Dashboard" description="Welcome" icon={BookOpen} />;
         }
     }

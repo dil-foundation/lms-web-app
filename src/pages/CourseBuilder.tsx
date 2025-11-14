@@ -6150,6 +6150,7 @@ const CourseBuilder = () => {
 
   const canDelete = user && courseData.id && courseData.authorId && (
     currentUserRole === 'admin' || currentUserRole === 'super_user' ||
+    (currentUserRole === 'content_creator' && user.id === courseData.authorId) ||
     (currentUserRole === 'teacher' && user.id === courseData.authorId && (courseData.status === 'Draft' || courseData.status === 'Rejected'))
   );
 
@@ -6281,13 +6282,16 @@ const CourseBuilder = () => {
                 )}
                 {courseData.status === 'Published' ? (
                   <>
-                    <Button 
-                      onClick={handleUnpublishClick} 
-                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
-                      disabled={isSaving}
-                    >
-                      {saveAction === 'unpublish' ? 'Unpublishing...' : 'Unpublish'}
-                    </Button>
+                    {/* Only show unpublish button if content creator is the author of the course */}
+                    {courseData.authorId === user?.id && (
+                      <Button 
+                        onClick={handleUnpublishClick} 
+                        className="h-9 px-4 rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
+                        disabled={isSaving}
+                      >
+                        {saveAction === 'unpublish' ? 'Unpublishing...' : 'Unpublish'}
+                      </Button>
+                    )}
                   </>
                 ) : (
                   (courseData.status === 'Draft' || courseData.status === 'Rejected') && (

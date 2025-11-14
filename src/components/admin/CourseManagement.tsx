@@ -108,10 +108,14 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
   const isContentCreator = profile?.role === 'content_creator';
   const isTeacher = profile?.role === 'teacher';
 
-  // Content creators cannot delete courses, only admins and teachers can
-  const canDelete = profile && (
+  // Check if user can delete the course
+  // Admins/super users can delete any course
+  // Content creators can delete courses they authored
+  // Teachers can delete draft courses they authored
+  const canDelete = profile && user && (
     (profile.role === 'admin' || profile.role === 'super_user') ||
-    (profile.role === 'teacher' && course.status === 'Draft' && user?.id === course.authorId)
+    (profile.role === 'content_creator' && user.id === course.authorId) ||
+    (profile.role === 'teacher' && course.status === 'Draft' && user.id === course.authorId)
   );
 
     return (
@@ -276,11 +280,24 @@ const CourseManagement = () => {
 
       } else if (role === 'teacher' || role === 'content_creator') {
         console.log('📊 CourseManagement: Fetching teacher/content_creator stats');
-        // RLS will automatically filter to courses the teacher can access.
+        
+        // Build queries with proper filtering for content creators
+        let totalQuery = supabase.from('courses').select('id', { count: 'exact', head: true });
+        let publishedQuery = supabase.from('courses').select('id', { count: 'exact', head: true }).eq('status', 'Published');
+        let draftQuery = supabase.from('courses').select('id', { count: 'exact', head: true }).eq('status', 'Draft');
+        
+        // Content creators should only see courses they authored (explicit filtering)
+        if (role === 'content_creator') {
+          totalQuery = totalQuery.eq('author_id', user.id);
+          publishedQuery = publishedQuery.eq('author_id', user.id);
+          draftQuery = draftQuery.eq('author_id', user.id);
+        }
+        // Teachers will be filtered by RLS policies (they can see courses they're members of)
+        
         const [totalRes, publishedRes, draftRes] = await Promise.all([
-            supabase.from('courses').select('id', { count: 'exact', head: true }),
-            supabase.from('courses').select('id', { count: 'exact', head: true }).eq('status', 'Published'),
-            supabase.from('courses').select('id', { count: 'exact', head: true }).eq('status', 'Draft'),
+            totalQuery,
+            publishedQuery,
+            draftQuery,
         ]);
         
 
@@ -297,7 +314,14 @@ const CourseManagement = () => {
         setStats(statsToSet);
 
         // For student count, we need the IDs of visible courses.
-        const { data: visibleCourses, error: coursesError } = await supabase.from('courses').select('id');
+        let coursesQuery = supabase.from('courses').select('id');
+        
+        // Apply same filtering for content creators
+        if (role === 'content_creator') {
+          coursesQuery = coursesQuery.eq('author_id', user.id);
+        }
+        
+        const { data: visibleCourses, error: coursesError } = await coursesQuery;
         if (coursesError) throw coursesError;
 
         if (visibleCourses && visibleCourses.length > 0) {
@@ -360,11 +384,13 @@ const CourseManagement = () => {
           sections:course_sections(lessons:course_lessons(id))
         `, { count: 'exact' });
 
-      // RLS (Row Level Security) in Supabase is already configured to only return courses
-      // that the logged-in user (teacher or admin) is allowed to see.
-      // The previous client-side logic to filter courses for teachers was redundant
-      // and was causing a discrepancy with the RLS policy, leading to missing courses.
-      // By removing it, we rely on the RLS as the single source of truth.
+      // Apply role-based filtering to ensure content creators only see their own courses
+      if (isContentCreator && user?.id) {
+        // Content creators should only see courses they authored
+        query = query.eq('author_id', user.id);
+      }
+      // Admins and super users can see all courses (no additional filtering needed)
+      // Teachers are handled by RLS policies
 
       if (searchQuery) {
         query = query.ilike('title', `%${searchQuery}%`);

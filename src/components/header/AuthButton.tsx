@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { getRoleDisplayName } from '@/config/roleNavigation';
 
 export const AuthButton = () => {
   const { user, signOut } = useAuth();
@@ -97,8 +98,8 @@ export const AuthButton = () => {
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                     {user.email}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                    {userRole}
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {getRoleDisplayName(profile?.role || 'student')}
                   </p>
                 </div>
 
