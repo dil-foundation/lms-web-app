@@ -39,8 +39,17 @@ export const connectEnglishOnlySocket = (
   try {
     // Get base URL from environment variable, fallback to staging production server
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api-prod.dil.lms-staging.com';
-    // Convert HTTP(S) URL to WebSocket URL and append the endpoint
-    const wsUrl = baseUrl.replace(/^https?:\/\//, 'wss://') + '/api/ws/english-only';
+    
+    // Convert HTTP(S) URL to WebSocket URL (ws:// for http, wss:// for https)
+    let wsUrl: string;
+    if (baseUrl.startsWith('https://')) {
+      wsUrl = baseUrl.replace(/^https:\/\//, 'wss://') + '/api/ws/english-only';
+    } else if (baseUrl.startsWith('http://')) {
+      wsUrl = baseUrl.replace(/^http:\/\//, 'ws://') + '/api/ws/english-only';
+    } else {
+      // If no protocol, assume https for production
+      wsUrl = `wss://${baseUrl}/api/ws/english-only`;
+    }
     
     console.log(`🔌 Connecting to English-only WebSocket: ${wsUrl}`);
     englishOnlySocket = new WebSocket(wsUrl);
@@ -56,6 +65,12 @@ export const connectEnglishOnlySocket = (
 
     englishOnlySocket.onopen = (event) => {
       console.log('✅ English-only WebSocket connected successfully');
+      console.log('📊 WebSocket details:', {
+        url: wsUrl,
+        readyState: englishOnlySocket?.readyState,
+        protocol: englishOnlySocket?.protocol,
+        extensions: englishOnlySocket?.extensions
+      });
       clearTimeout(timeoutId);
       connectionAttempts = 0; // Reset attempts on successful connection
       
@@ -103,6 +118,12 @@ export const connectEnglishOnlySocket = (
 
     englishOnlySocket.onerror = (error) => {
       console.error('❌ English-only WebSocket error:', error);
+      console.error('🔍 Error details:', {
+        url: wsUrl,
+        readyState: englishOnlySocket?.readyState,
+        type: error.type,
+        target: error.target
+      });
       clearTimeout(timeoutId);
       handleConnectionError();
     };
@@ -152,6 +173,41 @@ export const sendEnglishOnlyMessage = (message: any): boolean => {
     return true;
   } catch (error) {
     console.error('❌ Failed to send WebSocket message:', error);
+    return false;
+  }
+};
+
+/**
+ * Sends binary audio data through the English-only WebSocket
+ * This is optimized to send binary directly without base64 encoding
+ * @param audioBlob - Audio blob to send as binary
+ * @param user_name - User name for metadata
+ * @returns true if sent successfully, false otherwise
+ */
+export const sendEnglishOnlyBinaryAudio = (audioBlob: Blob, user_name: string): boolean => {
+  if (!englishOnlySocket || englishOnlySocket.readyState !== WebSocket.OPEN) {
+    console.warn('⚠️ Cannot send binary audio: WebSocket not connected');
+    return false;
+  }
+
+  try {
+    // Step 1: Send metadata message first (as per backend expectation)
+    const metadataMessage = {
+      type: 'audio_binary_metadata',
+      user_name: user_name,
+      audio_size: audioBlob.size,
+    };
+    
+    console.log(`📤 [BINARY] Sending metadata: ${audioBlob.size} bytes for user: ${user_name}`);
+    englishOnlySocket.send(JSON.stringify(metadataMessage));
+    
+    // Step 2: Send binary audio data directly
+    console.log(`📤 [BINARY] Sending binary audio: ${audioBlob.size} bytes`);
+    englishOnlySocket.send(audioBlob);
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Failed to send binary audio:', error);
     return false;
   }
 };
