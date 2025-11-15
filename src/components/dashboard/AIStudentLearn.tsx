@@ -7,7 +7,8 @@ import {
   connectEnglishOnlySocket, 
   disconnectEnglishOnlySocket, 
   isEnglishOnlySocketConnected,
-  sendEnglishOnlyMessage 
+  sendEnglishOnlyMessage,
+  sendEnglishOnlyBinaryAudio
 } from '@/utils/websocket';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -33,6 +34,10 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [expectingGreeting, setExpectingGreeting] = useState(false);
+  const [transcribedText, setTranscribedText] = useState<string>('');
+  const [partialResponse, setPartialResponse] = useState<string>('');
+  const [finalResponse, setFinalResponse] = useState<string>('');
+  const [isWaitingForAudio, setIsWaitingForAudio] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const greetingAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -106,22 +111,7 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
     }
   };
 
-  // Convert blob to base64
-  const blobToBase64 = (blob: Blob): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
-        // Remove the data:audio/webm;codecs=opus;base64, prefix
-        const base64 = dataUrl.split(',')[1];
-        resolve(base64);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  };
-
-  // Process recorded audio and send to server
+  // Process recorded audio and send to server using binary transmission
   const processRecordedAudio = async () => {
     if (audioChunksRef.current.length === 0) {
       console.log('⚠️ No audio chunks to process');
@@ -131,32 +121,26 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
 
     try {
       setIsProcessing(true);
+      setTranscribedText('');
+      setPartialResponse('');
+      setFinalResponse('');
+      setIsWaitingForAudio(false);
       console.log('🔄 Processing recorded audio...');
       
       // Create blob from audio chunks
       const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm;codecs=opus' });
       console.log('📦 Audio blob created:', audioBlob.size, 'bytes');
       
-      // Convert to base64
-      const base64Audio = await blobToBase64(audioBlob);
-      console.log('🔤 Audio converted to base64:', base64Audio.length, 'characters');
-      
-      // Send message to server
+      // Send binary audio directly (optimized - no base64 encoding)
       const userName = getUserName();
-      const messagePayload = {
-        audio_base64: base64Audio,
-        filename: `english_only_recording-${Date.now()}.wav`,
-        user_name: userName,
-      };
-      
-      console.log('📤 Sending audio to server for processing...');
-      const success = sendEnglishOnlyMessage(messagePayload);
+      console.log('📤 Sending binary audio to server for processing...');
+      const success = sendEnglishOnlyBinaryAudio(audioBlob, userName);
       
       if (success) {
-        console.log('✅ Audio sent successfully');
+        console.log('✅ Binary audio sent successfully');
         setConnectionMessage('Processing your speech...');
       } else {
-        console.error('❌ Failed to send audio');
+        console.error('❌ Failed to send binary audio');
         setConnectionMessage('Failed to send audio');
         setIsProcessing(false);
       }
@@ -380,23 +364,85 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
     };
   }, []);
 
-  // WebSocket event handlers
+  // WebSocket event handlers with support for partial responses and streaming
   const handleWebSocketMessage = (data: any) => {
     console.log('📨 Received WebSocket message:', data);
     
-    // Handle different message types
-    if (data.type === 'greeting_audio') {
-      console.log('🎵 Received greeting audio response');
-      // The audio should be handled by handleAudioData function
-    } else if (data.type === 'audio_response') {
-      console.log('🎵 Received audio processing response');
-      // The audio should be handled by handleAudioData function
-      setIsProcessing(false);
-      setConnectionMessage('');
+    // Handle partial responses (streaming optimization)
+    if (data.partial === true) {
+      console.log('📝 Received partial response');
+      
+      // Early analysis trigger - show transcribed text immediately
+      if (data.status === 'processing' && data.transcribed_text) {
+        console.log('⚡ Early trigger: Showing transcribed text:', data.transcribed_text);
+        setTranscribedText(data.transcribed_text);
+        setConnectionMessage('Analyzing your speech...');
+        setIsProcessing(true);
+        return;
+      }
+      
+      // Partial response with conversation text (before TTS completes)
+      if (data.response || data.conversation_text) {
+        const responseText = data.response || data.conversation_text;
+        console.log('📝 Partial response text:', responseText);
+        setPartialResponse(responseText);
+        setFinalResponse(''); // Clear final response if we have partial
+        setIsWaitingForAudio(true);
+        setConnectionMessage('AI is responding...');
+        
+        // Update transcribed text if available
+        if (data.original_text) {
+          setTranscribedText(data.original_text);
+        }
+      }
+      return;
     }
     
-    // Handle other message types as needed
-    // This will be expanded later based on the message types
+    // Handle final complete response
+    if (data.final === true || (!data.partial && (data.response || data.conversation_text))) {
+      console.log('✅ Received final response');
+      const responseText = data.response || data.conversation_text;
+      setFinalResponse(responseText);
+      setPartialResponse(''); // Clear partial when final arrives
+      setIsProcessing(false);
+      setIsWaitingForAudio(true); // Audio will come next
+      setConnectionMessage('');
+      
+      // Update transcribed text if available
+      if (data.original_text) {
+        setTranscribedText(data.original_text);
+      }
+      
+      // Update conversation state if provided
+      if (data.conversation_stage) {
+        console.log('🔄 Conversation stage:', data.conversation_stage);
+      }
+      return;
+    }
+    
+    // Handle greeting message
+    if (data.step === 'greeting') {
+      console.log('👋 Received greeting response');
+      setConnectionMessage('');
+      // Audio will be handled by handleAudioData
+      return;
+    }
+    
+    // Handle error messages
+    if (data.step === 'error') {
+      console.error('❌ Error from server:', data.error_type);
+      setIsProcessing(false);
+      setConnectionMessage(data.response || 'An error occurred');
+      return;
+    }
+    
+    // Handle other message types
+    if (data.step) {
+      console.log(`📋 Message step: ${data.step}`);
+      if (data.response) {
+        setConnectionMessage(data.response);
+      }
+    }
   };
 
   const handleAudioData = (audioBuffer: ArrayBuffer) => {
@@ -432,11 +478,12 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
           setExpectingGreeting(false); // Reset the flag
           setConnectionMessage('');
         } else {
-          // This is AI response audio after user speech
-          console.log('🤖 Playing AI response audio');
+          // This is AI response audio after user speech (streaming optimization)
+          console.log('🤖 Playing AI response audio (after partial text display)');
           audioType = 'response';
           setIsAIResponsePlaying(true);
           setIsProcessing(false);
+          setIsWaitingForAudio(false); // Audio has arrived
           setConnectionMessage('');
         }
         
@@ -459,6 +506,12 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
           } else if (audioType === 'response') {
             console.log('🤖 AI response audio completed');
             setIsAIResponsePlaying(false);
+            // Clear response text after audio finishes
+            setTimeout(() => {
+              setFinalResponse('');
+              setPartialResponse('');
+              setTranscribedText('');
+            }, 2000);
           }
           // Clear the reference when audio finishes
           webAudioSourceRef.current = null;
@@ -473,6 +526,7 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
           setIsAIResponsePlaying(false);
         }
         setIsProcessing(false);
+        setIsWaitingForAudio(false);
         setExpectingGreeting(false);
         webAudioSourceRef.current = null;
       });
@@ -486,6 +540,7 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
         setIsAIResponsePlaying(false);
       }
       setIsProcessing(false);
+      setIsWaitingForAudio(false);
       setExpectingGreeting(false);
       webAudioSourceRef.current = null;
     }
@@ -619,6 +674,10 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
     setIsAIResponsePlaying(false);
     setIsProcessing(false);
     setExpectingGreeting(false);
+    setTranscribedText('');
+    setPartialResponse('');
+    setFinalResponse('');
+    setIsWaitingForAudio(false);
     setCurrentView('greeting');
     setIsListening(false);
     // Don't reset audio played status - it should remain played
@@ -630,8 +689,8 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
       return;
     }
     
-    // Don't allow mic toggle while greeting audio is playing, AI responding, or processing
-    if (isGreetingAudioPlaying || isAIResponsePlaying || isProcessing) {
+    // Don't allow mic toggle while greeting audio is playing, AI responding, processing, or waiting for audio
+    if (isGreetingAudioPlaying || isAIResponsePlaying || isProcessing || isWaitingForAudio) {
       console.log('⚠️ Cannot start listening: System is busy');
       return;
     }
@@ -653,13 +712,23 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
       return 'Welcome';
     } else if (isAIResponsePlaying) {
       return 'AI Speaking...';
+    } else if (isWaitingForAudio) {
+      return 'Generating audio...';
     } else if (isProcessing) {
-      return 'Processing...';
+      return transcribedText ? 'Analyzing...' : 'Processing...';
     } else if (isListening) {
       return 'Listening...';
     } else {
       return 'Tap microphone to start';
     }
+  };
+  
+  // Get display text (prioritize final, then partial, then transcribed)
+  const getDisplayText = () => {
+    if (finalResponse) return finalResponse;
+    if (partialResponse) return partialResponse;
+    if (transcribedText) return `You said: "${transcribedText}"`;
+    return null;
   };
 
   // Get blob visual state - different colors/effects for different states
@@ -688,7 +757,7 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
         pulseBorder: 'border-purple-500/30',
         dotColor: 'bg-purple-500'
       };
-    } else if (isProcessing) {
+    } else if (isProcessing || isWaitingForAudio) {
       return {
         bgColor: 'bg-amber-500/20 border-amber-500/30 shadow-lg shadow-amber-500/20',
         innerGlow: 'bg-gradient-to-br from-amber-500/30 to-amber-500/10',
@@ -709,7 +778,7 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
   };
 
   const blobState = getBlobState();
-  const isActiveState = isListening || isGreetingAudioPlaying || isAIResponsePlaying || isProcessing;
+  const isActiveState = isListening || isGreetingAudioPlaying || isAIResponsePlaying || isProcessing || isWaitingForAudio;
 
   // Greeting Screen (View 1)
   if (currentView === 'greeting') {
@@ -857,7 +926,7 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
 
           {/* Enhanced Status indicator */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center space-y-3">
+            <div className="text-center space-y-3 px-4">
               <div className={`w-3 h-3 rounded-full mx-auto transition-all duration-300 ${
                 isActiveState ? `${blobState.dotColor} animate-pulse` : blobState.dotColor
               }`}></div>
@@ -868,13 +937,39 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
           </div>
         </div>
 
+        {/* Response Text Display (Streaming Optimization) */}
+        {getDisplayText() && (
+          <Card className="w-full max-w-2xl p-4 sm:p-6 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg">
+            <CardContent className="p-0">
+              <div className="space-y-2">
+                {transcribedText && (
+                  <div className="text-xs sm:text-sm text-muted-foreground mb-2">
+                    <span className="font-semibold">You:</span> {transcribedText}
+                  </div>
+                )}
+                {(partialResponse || finalResponse) && (
+                  <div className="text-sm sm:text-base text-foreground">
+                    <span className="font-semibold text-primary">AI:</span>{' '}
+                    <span className={partialResponse && !finalResponse ? 'opacity-70' : ''}>
+                      {finalResponse || partialResponse}
+                    </span>
+                    {partialResponse && !finalResponse && (
+                      <span className="inline-block w-2 h-4 ml-1 bg-primary animate-pulse" />
+                    )}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Enhanced Microphone Button */}
         <div className="flex flex-col items-center space-y-4">
           <button
             onClick={handleMicToggle}
-            disabled={connectionState !== 'connected' || isGreetingAudioPlaying || isAIResponsePlaying || isProcessing}
+            disabled={connectionState !== 'connected' || isGreetingAudioPlaying || isAIResponsePlaying || isProcessing || isWaitingForAudio}
             className={`w-20 h-20 rounded-full shadow-lg transition-all duration-200 ${
-              (connectionState !== 'connected' || isGreetingAudioPlaying || isAIResponsePlaying || isProcessing)
+              (connectionState !== 'connected' || isGreetingAudioPlaying || isAIResponsePlaying || isProcessing || isWaitingForAudio)
                 ? 'bg-muted cursor-not-allowed opacity-50'
                 : isListening 
                   ? 'bg-primary hover:bg-primary/90 scale-110' 
@@ -882,7 +977,7 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
             }`}
           >
             <Mic className={`h-8 w-8 mx-auto ${
-              (connectionState !== 'connected' || isGreetingAudioPlaying || isAIResponsePlaying || isProcessing) 
+              (connectionState !== 'connected' || isGreetingAudioPlaying || isAIResponsePlaying || isProcessing || isWaitingForAudio) 
                 ? 'text-muted-foreground' 
                 : 'text-primary-foreground'
             }`} />
