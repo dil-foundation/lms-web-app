@@ -9,13 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Shield, 
-  Settings, 
-  Save, 
-  AlertTriangle, 
-  Activity, 
-  Users, 
+import {
+  Shield,
+  Settings,
+  Save,
+  AlertTriangle,
+  Activity,
+  Users,
   Key,
   Loader2,
   RefreshCw,
@@ -27,7 +27,8 @@ import {
   Server,
   Bell,
   FileText,
-  Lock
+  Lock,
+  Download
 } from 'lucide-react';
 import { toast } from 'sonner';
 import SecurityService, { SecuritySetting, AccessLog, SecurityStats } from '@/services/securityService';
@@ -38,6 +39,8 @@ import { ContentLoader } from '@/components/ContentLoader';
 import { supabase } from '@/integrations/supabase/client';
 import { formatTimestampWithTimezone } from '@/utils/dateUtils';
 import LoginSecurityAlerts from './LoginSecurityAlerts';
+import exportEdgeFunctionsService from '@/services/exportEdgeFunctionsService';
+import { exportMFAUsers as exportMFAUsersToExcel, exportAccessLogs as exportAccessLogsToExcel } from '@/services/excelExportService';
 
 interface User {
   id: string;
@@ -68,6 +71,7 @@ const UserMFAManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [exporting, setExporting] = useState(false);
   const pageSize = 5;
 
   // Initial load
@@ -184,10 +188,10 @@ const UserMFAManagement = () => {
   const disableMFAForUser = async (userId: string) => {
     try {
       setDisablingMFA(userId);
-      
+
       // Use the service function instead of direct RPC call
       const success = await SupabaseMFAService.disableMFAForUser(userId);
-  
+
       if (success) {
         toast.success('MFA factors removed successfully. User will be prompted to set up MFA again if required for their role.');
         // Refresh the list using the appropriate loading function
@@ -207,9 +211,34 @@ const UserMFAManagement = () => {
     }
   };
 
+  const handleExportMFAUsers = async () => {
+    try {
+      setExporting(true);
+      toast.info('Exporting MFA users...');
+
+      // Fetch all users without pagination
+      const allUsers = await exportEdgeFunctionsService.exportMFAUsers(searchTerm);
+
+      if (allUsers.length === 0) {
+        toast.warning('No users found to export');
+        return;
+      }
+
+      // Export to Excel
+      exportMFAUsersToExcel(allUsers, `mfa-users-export-${new Date().toISOString().split('T')[0]}`);
+
+      toast.success(`Successfully exported ${allUsers.length} users`);
+    } catch (error) {
+      console.error('Error exporting MFA users:', error);
+      toast.error('Failed to export MFA users');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
@@ -219,6 +248,20 @@ const UserMFAManagement = () => {
             className="pl-10"
           />
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleExportMFAUsers}
+          disabled={exporting || loading}
+          className="flex items-center gap-2"
+        >
+          {exporting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
+          {exporting ? 'Exporting...' : 'Export to Excel'}
+        </Button>
       </div>
 
       {loading || searchLoading ? (
@@ -363,6 +406,7 @@ const AdminSecurity = () => {
   const [accessLogsLoading, setAccessLogsLoading] = useState(false);
   const [accessLogsHasMore, setAccessLogsHasMore] = useState(true);
   const [accessLogsOffset, setAccessLogsOffset] = useState(0);
+  const [accessLogsExporting, setAccessLogsExporting] = useState(false);
   const accessLogsRef = useRef<HTMLDivElement>(null);
 
   // Load all data on component mount
@@ -544,7 +588,7 @@ const AdminSecurity = () => {
       setAccessLogsLoading(true);
       const offset = reset ? 0 : accessLogsOffset;
       const logs = await SecurityService.getRecentAccessLogs(ITEMS_PER_PAGE, offset);
-      
+
       if (reset) {
         setAccessLogs(logs);
         setAccessLogsOffset(ITEMS_PER_PAGE);
@@ -559,6 +603,31 @@ const AdminSecurity = () => {
       toast.error('Failed to load access logs');
     } finally {
       setAccessLogsLoading(false);
+    }
+  };
+
+  const handleExportAccessLogs = async () => {
+    try {
+      setAccessLogsExporting(true);
+      toast.info('Exporting access logs...');
+
+      // Fetch all access logs without pagination
+      const allLogs = await exportEdgeFunctionsService.exportAccessLogs();
+
+      if (allLogs.length === 0) {
+        toast.warning('No access logs found to export');
+        return;
+      }
+
+      // Export to Excel
+      exportAccessLogsToExcel(allLogs, `access-logs-export-${new Date().toISOString().split('T')[0]}`);
+
+      toast.success(`Successfully exported ${allLogs.length} access logs`);
+    } catch (error) {
+      console.error('Error exporting access logs:', error);
+      toast.error('Failed to export access logs');
+    } finally {
+      setAccessLogsExporting(false);
     }
   };
 
@@ -1215,20 +1284,36 @@ const AdminSecurity = () => {
                     <h2 className="text-xl font-semibold">Access Logs</h2>
                     <p className="text-sm text-muted-foreground">Recent user access and activity logs</p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => loadAccessLogs(true)}
-                    disabled={accessLogsLoading}
-                    className="flex items-center gap-2"
-                  >
-                    {accessLogsLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4" />
-                    )}
-                    {accessLogsLoading ? 'Refreshing...' : 'Refresh'}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExportAccessLogs}
+                      disabled={accessLogsExporting || accessLogsLoading}
+                      className="flex items-center gap-2"
+                    >
+                      {accessLogsExporting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
+                      {accessLogsExporting ? 'Exporting...' : 'Export to Excel'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => loadAccessLogs(true)}
+                      disabled={accessLogsLoading}
+                      className="flex items-center gap-2"
+                    >
+                      {accessLogsLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4" />
+                      )}
+                      {accessLogsLoading ? 'Refreshing...' : 'Refresh'}
+                    </Button>
+                  </div>
                 </div>
 
                 <Card>
