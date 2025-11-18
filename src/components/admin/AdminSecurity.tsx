@@ -9,13 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Shield, 
-  Settings, 
-  Save, 
-  AlertTriangle, 
-  Activity, 
-  Users, 
+import {
+  Shield,
+  Settings,
+  Save,
+  AlertTriangle,
+  Activity,
+  Users,
   Key,
   Loader2,
   RefreshCw,
@@ -25,7 +25,10 @@ import {
   XCircle,
   X,
   Server,
-  Bell
+  Bell,
+  FileText,
+  Lock,
+  Download
 } from 'lucide-react';
 import { toast } from 'sonner';
 import SecurityService, { SecuritySetting, AccessLog, SecurityStats } from '@/services/securityService';
@@ -36,6 +39,8 @@ import { ContentLoader } from '@/components/ContentLoader';
 import { supabase } from '@/integrations/supabase/client';
 import { formatTimestampWithTimezone } from '@/utils/dateUtils';
 import LoginSecurityAlerts from './LoginSecurityAlerts';
+import exportEdgeFunctionsService from '@/services/exportEdgeFunctionsService';
+import { exportMFAUsers as exportMFAUsersToExcel, exportAccessLogs as exportAccessLogsToExcel } from '@/services/excelExportService';
 
 interface User {
   id: string;
@@ -66,6 +71,7 @@ const UserMFAManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [exporting, setExporting] = useState(false);
   const pageSize = 5;
 
   // Initial load
@@ -182,10 +188,10 @@ const UserMFAManagement = () => {
   const disableMFAForUser = async (userId: string) => {
     try {
       setDisablingMFA(userId);
-      
+
       // Use the service function instead of direct RPC call
       const success = await SupabaseMFAService.disableMFAForUser(userId);
-  
+
       if (success) {
         toast.success('MFA factors removed successfully. User will be prompted to set up MFA again if required for their role.');
         // Refresh the list using the appropriate loading function
@@ -198,176 +204,156 @@ const UserMFAManagement = () => {
         }
       }
     } catch (error) {
-      console.error('Error removing MFA:', error);
-      toast.error('Failed to remove MFA');
+      console.error('Error disabling MFA:', error);
+      toast.error('Failed to disable MFA for user');
     } finally {
       setDisablingMFA(null);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <ContentLoader message="Loading users..." />
-      </div>
-    );
-  }
+  const handleExportMFAUsers = async () => {
+    try {
+      setExporting(true);
+      toast.info('Exporting MFA users...');
+
+      // Fetch all users without pagination
+      const allUsers = await exportEdgeFunctionsService.exportMFAUsers(searchTerm);
+
+      if (allUsers.length === 0) {
+        toast.warning('No users found to export');
+        return;
+      }
+
+      // Export to Excel
+      exportMFAUsersToExcel(allUsers, `mfa-users-export-${new Date().toISOString().split('T')[0]}`);
+
+      toast.success(`Successfully exported ${allUsers.length} users`);
+    } catch (error) {
+      console.error('Error exporting MFA users:', error);
+      toast.error('Failed to export MFA users');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground">
-            Total users: {totalUsers}
-          </p>
+      <div className="flex items-center justify-between gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Input
+            placeholder="Search users..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
         <Button
           variant="outline"
           size="sm"
-          onClick={loadUsersWithSearch}
-          disabled={loading || searchLoading || paginationLoading}
+          onClick={handleExportMFAUsers}
+          disabled={exporting || loading}
+          className="flex items-center gap-2"
         >
-          {(searchLoading || paginationLoading) ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          {exporting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
-            <RefreshCw className="w-4 h-4 mr-2" />
+            <Download className="w-4 h-4" />
           )}
-          Refresh
+          {exporting ? 'Exporting...' : 'Export to Excel'}
         </Button>
       </div>
 
-      {/* Search Input */}
-      <div className="flex items-center space-x-2">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input
-            placeholder="Search by name or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-10"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
+      {loading || searchLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
         </div>
-      </div>
-
-      <div className="border rounded-lg relative">
-        {(searchLoading || paginationLoading) && (
-          <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
-            <div className="flex items-center space-x-2">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              <span className="text-sm text-primary font-medium">
-                {searchLoading ? 'Searching...' : 'Loading page...'}
-              </span>
-            </div>
-          </div>
-        )}
-        <Table>
+      ) : (
+        <>
+          <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>MFA Status</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>
-                  <div>
-                    <p className="font-medium">{user.first_name} {user.last_name}</p>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">
-                    {formatRoleName(user.role)}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    {user.mfa_enabled ? (
-                      <>
-                        <Shield className="w-4 h-4 text-green-500" />
-                        <Badge variant="default" className="bg-green-100 text-green-800">
-                          Enabled
-                        </Badge>
-                      </>
-                    ) : (
-                      <>
-                        <AlertTriangle className="w-4 h-4 text-gray-400" />
-                        <Badge variant="outline" className="capitalize">
-                          Disabled
-                        </Badge>
-                      </>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => disableMFAForUser(user.id)}
-                    disabled={disablingMFA === user.id || !user.mfa_enabled}
-                  >
-                    {disablingMFA === user.id ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Removing...
-                      </>
-                    ) : !user.mfa_enabled ? (
-                      <>
-                        <XCircle className="w-4 h-4 mr-2" />
-                        MFA Disabled
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="w-4 h-4 mr-2" />
-                        Remove MFA
-                      </>
-                    )}
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            <TableBody>
+              {users.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8">
+                    <p className="text-muted-foreground">No users found</p>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{user.first_name} {user.last_name}</div>
+                        <div className="text-sm text-muted-foreground">{user.email}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{formatRoleName(user.role)}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {user.mfa_enabled ? (
+                        <Badge className="bg-green-500">Enabled</Badge>
+                      ) : (
+                        <Badge variant="outline">Disabled</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => disableMFAForUser(user.id)}
+                        disabled={!user.mfa_enabled || disablingMFA === user.id}
+                      >
+                        {disablingMFA === user.id ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <XCircle className="w-4 h-4 mr-2" />
+                        )}
+                        Disable MFA
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
 
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Page {currentPage} of {totalPages}
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage === 1 || loading || searchLoading || paginationLoading}
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages || loading || searchLoading || paginationLoading}
-            >
-              Next
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages} ({totalUsers} total users)
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1 || paginationLoading}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages || paginationLoading}
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -418,9 +404,8 @@ const AdminSecurity = () => {
   const [accessLogsLoading, setAccessLogsLoading] = useState(false);
   const [accessLogsHasMore, setAccessLogsHasMore] = useState(true);
   const [accessLogsOffset, setAccessLogsOffset] = useState(0);
+  const [accessLogsExporting, setAccessLogsExporting] = useState(false);
   const accessLogsRef = useRef<HTMLDivElement>(null);
-
-
 
   // Load all data on component mount
   useEffect(() => {
@@ -601,7 +586,7 @@ const AdminSecurity = () => {
       setAccessLogsLoading(true);
       const offset = reset ? 0 : accessLogsOffset;
       const logs = await SecurityService.getRecentAccessLogs(ITEMS_PER_PAGE, offset);
-      
+
       if (reset) {
         setAccessLogs(logs);
         setAccessLogsOffset(ITEMS_PER_PAGE);
@@ -619,7 +604,30 @@ const AdminSecurity = () => {
     }
   };
 
+  const handleExportAccessLogs = async () => {
+    try {
+      setAccessLogsExporting(true);
+      toast.info('Exporting access logs...');
 
+      // Fetch all access logs without pagination
+      const allLogs = await exportEdgeFunctionsService.exportAccessLogs();
+
+      if (allLogs.length === 0) {
+        toast.warning('No access logs found to export');
+        return;
+      }
+
+      // Export to Excel
+      exportAccessLogsToExcel(allLogs, `access-logs-export-${new Date().toISOString().split('T')[0]}`);
+
+      toast.success(`Successfully exported ${allLogs.length} access logs`);
+    } catch (error) {
+      console.error('Error exporting access logs:', error);
+      toast.error('Failed to export access logs');
+    } finally {
+      setAccessLogsExporting(false);
+    }
+  };
 
   // Track if there are unsaved changes
   useEffect(() => {
@@ -629,23 +637,12 @@ const AdminSecurity = () => {
       return;
     }
 
-    // Debug logging
-    console.log('Original Settings:', originalSettings);
-    console.log('Local Settings:', localSettings);
-
     const isChanged = Object.keys(localSettings).some(key => {
       const localValue = localSettings[key as keyof typeof localSettings];
       const originalValue = originalSettings[key as keyof typeof originalSettings];
-      const changed = localValue !== originalValue;
-      
-      if (changed) {
-        console.log(`Setting "${key}" changed:`, { local: localValue, original: originalValue });
-      }
-      
-      return changed;
+      return localValue !== originalValue;
     });
     
-    console.log('Has unsaved changes:', isChanged);
     setHasUnsavedChanges(isChanged);
   }, [localSettings, originalSettings]);
 
@@ -815,8 +812,6 @@ const AdminSecurity = () => {
     }
   };
 
-
-
   if (loading || adminSettingsLoading) {
     return <ContentLoader />;
   }
@@ -836,397 +831,568 @@ const AdminSecurity = () => {
         </div>
       </div>
 
+      {/* Main Tabs: Settings and Security - Prominent Style */}
       <Tabs defaultValue="settings" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-        </TabsList>
-
-        {/* Settings Tab */}
-        <TabsContent value="settings">
-          <div className="space-y-6">
-            {/* Settings Header */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg flex items-center justify-center">
-                  <Server className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-semibold">System Settings</h2>
-                  <p className="text-sm text-muted-foreground">Configure system-wide settings and preferences</p>
-                </div>
+        <div className="border-b border-border/40 pb-0">
+          <TabsList className="h-auto bg-transparent p-0 gap-2 w-full justify-start">
+            <TabsTrigger 
+              value="settings" 
+              className="flex items-center gap-3 px-6 py-4 text-base font-semibold rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card data-[state=active]:shadow-sm transition-all duration-200 hover:bg-muted/50"
+            >
+              <div className="w-5 h-5 flex items-center justify-center">
+                <Settings className="w-5 h-5" />
               </div>
-              
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={handleAdminSettingsReset}
-                  disabled={adminSettingsResetting || adminSettingsSaving || adminSettingsLoading}
-                >
-                  {adminSettingsResetting ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                  )}
-                  {adminSettingsResetting ? 'Resetting...' : 'Reset'}
-                </Button>
-                <Button 
-                  onClick={handleAdminSettingsSave} 
-                  disabled={adminSettingsSaving || adminSettingsResetting || adminSettingsLoading || !hasUnsavedAdminChanges}
-                >
-                  {adminSettingsSaving ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4 mr-2" />
-                  )}
-                  {adminSettingsSaving ? 'Saving...' : 'Save Changes'}
-                </Button>
+              Settings
+            </TabsTrigger>
+            <TabsTrigger 
+              value="security" 
+              className="flex items-center gap-3 px-6 py-4 text-base font-semibold rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card data-[state=active]:shadow-sm transition-all duration-200 hover:bg-muted/50"
+            >
+              <div className="w-5 h-5 flex items-center justify-center">
+                <Shield className="w-5 h-5" />
               </div>
-            </div>
+              Security
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-            {/* System Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Server className="w-5 h-5" />
-                  System Configuration
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="systemName">System Name</Label>
-                  <Input
-                    id="systemName"
-                    value={adminSettings.systemName}
-                    onChange={(e) => setAdminSettings({...adminSettings, systemName: e.target.value})}
-                    disabled={adminSettingsSaving || adminSettingsResetting}
-                  />
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Maintenance Mode</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Temporarily disable access for maintenance
-                      </p>
-                    </div>
-                    <Switch
-                      checked={adminSettings.maintenanceMode}
-                      onCheckedChange={(checked) => setAdminSettings({...adminSettings, maintenanceMode: checked})}
-                      disabled={adminSettingsSaving || adminSettingsResetting}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        {/* Settings Tab with Sub-tabs */}
+        <TabsContent value="settings" className="mt-6">
+          <div className="bg-card border rounded-lg p-6 space-y-6">
+            <Tabs defaultValue="system" className="space-y-6">
+              {/* Sub-tabs - Subtle Style */}
+              <div className="border-b border-border/20 -mx-6 px-6">
+                <TabsList className="h-auto bg-transparent p-0 gap-1 w-auto">
+                  <TabsTrigger
+                    value="system"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground"
+                  >
+                    <Server className="w-4 h-4" />
+                    System Configuration
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="notifications"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground"
+                  >
+                    <Bell className="w-4 h-4" />
+                    Notifications
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
-            {/* Notifications */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="w-5 h-5" />
-                  Notification Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>System Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Enable system-wide notifications
-                      </p>
-                    </div>
-                    <Switch
-                      checked={adminSettings.systemNotifications}
-                      onCheckedChange={(checked) => setAdminSettings({...adminSettings, systemNotifications: checked})}
-                      disabled={adminSettingsSaving || adminSettingsResetting}
-                    />
+            {/* System Configuration Sub-tab */}
+            <TabsContent value="system">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold">System Configuration</h2>
+                    <p className="text-sm text-muted-foreground">Configure system-wide settings and preferences</p>
                   </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Real Time Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Send real-time notifications
-                      </p>
-                    </div>
-                    <Switch
-                      checked={adminSettings.pushNotifications}
-                      onCheckedChange={(checked) => setAdminSettings({...adminSettings, pushNotifications: checked})}
-                      disabled={adminSettingsSaving || adminSettingsResetting}
-                    />
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={handleAdminSettingsReset}
+                      disabled={adminSettingsResetting || adminSettingsSaving || adminSettingsLoading}
+                    >
+                      {adminSettingsResetting ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                      )}
+                      {adminSettingsResetting ? 'Resetting...' : 'Reset'}
+                    </Button>
+                    <Button 
+                      onClick={handleAdminSettingsSave} 
+                      disabled={adminSettingsSaving || adminSettingsResetting || adminSettingsLoading || !hasUnsavedAdminChanges}
+                    >
+                      {adminSettingsSaving ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Save className="w-4 h-4 mr-2" />
+                      )}
+                      {adminSettingsSaving ? 'Saving...' : 'Save Changes'}
+                    </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Server className="w-5 h-5" />
+                      System Configuration
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="systemName">System Name</Label>
+                      <Input
+                        id="systemName"
+                        value={adminSettings.systemName}
+                        onChange={(e) => setAdminSettings({...adminSettings, systemName: e.target.value})}
+                        disabled={adminSettingsSaving || adminSettingsResetting}
+                      />
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label>Maintenance Mode</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Temporarily disable access for maintenance
+                          </p>
+                        </div>
+                        <Switch
+                          checked={adminSettings.maintenanceMode}
+                          onCheckedChange={(checked) => setAdminSettings({...adminSettings, maintenanceMode: checked})}
+                          disabled={adminSettingsSaving || adminSettingsResetting}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Notifications Sub-tab */}
+            <TabsContent value="notifications">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold">Notification Settings</h2>
+                    <p className="text-sm text-muted-foreground">Configure system notification preferences</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={handleAdminSettingsReset}
+                      disabled={adminSettingsResetting || adminSettingsSaving || adminSettingsLoading}
+                    >
+                      {adminSettingsResetting ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                      )}
+                      {adminSettingsResetting ? 'Resetting...' : 'Reset'}
+                    </Button>
+                    <Button 
+                      onClick={handleAdminSettingsSave} 
+                      disabled={adminSettingsSaving || adminSettingsResetting || adminSettingsLoading || !hasUnsavedAdminChanges}
+                    >
+                      {adminSettingsSaving ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Save className="w-4 h-4 mr-2" />
+                      )}
+                      {adminSettingsSaving ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </div>
+                </div>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Bell className="w-5 h-5" />
+                      Notification Settings
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label>System Notifications</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Enable system-wide notifications
+                          </p>
+                        </div>
+                        <Switch
+                          checked={adminSettings.systemNotifications}
+                          onCheckedChange={(checked) => setAdminSettings({...adminSettings, systemNotifications: checked})}
+                          disabled={adminSettingsSaving || adminSettingsResetting}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label>Real Time Notifications</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Send real-time notifications
+                          </p>
+                        </div>
+                        <Switch
+                          checked={adminSettings.pushNotifications}
+                          onCheckedChange={(checked) => setAdminSettings({...adminSettings, pushNotifications: checked})}
+                          disabled={adminSettingsSaving || adminSettingsResetting}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+            </Tabs>
           </div>
         </TabsContent>
 
-        {/* Security Tab */}
-        <TabsContent value="security">
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold">Security Settings</h2>
+        {/* Security Tab with Sub-tabs */}
+        <TabsContent value="security" className="mt-6">
+          <div className="bg-card border rounded-lg p-6 space-y-6">
+            <Tabs defaultValue="overview" className="space-y-6">
+              {/* Sub-tabs - Subtle Style */}
+              <div className="border-b border-border/20 -mx-6 px-6 overflow-x-auto">
+                <TabsList className="h-auto bg-transparent p-0 gap-1 w-auto min-w-full">
+                  <TabsTrigger
+                    value="overview"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
+                  >
+                    <Activity className="w-4 h-4" />
+                    Overview
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="authentication"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
+                  >
+                    <Lock className="w-4 h-4" />
+                    Authentication
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="mfa"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
+                  >
+                    <Key className="w-4 h-4" />
+                    MFA Management
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="alerts"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
+                  >
+                    <AlertTriangle className="w-4 h-4" />
+                    Security Alerts
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="logs"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Access Logs
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
-      {/* Security Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5" />
-            Security Overview
-          </CardTitle>
-          <CardDescription>
-            Current security status and key metrics
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Active Sessions</p>
-              <p className="text-2xl font-bold">{securityStats?.active_sessions || 0}</p>
-            </div>
-            <Activity className="w-8 h-8 text-blue-500" />
-          </div>
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">2FA Enabled</p>
-              <p className="text-2xl font-bold">{securityStats?.two_fa_enabled_percentage || 0}%</p>
-            </div>
-            <Shield className="w-8 h-8 text-green-500" />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Security Settings */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Authentication Settings</CardTitle>
-              <CardDescription>
-                Configure authentication and access control policies
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              {hasUnsavedChanges && (
-                <Badge variant="secondary" className="text-orange-600 bg-orange-50">
-                  Unsaved Changes
-                </Badge>
-              )}
-              <Button
-                variant="outline"
-                onClick={handleResetSettings}
-                disabled={!hasUnsavedChanges || saving}
-              >
-                Reset
-              </Button>
-              <Button
-                onClick={handleSaveSettings}
-                disabled={!hasUnsavedChanges || saving}
-                className="flex items-center gap-2"
-              >
-                <Save className="w-4 h-4" />
-                {saving ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Two-Factor Authentication</Label>
-              <p className="text-sm text-muted-foreground">Require MFA for specific user roles</p>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="space-y-0.5">
-                  <Label className="text-base font-medium">Administrators</Label>
-                  <p className="text-sm text-muted-foreground">Require MFA for admin users</p>
+            {/* Security Overview Sub-tab */}
+            <TabsContent value="overview">
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-xl font-semibold">Security Overview</h2>
+                  <p className="text-sm text-muted-foreground">Current security status and key metrics</p>
                 </div>
-                <Switch
-                  checked={localSettings.two_factor_auth_enabled_admin}
-                  onCheckedChange={(checked) => handleLocalSettingChange('two_factor_auth_enabled_admin', checked)}
-                  disabled={saving}
-                />
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Shield className="w-5 h-5" />
+                      Security Overview
+                    </CardTitle>
+                    <CardDescription>
+                      Current security status and key metrics
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Active Sessions</p>
+                        <p className="text-2xl font-bold">{securityStats?.active_sessions || 0}</p>
+                      </div>
+                      <Activity className="w-8 h-8 text-blue-500" />
+                    </div>
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">2FA Enabled</p>
+                        <p className="text-2xl font-bold">{securityStats?.two_fa_enabled_percentage || 0}%</p>
+                      </div>
+                      <Shield className="w-8 h-8 text-green-500" />
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-              
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="space-y-0.5">
-                  <Label className="text-base font-medium">Teachers</Label>
-                  <p className="text-sm text-muted-foreground">Require MFA for teacher users</p>
+            </TabsContent>
+
+            {/* Authentication Settings Sub-tab */}
+            <TabsContent value="authentication">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold">Authentication Settings</h2>
+                    <p className="text-sm text-muted-foreground">Configure authentication and access control policies</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {hasUnsavedChanges && (
+                      <Badge variant="secondary" className="text-orange-600 bg-orange-50">
+                        Unsaved Changes
+                      </Badge>
+                    )}
+                    <Button
+                      variant="outline"
+                      onClick={handleResetSettings}
+                      disabled={!hasUnsavedChanges || saving}
+                    >
+                      Reset
+                    </Button>
+                    <Button
+                      onClick={handleSaveSettings}
+                      disabled={!hasUnsavedChanges || saving}
+                      className="flex items-center gap-2"
+                    >
+                      <Save className="w-4 h-4" />
+                      {saving ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </div>
                 </div>
-                <Switch
-                  checked={localSettings.two_factor_auth_enabled_teachers}
-                  onCheckedChange={(checked) => handleLocalSettingChange('two_factor_auth_enabled_teachers', checked)}
-                  disabled={saving}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="space-y-0.5">
-                  <Label className="text-base font-medium">Students</Label>
-                  <p className="text-sm text-muted-foreground">Require MFA for student users</p>
-                </div>
-                <Switch
-                  checked={localSettings.two_factor_auth_enabled_students}
-                  onCheckedChange={(checked) => handleLocalSettingChange('two_factor_auth_enabled_students', checked)}
-                  disabled={saving}
-                />
-              </div>
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label>Session Timeout (minutes)</Label>
-            <Select
-              value={localSettings.session_timeout_minutes.toString()}
-              onValueChange={(value) => handleLocalSettingChange('session_timeout_minutes', parseInt(value))}
-              disabled={saving}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="15">15 minutes</SelectItem>
-                <SelectItem value="30">30 minutes</SelectItem>
-                <SelectItem value="60">1 hour</SelectItem>
-                <SelectItem value="120">2 hours</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Max Login Attempts</Label>
-            <Input
-              type="number"
-              value={localSettings.max_login_attempts}
-              onChange={(e) => handleLocalSettingChange('max_login_attempts', parseInt(e.target.value))}
-              min="1"
-              max="10"
-              disabled={saving}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Login Security Alerts */}
-      <LoginSecurityAlerts />
-
-      {/* User MFA Management */}
-      <Card>
-        <CardHeader>
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              User MFA Management
-            </CardTitle>
-            <CardDescription>
-              Manage MFA settings for all users. You can disable MFA for users who are having issues.
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <UserMFAManagement />
-        </CardContent>
-      </Card>
-
-      {/* Access Logs */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Access Logs</CardTitle>
-              <CardDescription>
-                Recent user access and activity logs
-              </CardDescription>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => loadAccessLogs(true)}
-              disabled={accessLogsLoading}
-              className="flex items-center gap-2"
-            >
-              {accessLogsLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4" />
-              )}
-              {accessLogsLoading ? 'Refreshing...' : 'Refresh'}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div 
-            ref={accessLogsRef}
-            className="max-h-96 overflow-y-auto"
-          >
-            {accessLogs.length === 0 ? (
-              <div className="text-center py-8">
-                <Activity className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No access logs available</p>
-              </div>
-            ) : (
-              <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Action</TableHead>
-                      <TableHead>Timestamp</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {accessLogs.map((log) => (
-                      <TableRow key={log.id}>
-                        <TableCell className="font-medium">{log.user_email}</TableCell>
-                        <TableCell>
-                          {log.metadata?.details ? (
-                            <div className="space-y-1">
-                              <div className="font-medium">{log.action}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {typeof log.metadata.details === 'string' 
-                                  ? log.metadata.details 
-                                  : log.metadata.details.description || log.metadata.details.action || 'No additional details'
-                                }
-                              </div>
-                            </div>
-                          ) : (
-                            log.action
-                          )}
-                        </TableCell>
-                        <TableCell>{formatTimestamp(log.created_at)}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(log.status)}
-                            <Badge variant={log.status === 'success' ? 'default' : log.status === 'failed' ? 'destructive' : 'secondary'}>
-                              {log.status}
-                            </Badge>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Authentication Settings</CardTitle>
+                    <CardDescription>
+                      Configure authentication and access control policies
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Two-Factor Authentication</Label>
+                        <p className="text-sm text-muted-foreground">Require MFA for specific user roles</p>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="space-y-0.5">
+                            <Label className="text-base font-medium">Administrators</Label>
+                            <p className="text-sm text-muted-foreground">Require MFA for admin users</p>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                {accessLogsLoading && (
-                  <div className="flex items-center justify-center py-4">
-                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                    <span className="ml-2 text-sm text-muted-foreground">Loading more logs...</span>
+                          <Switch
+                            checked={localSettings.two_factor_auth_enabled_admin}
+                            onCheckedChange={(checked) => handleLocalSettingChange('two_factor_auth_enabled_admin', checked)}
+                            disabled={saving}
+                          />
+                        </div>
+                        
+                        <div className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="space-y-0.5">
+                            <Label className="text-base font-medium">Teachers</Label>
+                            <p className="text-sm text-muted-foreground">Require MFA for teacher users</p>
+                          </div>
+                          <Switch
+                            checked={localSettings.two_factor_auth_enabled_teachers}
+                            onCheckedChange={(checked) => handleLocalSettingChange('two_factor_auth_enabled_teachers', checked)}
+                            disabled={saving}
+                          />
+                        </div>
+                        
+                        <div className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="space-y-0.5">
+                            <Label className="text-base font-medium">Students</Label>
+                            <p className="text-sm text-muted-foreground">Require MFA for student users</p>
+                          </div>
+                          <Switch
+                            checked={localSettings.two_factor_auth_enabled_students}
+                            onCheckedChange={(checked) => handleLocalSettingChange('two_factor_auth_enabled_students', checked)}
+                            disabled={saving}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Session Timeout (minutes)</Label>
+                      <Select
+                        value={localSettings.session_timeout_minutes.toString()}
+                        onValueChange={(value) => handleLocalSettingChange('session_timeout_minutes', parseInt(value))}
+                        disabled={saving}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="15">15 minutes</SelectItem>
+                          <SelectItem value="30">30 minutes</SelectItem>
+                          <SelectItem value="60">1 hour</SelectItem>
+                          <SelectItem value="120">2 hours</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Max Login Attempts</Label>
+                      <Input
+                        type="number"
+                        value={localSettings.max_login_attempts}
+                        onChange={(e) => handleLocalSettingChange('max_login_attempts', parseInt(e.target.value))}
+                        min="1"
+                        max="10"
+                        disabled={saving}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* MFA Management Sub-tab */}
+            <TabsContent value="mfa">
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-xl font-semibold">User MFA Management</h2>
+                  <p className="text-sm text-muted-foreground">Manage MFA settings for all users</p>
+                </div>
+
+                <Card>
+                  <CardHeader>
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Users className="w-5 h-5" />
+                        User MFA Management
+                      </CardTitle>
+                      <CardDescription>
+                        Manage MFA settings for all users. You can disable MFA for users who are having issues.
+                      </CardDescription>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <UserMFAManagement />
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Security Alerts Sub-tab */}
+            <TabsContent value="alerts">
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-xl font-semibold">Security Alerts</h2>
+                  <p className="text-sm text-muted-foreground">Monitor login security and blocked users</p>
+                </div>
+                <LoginSecurityAlerts />
+              </div>
+            </TabsContent>
+
+            {/* Access Logs Sub-tab */}
+            <TabsContent value="logs">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold">Access Logs</h2>
+                    <p className="text-sm text-muted-foreground">Recent user access and activity logs</p>
                   </div>
-                )}
-                {!accessLogsHasMore && accessLogs.length > 0 && (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-muted-foreground">No more logs to load</p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExportAccessLogs}
+                      disabled={accessLogsExporting || accessLogsLoading}
+                      className="flex items-center gap-2"
+                    >
+                      {accessLogsExporting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
+                      {accessLogsExporting ? 'Exporting...' : 'Export to Excel'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => loadAccessLogs(true)}
+                      disabled={accessLogsLoading}
+                      className="flex items-center gap-2"
+                    >
+                      {accessLogsLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4" />
+                      )}
+                      {accessLogsLoading ? 'Refreshing...' : 'Refresh'}
+                    </Button>
                   </div>
-                )}
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+                </div>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Access Logs</CardTitle>
+                    <CardDescription>
+                      Recent user access and activity logs
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div 
+                      ref={accessLogsRef}
+                      className="max-h-96 overflow-y-auto"
+                    >
+                      {accessLogs.length === 0 ? (
+                        <div className="text-center py-8">
+                          <Activity className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-muted-foreground">No access logs available</p>
+                        </div>
+                      ) : (
+                        <>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>User</TableHead>
+                                <TableHead>Action</TableHead>
+                                <TableHead>Timestamp</TableHead>
+                                <TableHead>Status</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {accessLogs.map((log) => (
+                                <TableRow key={log.id}>
+                                  <TableCell className="font-medium">{log.user_email}</TableCell>
+                                  <TableCell>
+                                    {log.metadata?.details ? (
+                                      <div className="space-y-1">
+                                        <div className="font-medium">{log.action}</div>
+                                        <div className="text-sm text-muted-foreground">
+                                          {typeof log.metadata.details === 'string' 
+                                            ? log.metadata.details 
+                                            : log.metadata.details.description || log.metadata.details.action || 'No additional details'
+                                          }
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      log.action
+                                    )}
+                                  </TableCell>
+                                  <TableCell>{formatTimestamp(log.created_at)}</TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center gap-2">
+                                      {getStatusIcon(log.status)}
+                                      <Badge variant={log.status === 'success' ? 'default' : log.status === 'failed' ? 'destructive' : 'secondary'}>
+                                        {log.status}
+                                      </Badge>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                          {accessLogsLoading && (
+                            <div className="flex items-center justify-center py-4">
+                              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                              <span className="ml-2 text-sm text-muted-foreground">Loading more logs...</span>
+                            </div>
+                          )}
+                          {!accessLogsHasMore && accessLogs.length > 0 && (
+                            <div className="text-center py-4">
+                              <p className="text-sm text-muted-foreground">No more logs to load</p>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+            </Tabs>
           </div>
         </TabsContent>
       </Tabs>

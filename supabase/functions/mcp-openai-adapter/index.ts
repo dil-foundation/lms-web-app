@@ -2,13 +2,11 @@
 // Converts MCP tools to OpenAI function calling format
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { Client } from "npm:@modelcontextprotocol/sdk/client/index.js";
-import { SSEClientTransport } from "npm:@modelcontextprotocol/sdk/client/sse.js";
 import OpenAI from "npm:openai";
 
 // ---- Config ----
-const MCP_SSE_URL = Deno.env.get("MCP_SSE_URL");
-const MCP_SSE_HEADERS = Deno.env.get("MCP_SSE_HEADERS") ? JSON.parse(Deno.env.get("MCP_SSE_HEADERS")!) : {};
+const MCP_SERVER_URL = Deno.env.get("MCP_SSE_URL"); // Keeping variable name for backward compatibility
+const MCP_HEADERS = Deno.env.get("MCP_SSE_HEADERS") ? JSON.parse(Deno.env.get("MCP_SSE_HEADERS")!) : {};
 const LOG_LEVEL = Deno.env.get("LOG_LEVEL") || "info";
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const MAX_ITERATIONS = parseInt(Deno.env.get("MAX_ITERATIONS") || "10");
@@ -17,85 +15,119 @@ if (!OPENAI_API_KEY) {
   console.error("Missing OPENAI_API_KEY environment variable");
 }
 
-// ---- OpenAI Client ----
-const openai = new OpenAI({
-  apiKey: OPENAI_API_KEY,
-});
+// ---- Direct MCP HTTP Client (bypasses SDK transport complexity) ----
+// This directly calls the MCP server HTTP endpoints without using the SDK's transport layer
 
-// ---- MCP Client (SSE) ----
-let mcpClient: Client | undefined;
-let cachedTools: any[] = [];
+interface MCPTool {
+  name: string;
+  description?: string;
+  inputSchema: Record<string, unknown>;
+}
 
-async function connectMCP() {
-  console.log(`Attempting to connect to MCP server: ${MCP_SSE_URL}`);
-  
+let cachedTools: MCPTool[] = [];
+
+// Direct HTTP call to MCP server
+async function callMCPServer(method: string, params: Record<string, unknown> = {}) {
+  console.log(`[MCP Direct] Calling ${method} with params:`, params);
+
+  const requestBody = {
+    jsonrpc: "2.0",
+    id: Date.now(),
+    method: method,
+    params: params
+  };
+
+  console.log(`[MCP Direct] Full request body:`, JSON.stringify(requestBody, null, 2));
+
   try {
-    const transport = new SSEClientTransport(
-      new URL(MCP_SSE_URL),
-      {
-        headers: {
-          ...MCP_SSE_HEADERS,
-          'Accept': 'application/json, text/event-stream',
-          'Cache-Control': 'no-cache'
-        }
-      }
-    );
+    const response = await fetch(MCP_SERVER_URL!, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...MCP_HEADERS
+      },
+      body: JSON.stringify(requestBody)
+    });
 
-    const client = new Client(
-      {
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log(`[MCP Direct] Response:`, data);
+
+    if (data.error) {
+      throw new Error(`MCP Error: ${data.error.message || JSON.stringify(data.error)}`);
+    }
+
+    return data.result;
+  } catch (error) {
+    console.error(`[MCP Direct] Error calling ${method}:`, error);
+    throw error;
+  }
+}
+
+// Initialize MCP connection and get tools
+async function initializeMCP() {
+  console.log(`Initializing MCP server: ${MCP_SERVER_URL}`);
+
+  try {
+    // Initialize the MCP session
+    const initResult = await callMCPServer('initialize', {
+      protocolVersion: "2024-11-05",
+      clientInfo: {
         name: "mcp-openai-adapter",
         version: "0.1.0"
       },
-      {
-        capabilities: {
-          tools: {}
-        }
+      capabilities: {
+        tools: {}
       }
-    );
+    });
 
-    await client.connect(transport);
-    console.log("MCP transport connected successfully");
+    console.log("MCP initialized:", initResult);
 
-    if (LOG_LEVEL === "debug") {
-      client.on("message", (m: any) => console.log("[MCP message]", m));
-      client.on("notification", (n: any) => console.log("[MCP notif]", n));
-    }
+    // List available tools
+    const toolsResult = await callMCPServer('tools/list', {});
+    cachedTools = toolsResult.tools || [];
 
-    // List tools
-    console.log("Requesting tools from MCP server...");
-    const tools = await client.listTools();
-    cachedTools = tools.tools || [];
-    console.log(`Connected to MCP. Found ${cachedTools.length} tool(s):`, cachedTools.map((t: any) => t.name));
+    console.log(`MCP connected. Found ${cachedTools.length} tool(s):`, cachedTools.map((t: any) => t.name));
 
-    return client;
+    return true;
   } catch (error) {
-    console.error("Failed to connect to MCP server:", error);
+    console.error("Failed to initialize MCP server:", error);
     throw error;
   }
 }
 
 async function ensureMCP() {
-  if (mcpClient) return mcpClient;
-  
-  // Simple retry logic for Deno
-  let retries = 5;
+  if (cachedTools.length > 0) return true;
+
+  // Simple retry logic
+  let retries = 3;
   let lastError;
-  
+
   while (retries > 0) {
     try {
-      mcpClient = await connectMCP();
-      return mcpClient;
+      await initializeMCP();
+      return true;
     } catch (error) {
       lastError = error;
       retries--;
       if (retries > 0) {
-        await new Promise(resolve => setTimeout(resolve, 1000 * (6 - retries)));
+        console.log(`Retrying MCP initialization... (${retries} retries left)`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
   }
-  
+
   throw lastError;
 }
+
+// ---- OpenAI Client ----
+const openai = new OpenAI({
+  apiKey: OPENAI_API_KEY,
+});
 
 // Map MCP tool schema → OpenAI tools schema (functions)
 function mcpToolsToOpenAITools(mcpTools: any[] = []) {
@@ -110,23 +142,43 @@ function mcpToolsToOpenAITools(mcpTools: any[] = []) {
 }
 
 // Helper function to invoke a single MCP tool
-async function invokeMCPTool(name: string, args: any) {
+async function invokeMCPTool(name: string, args: Record<string, unknown>) {
   await ensureMCP();
-  
+
   // Ensure tool exists
-  const tool = cachedTools.find((t: any) => t.name === name);
+  const tool = cachedTools.find((t: MCPTool) => t.name === name);
   if (!tool) throw new Error(`Tool '${name}' not found.`);
 
-  const invokeRes = await mcpClient!.callTool({ name, arguments: args || {} });
-  
+  console.log(`[invokeMCPTool] Tool: ${name}`);
+  console.log(`[invokeMCPTool] Input args from OpenAI:`, JSON.stringify(args, null, 2));
+
+  // CRITICAL FIX: Remove trailing semicolons from SQL queries
+  // The MCP database server rejects queries with semicolons as potentially dangerous multi-statement queries
+  if (name === 'query_database' && args.sql && typeof args.sql === 'string') {
+    const originalSql = args.sql;
+    args.sql = args.sql.trim().replace(/;+\s*$/, '');
+    if (originalSql !== args.sql) {
+      console.log(`[invokeMCPTool] Removed trailing semicolon from SQL query`);
+      console.log(`[invokeMCPTool] Modified SQL:`, args.sql);
+    }
+  }
+
+  // Call the MCP tool directly
+  const invokeRes = await callMCPServer('tools/call', {
+    name,
+    arguments: args || {}
+  });
+
   // Coalesce MCP content parts into a single string/JSON
   let out: string[] = [];
-  for (const part of invokeRes.content || []) {
+  const content = invokeRes.content || [];
+
+  for (const part of content) {
     if (part?.type === "text") out.push(part.text);
     else if (part?.type === "json") out.push(JSON.stringify(part.json));
     else out.push(JSON.stringify(part));
   }
-  
+
   return {
     content: out.join("\n") || null,
     raw: invokeRes
@@ -162,7 +214,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         maxIterations: MAX_ITERATIONS,
         logLevel: LOG_LEVEL,
-        mcpServerUrl: MCP_SSE_URL,
+        mcpServerUrl: MCP_SERVER_URL,
         availableModels: [
           "gpt-4o-mini",
           "gpt-4o",
@@ -184,12 +236,14 @@ serve(async (req) => {
     // Get tools endpoint
     if (path.endsWith('/tools') && req.method === 'GET') {
       await ensureMCP();
-      // Refresh tool list if empty
+      // Refresh tool list if empty (ensureMCP already populates cachedTools)
       if (!cachedTools.length) {
-        const list = await mcpClient!.listTools();
-        cachedTools = list.tools || [];
+        await initializeMCP();
       }
-      return new Response(JSON.stringify({ tools: mcpToolsToOpenAITools(cachedTools) }), {
+      return new Response(JSON.stringify({
+        tools: mcpToolsToOpenAITools(cachedTools),
+        rawMCPTools: cachedTools // Include raw MCP tools for debugging
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -210,11 +264,10 @@ serve(async (req) => {
       }
 
       await ensureMCP();
-      
-      // Refresh tools if empty
+
+      // Refresh tools if empty (ensureMCP already populates cachedTools)
       if (!cachedTools.length) {
-        const list = await mcpClient!.listTools();
-        cachedTools = list.tools || [];
+        await initializeMCP();
       }
 
       const tools = mcpToolsToOpenAITools(cachedTools);
@@ -234,6 +287,17 @@ serve(async (req) => {
         {
           role: "system",
           content: `You are an assistant for an educational platform that can ONLY respond by using the available tools. You MUST use one or more tools to answer every user request.
+
+🚨🚨🚨 CRITICAL SQL RULES - ABSOLUTELY MANDATORY 🚨🚨🚨:
+⚠️ ONLY USE SELECT QUERIES! NO CREATE, INSERT, UPDATE, DELETE, DROP, ALTER!
+⚠️ The queryDatabase tool ONLY allows SELECT statements for READ-ONLY operations!
+⚠️ NEVER use CREATE TEMPORARY TABLE, CREATE TABLE AS, or any CREATE statement!
+⚠️ NEVER use WITH ... AS (subquery) if it tries to CREATE anything!
+⚠️ Use CTEs (WITH clause) for complex queries, but NO CREATE statements!
+⚠️ For string concatenation, use PostgreSQL's || operator: (first_name || ' ' || last_name)
+⚠️ AVOID CONCAT() function - use || instead: (column1 || ' ' || column2) AS combined
+⚠️ If query fails with "Operation 'CREATE' is not allowed", the SQL parser is rejecting it!
+⚠️ When this happens, simplify: SELECT first_name, last_name separately instead of concatenating!
 
 🚨 CRITICAL - READ THIS FIRST - MANDATORY RULES:
 ⚠️ YOU MUST USE queryDatabase TOOL FOR EVERY DATA REQUEST!
@@ -1161,6 +1225,306 @@ Always start by calling the appropriate tool(s) to gather information, then prov
       });
     }
 
+    // Streaming invoke endpoint - Server-Sent Events (SSE)
+    if (path.endsWith('/invoke-stream') && req.method === 'POST') {
+      const body = await req.json();
+      const { prompt, model = "gpt-4o-mini", temperature = 0.2 } = body;
+
+      if (!prompt) {
+        return new Response(JSON.stringify({
+          ok: false,
+          error: "Missing 'prompt'. Expected format: { \"prompt\": \"your request here\" }"
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      await ensureMCP();
+
+      if (!cachedTools.length) {
+        await initializeMCP();
+      }
+
+      const tools = mcpToolsToOpenAITools(cachedTools);
+
+      if (!tools.length) {
+        return new Response(JSON.stringify({
+          ok: false,
+          error: "No tools available from MCP server"
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Create Server-Sent Events stream
+      const stream = new ReadableStream({
+        async start(controller) {
+          const encoder = new TextEncoder();
+
+          // Helper function to send SSE message
+          const sendEvent = (event: string, data: any) => {
+            const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+            controller.enqueue(encoder.encode(message));
+          };
+
+          try {
+            // Send initial event
+            sendEvent('start', { message: 'Starting IRIS query...' });
+
+            console.log('🔍 [STREAMING DEBUG] Received prompt from iris-chat-simple');
+            console.log('🔍 [STREAMING DEBUG] Prompt length:', prompt.length);
+            console.log('🔍 [STREAMING DEBUG] Prompt preview (first 500 chars):', prompt.substring(0, 500));
+            console.log('🔍 [STREAMING DEBUG] Prompt preview (last 200 chars):', prompt.substring(prompt.length - 200));
+
+            // Initialize conversation with proper message structure
+            // The prompt from iris-chat-simple is a concatenated string with:
+            // 1. IRIS_SYSTEM_PROMPT (the long detailed instructions)
+            // 2. User Context
+            // 3. Conversation history (if any)
+            // 4. Current User Query (after "Current User Query: ")
+            // We need to SPLIT this into separate system and user messages for OpenAI
+
+            // Extract the user query from the end
+            const queryMarker = 'Current User Query: ';
+            const queryIndex = prompt.lastIndexOf(queryMarker);
+
+            let systemPrompt = prompt;
+            let userQuery = '';
+
+            if (queryIndex !== -1) {
+              systemPrompt = prompt.substring(0, queryIndex).trim();
+              userQuery = prompt.substring(queryIndex + queryMarker.length).trim();
+              console.log('🔍 [STREAMING DEBUG] Extracted user query:', userQuery);
+              console.log('🔍 [STREAMING DEBUG] System prompt length:', systemPrompt.length);
+            } else {
+              console.warn('⚠️ [STREAMING DEBUG] Could not find "Current User Query:" marker, using entire prompt as system');
+            }
+
+            const messages: any[] = [
+              {
+                role: "system",
+                content: systemPrompt  // IRIS instructions + context + history
+              },
+              {
+                role: "user",
+                content: userQuery || prompt  // The actual user query
+              }
+            ];
+
+            console.log('🔍 [STREAMING DEBUG] Initial messages array:', JSON.stringify(messages.map(m => ({ role: m.role, contentLength: m.content?.length }))));
+
+
+            let iteration = 0;
+            const toolInvocations: any[] = [];
+
+            // Iterative tool calling loop
+            while (iteration < MAX_ITERATIONS) {
+              iteration++;
+
+              sendEvent('iteration', { iteration, message: `Processing iteration ${iteration}...` });
+
+              const toolChoice: any = (iteration === 1 && toolInvocations.length === 0) ? "required" : "auto";
+
+              console.log(`🔍 [STREAMING DEBUG] Iteration ${iteration} - Tool choice:`, toolChoice);
+              console.log(`🔍 [STREAMING DEBUG] Iteration ${iteration} - Messages count before OpenAI:`, messages.length);
+              console.log(`🔍 [STREAMING DEBUG] Iteration ${iteration} - Messages structure:`,
+                JSON.stringify(messages.map((m, i) => ({
+                  index: i,
+                  role: m.role,
+                  hasContent: !!m.content,
+                  contentLength: m.content?.length,
+                  hasToolCalls: !!m.tool_calls,
+                  toolCallsCount: m.tool_calls?.length
+                }))));
+
+              // Call OpenAI WITHOUT streaming first for tool calls
+              const completion = await openai.chat.completions.create({
+                model: model,
+                messages: messages,
+                tools: tools,
+                tool_choice: toolChoice,
+                temperature: temperature,
+                stream: false // Tool calls don't stream well
+              });
+
+              const assistantMessage = completion.choices[0].message;
+
+              console.log(`🔍 [STREAMING DEBUG] Iteration ${iteration} - OpenAI response:`, {
+                hasContent: !!assistantMessage.content,
+                contentPreview: assistantMessage.content?.substring(0, 200),
+                hasToolCalls: !!assistantMessage.tool_calls,
+                toolCallsCount: assistantMessage.tool_calls?.length,
+                toolNames: assistantMessage.tool_calls?.map((t: any) => t.function.name)
+              });
+
+              // Check if assistant wants to use tools
+              if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+                // Only push assistant message if it has tool calls
+                messages.push(assistantMessage);
+
+                sendEvent('tools', {
+                  count: assistantMessage.tool_calls.length,
+                  tools: assistantMessage.tool_calls.map((t: any) => t.function.name)
+                });
+
+                // Process each tool call
+                for (const toolCall of assistantMessage.tool_calls) {
+                  const toolName = toolCall.function.name;
+                  const toolArgs = JSON.parse(toolCall.function.arguments || "{}");
+
+                  sendEvent('tool_call', { tool: toolName, status: 'executing' });
+
+                  try {
+                    const toolResult = await invokeMCPTool(toolName, toolArgs);
+
+                    console.log(`🔍 [STREAMING DEBUG] Tool ${toolName} result:`, {
+                      hasContent: !!toolResult.content,
+                      contentLength: toolResult.content?.length,
+                      contentPreview: toolResult.content?.substring(0, 300)
+                    });
+
+                    toolInvocations.push({
+                      iteration,
+                      tool: toolName,
+                      arguments: toolArgs,
+                      result: toolResult.content,
+                      success: true
+                    });
+
+                    sendEvent('tool_result', { tool: toolName, status: 'success' });
+
+                    const toolMessage = {
+                      role: "tool",
+                      tool_call_id: toolCall.id,
+                      name: toolName,
+                      content: toolResult.content || "Tool executed successfully."
+                    };
+
+                    console.log(`🔍 [STREAMING DEBUG] Adding tool message to conversation:`, {
+                      role: toolMessage.role,
+                      name: toolMessage.name,
+                      contentLength: toolMessage.content?.length
+                    });
+
+                    messages.push(toolMessage);
+
+                  } catch (toolError) {
+                    console.error(`Error invoking tool ${toolName}:`, toolError);
+
+                    toolInvocations.push({
+                      iteration,
+                      tool: toolName,
+                      arguments: toolArgs,
+                      error: String(toolError),
+                      success: false
+                    });
+
+                    sendEvent('tool_result', { tool: toolName, status: 'error', error: String(toolError) });
+
+                    messages.push({
+                      role: "tool",
+                      tool_call_id: toolCall.id,
+                      name: toolName,
+                      content: `Error: ${String(toolError)}`
+                    });
+                  }
+                }
+
+                continue; // Go to next iteration to process tool results
+
+              } else {
+                // No tools called - final response with STREAMING
+                console.log(`🔍 [STREAMING DEBUG] No tool calls in iteration ${iteration}`);
+                console.log(`🔍 [STREAMING DEBUG] Total tool invocations so far:`, toolInvocations.length);
+
+                if (toolInvocations.length === 0) {
+                  // Force tool usage
+                  console.log('🔍 [STREAMING DEBUG] Forcing tool usage - no tools called yet');
+                  messages.push({
+                    role: "user",
+                    content: "You must use the available tools to answer my request. Please call the appropriate tool(s) to gather the information I need."
+                  });
+                  continue;
+                }
+
+                // Stream the final response
+                console.log('🔍 [STREAMING DEBUG] Starting final streaming response');
+                console.log('🔍 [STREAMING DEBUG] Final messages array before streaming:',
+                  JSON.stringify(messages.map((m, i) => ({
+                    index: i,
+                    role: m.role,
+                    hasContent: !!m.content,
+                    contentLength: m.content?.length,
+                    contentPreview: m.role === 'tool' ? m.content?.substring(0, 100) : undefined
+                  }))));
+
+                sendEvent('response_start', { message: 'Generating response...' });
+
+                const streamCompletion = await openai.chat.completions.create({
+                  model: model,
+                  messages: messages,
+                  temperature: temperature,
+                  stream: true // NOW we stream the final response
+                });
+
+                let fullResponse = '';
+                let chunkCount = 0;
+
+                for await (const chunk of streamCompletion) {
+                  const content = chunk.choices[0]?.delta?.content;
+                  if (content) {
+                    chunkCount++;
+                    fullResponse += content;
+                    sendEvent('chunk', { content });
+
+                    if (chunkCount === 1) {
+                      console.log('🔍 [STREAMING DEBUG] First chunk received:', content);
+                    }
+                  }
+                }
+
+                console.log('🔍 [STREAMING DEBUG] Streaming complete');
+                console.log('🔍 [STREAMING DEBUG] Total chunks sent:', chunkCount);
+                console.log('🔍 [STREAMING DEBUG] Full response length:', fullResponse.length);
+                console.log('🔍 [STREAMING DEBUG] Full response preview (first 300 chars):', fullResponse.substring(0, 300));
+
+                // Send completion event
+                sendEvent('complete', {
+                  response: fullResponse,
+                  iterations: iteration,
+                  toolsUsed: toolInvocations.map((t: any) => t.tool),
+                  tokensUsed: messages.reduce((acc: number, msg: any) => acc + (msg.content?.length || 0), 0)
+                });
+
+                controller.close();
+                return;
+              }
+            }
+
+            // Max iterations reached
+            sendEvent('error', { message: 'Maximum iterations reached. The task may be incomplete.' });
+            controller.close();
+
+          } catch (error) {
+            console.error('Stream error:', error);
+            sendEvent('error', { message: String(error) });
+            controller.close();
+          }
+        }
+      });
+
+      return new Response(stream, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
+    }
+
     // Legacy invoke-tool endpoint
     if (path.endsWith('/invoke-tool') && req.method === 'POST') {
       const body = await req.json();
@@ -1180,8 +1544,8 @@ Always start by calling the appropriate tool(s) to gather information, then prov
         });
       } catch (error) {
         console.error(error);
-        // Reset the client on transport errors to trigger reconnect next time.
-        mcpClient = undefined;
+        // Reset the cached tools on errors to trigger reconnect next time.
+        cachedTools = [];
         return new Response(JSON.stringify({ ok: false, error: String(error) }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -1200,8 +1564,8 @@ Always start by calling the appropriate tool(s) to gather information, then prov
 
   } catch (error) {
     console.error("Error in Edge Function:", error);
-    // Reset the client on transport errors to trigger reconnect next time.
-    mcpClient = undefined;
+    // Reset the cached tools on errors to trigger reconnect next time.
+    cachedTools = [];
     return new Response(JSON.stringify({ 
       ok: false, 
       error: String(error),

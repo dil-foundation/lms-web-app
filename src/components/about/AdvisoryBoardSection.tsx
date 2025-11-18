@@ -27,8 +27,14 @@ AdvisoryMember.displayName = 'AdvisoryMember';
 
 const AdvisoryBoardSection = () => {
   return (
-    <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 relative">
-      <div className="container mx-auto max-w-7xl relative">
+    <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 relative bg-gradient-to-br from-muted/5 via-background to-muted/10">
+      {/* Elegant Background Pattern */}
+      <div className="absolute inset-0 opacity-25">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_40%,rgba(var(--primary),0.04),transparent_60%)]"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_60%,rgba(var(--primary),0.02),transparent_60%)]"></div>
+      </div>
+      
+      <div className="container mx-auto max-w-7xl relative z-10">
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-foreground tracking-tight">
             Advisory <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">Board</span>

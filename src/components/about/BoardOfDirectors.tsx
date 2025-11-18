@@ -1,100 +1,191 @@
-import { memo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users } from 'lucide-react';
+import { memo, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Users, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 
 const boardMembers = [
   {
     name: "Fiza Shah",
     role: "Founder & CEO",
-    bio: "Fiza Shah is the Founder and Chief Executive Officer of Developments in Literacy (DIL). Since establishing the organization in 1997, she has transformed it into one of Pakistan's leading providers of quality education for underserved children. Under her leadership, DIL has educated hundreds of thousands of students, expanded girls' access to schooling, strengthened teacher development, and introduced technology-enabled learning solutions that bring innovation to classrooms. Fiza earned her Executive MBA from the University of California, Irvine, and has received numerous honors for her contributions, including Pakistan's prestigious Tamgha-e-Imtiaz (Medal of Excellence). She remains deeply committed to ensuring that every child, regardless of background, has access to the knowledge and opportunities needed to achieve their fullest potential."
+    credentials: "Executive MBA, UC Irvine | Tamgha-e-Imtiaz",
+    company: "Developments in Literacy",
+    bio: "Founded DIL in 1997, transforming it into Pakistan's leading education provider. Under her leadership, DIL has educated hundreds of thousands of students and introduced innovative technology-enabled learning solutions.",
+    isExecutive: true
   },
   {
     name: "Muhammad Shahzad",
     role: "Chairperson",
-    bio: "Muhammad Shahzad is President and Chief Financial Officer of Relativity Space, where he oversees the company's commercial, financial, people, legal, and risk functions. Under his leadership, Relativity has raised over $2 billion and expanded its team more than twentyfold. With over two decades of finance and capital markets experience, he has held senior roles at The Honest Company and Goldman Sachs, advising on transactions exceeding $30 billion. Earlier in his career, he founded a startup and worked at Accenture and Deutsche Bank. Muhammad graduated cum laude from The Wharton School and earned his MBA from the UCLA Anderson School of Management."
+    credentials: "MBA, UCLA Anderson | Wharton School",
+    company: "Relativity Space",
+    bio: "President & CFO at Relativity Space, overseeing $2B+ in funding. Former Goldman Sachs executive with 20+ years in finance and capital markets, advising on $30B+ in transactions.",
+    isExecutive: true
   },
   {
     name: "Maha Hayat",
     role: "Board Member",
-    bio: "Maha Hayat is a founding member of DIL's New York chapter and has been a dedicated supporter of Developments in Literacy for more than 24 years. She has played a central role in establishing the chapter's presence, leading fundraising efforts, and cultivating a strong network of donors to advance DIL's mission of empowering underprivileged girls in Pakistan through education. Professionally, Maha brings her creative eye and passion for design to her work at Alex Papachristidis Interiors, where she specializes in interior architecture and design, balancing a thriving career with her long-standing commitment to philanthropy."
+    credentials: "24+ Years DIL Supporter",
+    company: "Alex Papachristidis Interiors",
+    bio: "Founding member of DIL's New York chapter, leading fundraising efforts and cultivating donor networks. Specializes in interior architecture and design while maintaining long-standing philanthropic commitment.",
+    isExecutive: false
   },
   {
     name: "Malika Junaid",
     role: "Board Member",
-    bio: "Malika Junaid is principal at M. Designs Architects, a Los Altos–based firm specializing in sustainable residential, office, and commercial projects. With over 30 years of experience, she is recognized for delivering innovative, environmentally conscious designs that have earned multiple architectural awards for excellence and leadership. Honored with the Sitara-e-Imtiaz, Pakistan's highest civilian award, Malika is also co-founder and board member of Empower Sports Academy, advocating for women's education, leadership, and sports in Pakistan. She actively supports youth education through organizations like DIL (Developments in Literacy) and serves as a board and charter member of OPEN North America, mentoring future leaders."
+    credentials: "Sitara-e-Imtiaz | 30+ Years Experience",
+    company: "M. Designs Architects",
+    bio: "Principal architect specializing in sustainable design with multiple architectural awards. Co-founder of Empower Sports Academy, advocating for women's education and leadership in Pakistan.",
+    isExecutive: false
   },
   {
     name: "Wajid Mirza",
     role: "Board Member",
-    bio: "Wajid Mirza is the Managing Partner of Arthur Lawrence LP, a global consulting firm he co-founded in 2003. He has led the company's expansion across industries and continents, serving Fortune 500 and Global 2000 clients while promoting technology-driven solutions. A social entrepreneur at heart, Wajid integrates business growth with social impact, creating opportunities for dignified livelihoods and community development. He is a member of the Forbes Business Development Council and actively supports nonprofit organizations focused on literacy, healthcare, and youth mentorship, extending his commitment to linking business leadership with meaningful social progress through education."
+    credentials: "Forbes Business Council",
+    company: "Arthur Lawrence LP",
+    bio: "Managing Partner of global consulting firm serving Fortune 500 clients. Social entrepreneur integrating business growth with social impact, focusing on literacy and youth mentorship.",
+    isExecutive: false
   },
   {
     name: "Abdul Rehman Yaqub",
     role: "Board Member",
-    bio: "Abdul Rehman Yaqub has over 35 years of experience in the global textile industry and serves as a visionary leader at 1888 Mills, LLC. Over the years, he has drawn on his deep knowledge of international textile markets to guide the company's growth and long-term strategy. His unique ability to bring together people of diverse cultures and backgrounds has enabled 1888 Mills to become a pioneer of global textile production, with mills in Pakistan, Bangladesh, Ghana, and the United States. Today, Abdul Rehman is recognized as a predominant global business leader and remains committed to advancing opportunities for education and community development through DIL."
+    credentials: "35+ Years Global Experience",
+    company: "1888 Mills, LLC",
+    bio: "Visionary leader in global textile industry with mills across Pakistan, Bangladesh, Ghana, and the United States. Recognized for bringing together diverse cultures and advancing education opportunities.",
+    isExecutive: false
   },
   {
     name: "Shaila Zamir",
     role: "Board Member",
-    bio: "Shaila Zamir is a long-standing member of the DIL Board and has previously served as President of the New York chapter. She has been a driving force behind some of the organization's most impactful fundraising initiatives, including the annual New York gala — one of DIL's most high-profile events. Through her leadership, Shaila has mobilized vital support for DIL's mission, strengthened its presence across the United States, and raised awareness about the urgent need for quality education in Pakistan. Professionally, Shaila is an entrepreneur and founder of her own interior design firm. She holds an undergraduate degree in art history and interior design from Parsons."
+    credentials: "Former DIL NY President",
+    company: "Interior Design Firm",
+    bio: "Long-standing DIL Board member and former NY chapter president. Entrepreneur and interior design firm founder, driving impactful fundraising initiatives including the annual NY gala.",
+    isExecutive: false
   },
   {
     name: "Adnan Zuberi",
     role: "Board Member",
-    bio: "Adnan Zuberi is a Managing Director and Co-Head of Global Capital Markets for the Americas at BNP Paribas. His responsibilities span the Investment Grade, Leverage Finance, Equity, Securitization and Real Asset businesses. With more than two decades of experience, he previously held senior roles at JPMorgan Chase, UBS, and Credit Suisse, advising on complex credit and securitization transactions across asset classes. A graduate of the University of Michigan, Adnan has also been an active supporter of DIL's New York chapter, contributing to its growth and ensuring it remains a strong platform for advancing education in Pakistan."
+    credentials: "University of Michigan",
+    company: "BNP Paribas",
+    bio: "Managing Director and Co-Head of Global Capital Markets for the Americas. Former senior roles at JPMorgan Chase, UBS, and Credit Suisse with 20+ years in complex credit transactions.",
+    isExecutive: false
   }
 ];
 
-const BoardMemberCard = memo(({ member }: { member: typeof boardMembers[0] }) => (
-  <Card className="bg-card/80 backdrop-blur-sm border border-border/50 hover:shadow-2xl transition-all duration-500 rounded-3xl overflow-hidden">
-    <CardHeader>
-      <div className="flex items-start gap-6">
-        <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center flex-shrink-0">
-          <span className="text-primary-foreground font-bold text-xl md:text-2xl">
+const BoardMemberCard = memo(({ member, index }: { member: typeof boardMembers[0], index: number }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  return (
+    <Card 
+      className={`group relative bg-card/40 backdrop-blur-xl border border-border/30 hover:border-primary/40 transition-all duration-500 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 rounded-2xl overflow-hidden shadow-sm ${
+        member.isExecutive ? 'ring-1 ring-primary/30 shadow-lg shadow-primary/5' : ''
+      }`}
+    >
+      <CardContent className="p-6">
+        {/* Executive Badge - Compact */}
+        {member.isExecutive && (
+          <div className="absolute top-4 right-4">
+            <div className="bg-gradient-to-r from-primary to-primary/80 text-white text-xs font-semibold px-3 py-1 rounded-full">
+              Executive
+            </div>
+          </div>
+        )}
+        
+        {/* Profile Section - Compact */}
+        <div className="text-center mb-6">
+          {/* Avatar - Smaller */}
+          <div className="w-16 h-16 bg-gradient-to-br from-primary/15 to-primary/5 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-primary/20">
+            <span className="text-primary font-bold text-xl tracking-tight">
             {member.name.split(' ').map(n => n[0]).join('')}
           </span>
         </div>
-        <div className="flex-1">
-          <CardTitle className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-            {member.name}
-          </CardTitle>
-          <p className="text-primary font-semibold text-lg">{member.role}</p>
+          
+          {/* Name & Role - Improved Readability */}
+          <h3 className="text-xl font-bold text-foreground mb-2 tracking-tight">{member.name}</h3>
+          <p className="text-primary font-semibold text-base mb-2">{member.role}</p>
+          <p className="text-muted-foreground text-sm font-medium">{member.company}</p>
         </div>
+        
+        {/* Credentials - Improved Readability */}
+        <div className="text-center mb-4">
+          <p className="text-sm text-muted-foreground leading-relaxed font-medium">{member.credentials}</p>
       </div>
-    </CardHeader>
-    <CardContent className="px-6 md:px-8 pb-8">
-      <p className="text-muted-foreground text-base md:text-lg leading-relaxed">
+        
+        {/* Expandable Bio - Compact */}
+        <div className="border-t border-border/10 pt-4">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full flex items-center justify-center gap-2 text-sm text-primary hover:text-primary/80 transition-all duration-300 font-medium"
+          >
+            {isExpanded ? 'Show Less' : 'Learn More'}
+            {isExpanded ? (
+              <ChevronUp className="h-4 w-4 transition-transform duration-300" />
+            ) : (
+              <ChevronDown className="h-4 w-4 transition-transform duration-300" />
+            )}
+          </button>
+          
+          {isExpanded && (
+            <div className="mt-4 pt-4 border-t border-border/5 animate-fade-in">
+              <p className="text-sm text-muted-foreground leading-relaxed font-normal">
         {member.bio}
       </p>
+            </div>
+          )}
+        </div>
     </CardContent>
   </Card>
-));
+  );
+});
 
 BoardMemberCard.displayName = 'BoardMemberCard';
 
 const BoardOfDirectors = () => {
+  const executives = boardMembers.filter(member => member.isExecutive);
+  const boardMembers_list = boardMembers.filter(member => !member.isExecutive);
+
   return (
-    <section className="py-12 sm:py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 relative">
-      <div className="container mx-auto max-w-7xl relative">
-        <div className="text-center mb-12 md:mb-16">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
+    <section className="py-32 lg:py-40 relative bg-gradient-to-br from-muted/10 via-background to-muted/5">
+      {/* Section Background Pattern */}
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(var(--primary),0.04),transparent_70%)]"></div>
+      </div>
+      
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="max-w-7xl mx-auto">
+          {/* Section Header - Apple Style */}
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center gap-3 bg-primary/5 text-primary px-6 py-3 rounded-full text-sm font-medium mb-8 border border-primary/10 backdrop-blur-sm">
             <Users className="h-4 w-4" />
             Leadership Team
           </div>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 text-foreground tracking-tight">
-            Board of <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">Directors</span>
+            <h2 className="text-5xl sm:text-6xl font-bold mb-8 leading-[0.9] tracking-[-0.02em]">
+              <span className="text-foreground">Board of </span>
+              <span className="bg-gradient-to-r from-primary via-primary to-primary/90 bg-clip-text text-transparent">
+                Directors
+              </span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            The DIL Board of Directors provides strategic direction and oversight, ensuring that every decision 
-            strengthens our mission. From guiding program priorities to expanding outreach and donor support, 
-            the Board helps chart the path for DIL's long-term impact and sustainability.
+            <p className="text-2xl text-muted-foreground max-w-3xl mx-auto leading-[1.4] font-light">
+              Strategic leaders guiding our mission of transforming lives through education.
           </p>
         </div>
 
-        <div className="space-y-8">
-          {boardMembers.map((member, index) => (
-            <BoardMemberCard key={index} member={member} />
-          ))}
+          {/* Executive Leadership */}
+          <div className="mb-12">
+            <h3 className="text-2xl font-bold text-foreground mb-6 text-center">Executive Leadership</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+              {executives.map((member, index) => (
+                <BoardMemberCard key={index} member={member} index={index} />
+              ))}
+            </div>
+          </div>
+
+          {/* Board Members */}
+          <div>
+            <h3 className="text-2xl font-bold text-foreground mb-6 text-center">Board Members</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              {boardMembers_list.map((member, index) => (
+                <BoardMemberCard key={index} member={member} index={index} />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>

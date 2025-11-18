@@ -4,27 +4,30 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Shield, 
-  AlertTriangle, 
-  Clock, 
-  Users, 
-  RefreshCw, 
+import {
+  Shield,
+  AlertTriangle,
+  Clock,
+  Users,
+  RefreshCw,
   Unlock,
   Eye,
   TrendingUp,
   TrendingDown,
-  Loader2
+  Loader2,
+  Download
 } from 'lucide-react';
 import { toast } from 'sonner';
-import LoginSecurityService, { 
-  SecurityStats, 
-  BlockedUser, 
-  LoginAttempt 
+import LoginSecurityService, {
+  SecurityStats,
+  BlockedUser,
+  LoginAttempt
 } from '@/services/loginSecurityService';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import AccessLogService from '@/services/accessLogService';
+import exportEdgeFunctionsService from '@/services/exportEdgeFunctionsService';
+import { exportBlockedUsers as exportBlockedUsersToExcel, exportLoginAttempts as exportLoginAttemptsToExcel } from '@/services/excelExportService';
 
 const LoginSecurityAlerts = () => {
   const { user } = useAuth();
@@ -33,19 +36,23 @@ const LoginSecurityAlerts = () => {
   const [recentAttempts, setRecentAttempts] = useState<LoginAttempt[]>([]);
   const [loading, setLoading] = useState(true);
   const [unblocking, setUnblocking] = useState<string | null>(null);
-  
+
   // Pagination states for recent login attempts
   const [attemptsLoading, setAttemptsLoading] = useState(false);
   const [attemptsHasMore, setAttemptsHasMore] = useState(true);
   const [attemptsOffset, setAttemptsOffset] = useState(0);
   const attemptsRef = useRef<HTMLDivElement>(null);
-  
+
   // Pagination states for blocked users
   const [blockedUsersLoading, setBlockedUsersLoading] = useState(false);
   const [blockedUsersHasMore, setBlockedUsersHasMore] = useState(true);
   const [blockedUsersOffset, setBlockedUsersOffset] = useState(0);
   const blockedUsersRef = useRef<HTMLDivElement>(null);
-  
+
+  // Export states
+  const [exportingBlockedUsers, setExportingBlockedUsers] = useState(false);
+  const [exportingLoginAttempts, setExportingLoginAttempts] = useState(false);
+
   const ITEMS_PER_PAGE = 20;
 
   useEffect(() => {
@@ -165,7 +172,7 @@ const LoginSecurityAlerts = () => {
     setUnblocking(email);
     try {
       await LoginSecurityService.unblockUser(email);
-      
+
       // Log admin unblock action in access logs
       if (user) {
         await AccessLogService.logSecurityEvent(
@@ -176,7 +183,7 @@ const LoginSecurityAlerts = () => {
           `Admin ${user.email} unblocked user ${email} from login restrictions`
         );
       }
-      
+
       toast.success(`User ${email} has been unblocked`);
       // Refresh blocked users data
       await loadBlockedUsers(true);
@@ -188,6 +195,56 @@ const LoginSecurityAlerts = () => {
       toast.error('Failed to unblock user');
     } finally {
       setUnblocking(null);
+    }
+  };
+
+  const handleExportBlockedUsers = async () => {
+    try {
+      setExportingBlockedUsers(true);
+      toast.info('Exporting blocked users...');
+
+      // Fetch all blocked users without pagination
+      const allBlockedUsers = await exportEdgeFunctionsService.exportBlockedUsers();
+
+      if (allBlockedUsers.length === 0) {
+        toast.warning('No blocked users found to export');
+        return;
+      }
+
+      // Export to Excel
+      exportBlockedUsersToExcel(allBlockedUsers, `blocked-users-export-${new Date().toISOString().split('T')[0]}`);
+
+      toast.success(`Successfully exported ${allBlockedUsers.length} blocked users`);
+    } catch (error) {
+      console.error('Error exporting blocked users:', error);
+      toast.error('Failed to export blocked users');
+    } finally {
+      setExportingBlockedUsers(false);
+    }
+  };
+
+  const handleExportLoginAttempts = async () => {
+    try {
+      setExportingLoginAttempts(true);
+      toast.info('Exporting login attempts...');
+
+      // Fetch all login attempts without pagination (no time filter)
+      const allAttempts = await exportEdgeFunctionsService.exportLoginAttempts();
+
+      if (allAttempts.length === 0) {
+        toast.warning('No login attempts found to export');
+        return;
+      }
+
+      // Export to Excel
+      exportLoginAttemptsToExcel(allAttempts, `login-attempts-export-${new Date().toISOString().split('T')[0]}`);
+
+      toast.success(`Successfully exported ${allAttempts.length} login attempts`);
+    } catch (error) {
+      console.error('Error exporting login attempts:', error);
+      toast.error('Failed to export login attempts');
+    } finally {
+      setExportingLoginAttempts(false);
     }
   };
 
@@ -312,20 +369,36 @@ const LoginSecurityAlerts = () => {
                 Users who have been temporarily blocked due to security violations
               </CardDescription>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => loadBlockedUsers(true)}
-              disabled={blockedUsersLoading}
-              className="flex items-center gap-2"
-            >
-              {blockedUsersLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4" />
-              )}
-              {blockedUsersLoading ? 'Refreshing...' : 'Refresh'}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportBlockedUsers}
+                disabled={exportingBlockedUsers || blockedUsersLoading}
+                className="flex items-center gap-2"
+              >
+                {exportingBlockedUsers ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                {exportingBlockedUsers ? 'Exporting...' : 'Export'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => loadBlockedUsers(true)}
+                disabled={blockedUsersLoading}
+                className="flex items-center gap-2"
+              >
+                {blockedUsersLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                {blockedUsersLoading ? 'Refreshing...' : 'Refresh'}
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -419,20 +492,36 @@ const LoginSecurityAlerts = () => {
                 Latest login attempts across the system
               </CardDescription>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => loadRecentAttempts(true)}
-              disabled={attemptsLoading}
-              className="flex items-center gap-2"
-            >
-              {attemptsLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4" />
-              )}
-              {attemptsLoading ? 'Refreshing...' : 'Refresh'}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportLoginAttempts}
+                disabled={exportingLoginAttempts || attemptsLoading}
+                className="flex items-center gap-2"
+              >
+                {exportingLoginAttempts ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                {exportingLoginAttempts ? 'Exporting...' : 'Export'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => loadRecentAttempts(true)}
+                disabled={attemptsLoading}
+                className="flex items-center gap-2"
+              >
+                {attemptsLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                {attemptsLoading ? 'Refreshing...' : 'Refresh'}
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>

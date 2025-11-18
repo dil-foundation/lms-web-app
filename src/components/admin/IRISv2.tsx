@@ -60,8 +60,11 @@ export const IRISv2 = () => {
   const [userContext, setUserContext] = useState<IRISContext | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [serviceHealth, setServiceHealth] = useState(true);
+  const [rateLimitCountdown, setRateLimitCountdown] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const shouldAutoScrollRef = useRef<boolean>(true);
 
   // Platform-specific quick actions (AI Tutor tables)
   const aiTutorActions = [
@@ -149,11 +152,21 @@ export const IRISv2 = () => {
     initializeIRIS();
   }, [user]);
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages change (only if user is near bottom)
   useEffect(() => {
-    // Only scroll if there are messages
-    if (messages.length > 0) {
-      scrollToBottom();
+    if (messages.length === 0 || !shouldAutoScrollRef.current) return;
+
+    const container = chatContainerRef.current;
+    if (!container) return;
+
+    // Check if user is near the bottom of the chat (within 100px)
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+
+    if (isNearBottom) {
+      // Scroll the container to the bottom (not the whole page)
+      requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight;
+      });
     }
   }, [messages]);
 
@@ -170,6 +183,24 @@ export const IRISv2 = () => {
       }
     }
   }, [messages, userContext]);
+
+  // Countdown timer effect for rate limit
+  useEffect(() => {
+    if (rateLimitCountdown === null || rateLimitCountdown <= 0) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setRateLimitCountdown(prev => {
+        if (prev === null || prev <= 1) {
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [rateLimitCountdown]);
 
   const initializeIRIS = async () => {
     try {
@@ -251,12 +282,6 @@ Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
     }
   };
 
-  const scrollToBottom = () => {
-    // Use setTimeout to ensure DOM has updated before scrolling
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-  };
 
   const handleSendMessage = async (content: string) => {
     if (!content.trim() || isLoading || !userContext) return;
@@ -288,63 +313,162 @@ Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
     }
 
     try {
-      console.log('🚀 Sending message to IRIS:', content);
+      console.log('🌊 Sending streaming message to IRIS:', content);
 
-      const response = await IRISService.sendMessage([...messages, userMessage], userContext);
-      
-      if (response.success) {
-        const assistantMessage: IRISMessage = {
-          ...response.message,
-          timestamp: new Date()
-        };
-        
-        setMessages(prev => [...prev, assistantMessage]);
-        
-        // Show success toast with tools used
-        if (response.toolsUsed && response.toolsUsed.length > 0) {
-          toast({
-            title: "Query Executed Successfully",
-            description: `Used database tools: ${response.toolsUsed.join(', ')}`,
+      // Track if we've started adding the assistant message
+      let assistantMessageStarted = false;
+
+      // Use streaming API
+      await IRISService.sendMessageStream(
+        [...messages, userMessage],
+        userContext,
+        // onChunk - update the message content as chunks arrive
+        (chunk: string) => {
+          setMessages(prev => {
+            const updated = [...prev];
+
+            // On first chunk, create the assistant message
+            if (!assistantMessageStarted) {
+              assistantMessageStarted = true;
+              return [...updated, {
+                role: 'assistant' as const,
+                content: chunk,
+                timestamp: new Date()
+              }];
+            }
+
+            // For subsequent chunks, update the last message
+            const lastIndex = updated.length - 1;
+            if (updated[lastIndex] && updated[lastIndex].role === 'assistant') {
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                content: updated[lastIndex].content + chunk
+              };
+            }
+            return updated;
           });
-        }
+        },
+        // onComplete - handle completion
+        (data) => {
+          console.log('✅ Stream complete:', data);
+          if (data.tokensUsed) {
+            console.log(`💰 Tokens used: ${data.tokensUsed}`);
+          }
+          setIsLoading(false);
+        },
+        // onError - handle errors
+        (error: string) => {
+          console.error('❌ Streaming error:', error);
 
-        // Log tokens used if available
-        if (response.tokensUsed) {
-          console.log(`💰 Tokens used: ${response.tokensUsed}`);
+          // Check if it's a rate limit error
+          const rateLimitMatch = error.match(/try again in (\d+)(\w+)/i);
+          const retryAfterMatch = error.match(/retry-after[:\s]+(\d+)/i);
+          const resetTokensMatch = error.match(/reset-tokens[:\s]+"?(\d+\.?\d*)s/i);
+
+          if (rateLimitMatch || retryAfterMatch || resetTokensMatch || error.includes('429') || error.toLowerCase().includes('rate limit')) {
+            // Extract wait time in seconds
+            let waitSeconds = 60; // Default to 60 seconds
+
+            if (rateLimitMatch) {
+              const value = parseInt(rateLimitMatch[1]);
+              const unit = rateLimitMatch[2].toLowerCase();
+
+              // Convert to seconds based on unit
+              if (unit.startsWith('ms')) {
+                waitSeconds = Math.ceil(value / 1000);
+              } else if (unit.startsWith('s')) {
+                waitSeconds = value;
+              } else if (unit.startsWith('m')) {
+                waitSeconds = value * 60;
+              }
+            } else if (resetTokensMatch) {
+              waitSeconds = Math.ceil(parseFloat(resetTokensMatch[1]));
+            } else if (retryAfterMatch) {
+              waitSeconds = parseInt(retryAfterMatch[1]);
+            }
+
+            console.log(`⏳ Rate limit detected: ${waitSeconds} seconds wait time`);
+
+            // Start countdown timer
+            setRateLimitCountdown(waitSeconds);
+
+            // Create user-friendly rate limit message
+            const rateLimitMessage = `⏳ **Rate Limit Reached**\n\nThe AI service is currently experiencing high demand. Please wait approximately **${waitSeconds} seconds** before trying again.\n\nThis helps ensure fair usage for all users. Thank you for your patience!`;
+
+            setMessages(prev => {
+              const updated = [...prev];
+              const lastIndex = updated.length - 1;
+              // If assistant message already exists, update it
+              if (updated[lastIndex] && updated[lastIndex].role === 'assistant') {
+                updated[lastIndex] = {
+                  ...updated[lastIndex],
+                  content: rateLimitMessage
+                };
+                return updated;
+              }
+              // Otherwise, add a new assistant message with the error
+              return [...updated, {
+                role: 'assistant' as const,
+                content: rateLimitMessage,
+                timestamp: new Date()
+              }];
+            });
+
+            toast({
+              title: "Rate Limit Reached",
+              description: `Please wait ${waitSeconds} seconds before trying again`,
+              variant: "destructive",
+              duration: 5000
+            });
+          } else {
+            // Regular error handling
+            setMessages(prev => {
+              const updated = [...prev];
+              const lastIndex = updated.length - 1;
+              // If assistant message already exists, update it
+              if (updated[lastIndex] && updated[lastIndex].role === 'assistant') {
+                updated[lastIndex] = {
+                  ...updated[lastIndex],
+                  content: `❌ Error: ${error}`
+                };
+                return updated;
+              }
+              // Otherwise, add a new assistant message with the error
+              return [...updated, {
+                role: 'assistant' as const,
+                content: `❌ Error: ${error}`,
+                timestamp: new Date()
+              }];
+            });
+
+            toast({
+              title: "Request Failed",
+              description: "Failed to process your request",
+              variant: "destructive"
+            });
+          }
+
+          setIsLoading(false);
         }
-      } else {
-        // Handle error response
-        const errorMessage: IRISMessage = {
-          role: 'assistant',
-          content: response.message.content,
-          timestamp: new Date()
-        };
-        
-        setMessages(prev => [...prev, errorMessage]);
-        
-        toast({
-          title: "Request Failed",
-          description: response.error || "Failed to process your request",
-          variant: "destructive"
-        });
-      }
+      );
+
     } catch (error) {
       console.error('Error sending message:', error);
-      
+
       const errorMessage: IRISMessage = {
         role: 'assistant',
         content: `I apologize, but I encountered an unexpected error. Please try again or contact support if the issue persists.\n\n**Error:** ${error instanceof Error ? error.message : 'Unknown error'}`,
         timestamp: new Date()
       };
-      
+
       setMessages(prev => [...prev, errorMessage]);
-      
+
       toast({
         title: "Connection Error",
         description: "Failed to connect to IRIS service",
         variant: "destructive"
       });
-    } finally {
+
       setIsLoading(false);
     }
   };
@@ -573,6 +697,38 @@ formatted = formatted.replace(/💡 Recommendations:?|Recommendations:?/g,
         </div>
       </div>
 
+      {/* Rate Limit Warning Banner - Prominent at top */}
+      {rateLimitCountdown !== null && rateLimitCountdown > 0 && (
+        <div className="mb-6 p-4 bg-amber-100 dark:bg-amber-950/40 border-2 border-amber-500 dark:border-amber-600 rounded-xl shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <Clock className="h-8 w-8 text-amber-600 dark:text-amber-400 animate-pulse" />
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full animate-ping"></div>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-amber-900 dark:text-amber-100">
+                  Rate Limit Active
+                </h3>
+                <p className="text-sm text-amber-800 dark:text-amber-200">
+                  Too many requests. Please wait before sending another message.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="text-center">
+                <div className="text-4xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
+                  {rateLimitCountdown}
+                </div>
+                <div className="text-xs text-amber-700 dark:text-amber-300 font-medium">
+                  seconds
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main IRIS Interface */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* IRIS Chat Interface - Takes up 2 columns */}
@@ -598,7 +754,10 @@ formatted = formatted.replace(/💡 Recommendations:?|Recommendations:?/g,
               )}
 
               {/* Chat Messages Area */}
-              <div className="flex-1 p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
+              <div
+                ref={chatContainerRef}
+                className="flex-1 p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
+              >
                 <div className="space-y-6 max-w-none">
                   {messages.map((message, index) => (
                     <div key={index} className="space-y-2">
@@ -644,23 +803,14 @@ formatted = formatted.replace(/💡 Recommendations:?|Recommendations:?/g,
                         <div className="flex items-center gap-2 mt-2 ml-11">
                           <span className="text-xs text-muted-foreground">Export:</span>
                           <div className="flex gap-1">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
+                            <Button
+                              variant="outline"
+                              size="sm"
                               className="h-7 px-2 text-xs"
                               onClick={() => handleExportReport(message, 'pdf', findUserQueryForMessage(index))}
                             >
                               <FileText className="h-3 w-3 mr-1" />
                               PDF
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-7 px-2 text-xs"
-                              onClick={() => handleExportReport(message, 'xlsx', findUserQueryForMessage(index))}
-                            >
-                              <FileSpreadsheet className="h-3 w-3 mr-1" />
-                              Excel
                             </Button>
                           </div>
                         </div>
@@ -668,17 +818,19 @@ formatted = formatted.replace(/💡 Recommendations:?|Recommendations:?/g,
                     </div>
                   ))}
                   
-                  {isLoading && (
+                  {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
                     <div className="flex items-start space-x-3">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center flex-shrink-0 shadow-sm">
-                        <Bot className="h-4 w-4 text-primary" />
+                        <Bot className="h-4 w-4 text-primary animate-pulse" />
                       </div>
                       <div className="bg-muted/50 border border-border/50 rounded-lg p-4 max-w-[85%] break-words">
-                        <div className="flex items-center space-x-2">
-                          <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                          <span className="text-sm text-muted-foreground">
-                            Analyzing your request and querying the database...
-                          </span>
+                        <div className="flex items-center space-x-3">
+                          <span className="text-sm text-muted-foreground">IRIS is thinking</span>
+                          <div className="flex space-x-1">
+                            <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0ms', animationDuration: '1s' }}></div>
+                            <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '150ms', animationDuration: '1s' }}></div>
+                            <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '300ms', animationDuration: '1s' }}></div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -710,19 +862,38 @@ formatted = formatted.replace(/💡 Recommendations:?|Recommendations:?/g,
                   />
                   <Button
                     onClick={() => handleSendMessage(inputValue)}
-                    disabled={!inputValue.trim() || isLoading || !userContext}
+                    disabled={!inputValue.trim() || isLoading || !userContext || rateLimitCountdown !== null}
                     size="sm"
                     className="flex-shrink-0 self-end"
                   >
                     {isLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : rateLimitCountdown !== null ? (
+                      <Clock className="h-4 w-4" />
                     ) : (
                       <Send className="h-4 w-4" />
                     )}
                   </Button>
                 </div>
-                
-                
+
+                {/* Rate Limit Countdown Banner */}
+                {rateLimitCountdown !== null && rateLimitCountdown > 0 && (
+                  <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center space-x-2">
+                    <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400 animate-pulse" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                        Rate limit in effect
+                      </p>
+                      <p className="text-xs text-amber-700 dark:text-amber-300">
+                        Please wait {rateLimitCountdown} second{rateLimitCountdown !== 1 ? 's' : ''} before sending another message
+                      </p>
+                    </div>
+                    <div className="text-2xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
+                      {rateLimitCountdown}
+                    </div>
+                  </div>
+                )}
+
                 <p className="text-xs text-muted-foreground mt-1">
                   Press Enter to send, Shift+Enter for new line
                 </p>
