@@ -299,14 +299,14 @@ Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
         };
         
         setMessages(prev => [...prev, assistantMessage]);
-        
-        // Show success toast with tools used
-        if (response.toolsUsed && response.toolsUsed.length > 0) {
-          toast({
-            title: "Query Executed Successfully",
-            description: `Used database tools: ${response.toolsUsed.join(', ')}`,
-          });
-        }
+
+        // Success toast disabled - query results are shown in the chat
+        // if (response.toolsUsed && response.toolsUsed.length > 0) {
+        //   toast({
+        //     title: "Query Executed Successfully",
+        //     description: `Used database tools: ${response.toolsUsed.join(', ')}`,
+        //   });
+        // }
 
         // Log tokens used if available
         if (response.tokensUsed) {
