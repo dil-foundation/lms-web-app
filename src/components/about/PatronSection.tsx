@@ -2,8 +2,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const PatronSection = () => {
   return (
-    <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 relative">
-      <div className="container mx-auto max-w-5xl relative">
+    <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 relative bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-slate-900/50 dark:via-blue-900/20 dark:to-indigo-900/10">
+      {/* Subtle background pattern - matching Student Success Stories */}
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(59,130,246,0.1),transparent_50%)]"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(99,102,241,0.08),transparent_50%)]"></div>
+      </div>
+      
+      <div className="container mx-auto max-w-5xl relative z-10">
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-foreground tracking-tight">
             Our <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">Patron</span>
