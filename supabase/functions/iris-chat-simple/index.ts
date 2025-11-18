@@ -275,6 +275,13 @@ serve(async (req) => {
       if (!adapterResponse.ok) {
         const errorText = await adapterResponse.text();
         console.error('❌ [IRIS-SIMPLE DEBUG] MCP Adapter error:', errorText);
+        console.error('🔍 [IRIS-SIMPLE ERROR DEBUG] Streaming adapter error details:', {
+          status: adapterResponse.status,
+          statusText: adapterResponse.statusText,
+          errorText: errorText,
+          errorTextLength: errorText?.length || 0,
+          timestamp: new Date().toISOString()
+        });
         throw new Error(`MCP Adapter error (${adapterResponse.status}): ${errorText}`);
       }
 
@@ -307,12 +314,24 @@ serve(async (req) => {
 
     if (!adapterResponse.ok) {
       const errorText = await adapterResponse.text();
+      console.error('🔍 [IRIS-SIMPLE ERROR DEBUG] Non-streaming adapter error:', {
+        status: adapterResponse.status,
+        statusText: adapterResponse.statusText,
+        errorText: errorText,
+        errorTextLength: errorText?.length || 0,
+        timestamp: new Date().toISOString()
+      });
       throw new Error(`MCP Adapter error (${adapterResponse.status}): ${errorText}`);
     }
 
     const adapterResult = await adapterResponse.json();
 
     if (!adapterResult.ok) {
+      console.error('🔍 [IRIS-SIMPLE ERROR DEBUG] Adapter result not ok:', {
+        error: adapterResult.error,
+        fullResult: JSON.stringify(adapterResult),
+        timestamp: new Date().toISOString()
+      });
       throw new Error(`MCP Adapter failed: ${adapterResult.error}`);
     }
 
@@ -359,9 +378,16 @@ serve(async (req) => {
       },
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ IRIS Simple Chat Error:', error);
-    
+    console.error('🔍 [IRIS-SIMPLE ERROR DEBUG] Main catch block error:', {
+      errorMessage: error?.message || 'Unknown error',
+      errorName: error?.name || 'N/A',
+      errorStack: error?.stack || 'N/A',
+      timestamp: new Date().toISOString(),
+      fullError: JSON.stringify(error, Object.getOwnPropertyNames(error))
+    });
+
     // Check for token overflow error
     const errorMessage = error.message || '';
     let userFriendlyMessage = `I apologize, but I encountered an error while processing your request: ${errorMessage}`;

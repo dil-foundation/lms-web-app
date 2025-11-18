@@ -1410,8 +1410,16 @@ Always start by calling the appropriate tool(s) to gather information, then prov
 
                     messages.push(toolMessage);
 
-                  } catch (toolError) {
+                  } catch (toolError: any) {
                     console.error(`Error invoking tool ${toolName}:`, toolError);
+                    console.error(`🔍 [MCP-ADAPTER ERROR DEBUG] Tool invocation error:`, {
+                      toolName: toolName,
+                      errorMessage: toolError?.message || 'Unknown error',
+                      errorName: toolError?.name || 'N/A',
+                      errorStack: toolError?.stack || 'N/A',
+                      isAbortError: toolError?.name === 'AbortError',
+                      timestamp: new Date().toISOString()
+                    });
 
                     toolInvocations.push({
                       iteration,
@@ -1507,8 +1515,14 @@ Always start by calling the appropriate tool(s) to gather information, then prov
             sendEvent('error', { message: 'Maximum iterations reached. The task may be incomplete.' });
             controller.close();
 
-          } catch (error) {
+          } catch (error: any) {
             console.error('Stream error:', error);
+            console.error('🔍 [MCP-ADAPTER ERROR DEBUG] Stream error:', {
+              errorMessage: error?.message || 'Unknown error',
+              errorName: error?.name || 'N/A',
+              errorStack: error?.stack || 'N/A',
+              timestamp: new Date().toISOString()
+            });
             sendEvent('error', { message: String(error) });
             controller.close();
           }
@@ -1562,12 +1576,19 @@ Always start by calling the appropriate tool(s) to gather information, then prov
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in Edge Function:", error);
+    console.error('🔍 [MCP-ADAPTER ERROR DEBUG] Main catch block error:', {
+      errorMessage: error?.message || 'Unknown error',
+      errorName: error?.name || 'N/A',
+      errorStack: error?.stack || 'N/A',
+      timestamp: new Date().toISOString(),
+      fullError: JSON.stringify(error, Object.getOwnPropertyNames(error))
+    });
     // Reset the cached tools on errors to trigger reconnect next time.
     cachedTools = [];
-    return new Response(JSON.stringify({ 
-      ok: false, 
+    return new Response(JSON.stringify({
+      ok: false,
       error: String(error),
       details: "An error occurred during processing"
     }), {
