@@ -803,23 +803,14 @@ formatted = formatted.replace(/💡 Recommendations:?|Recommendations:?/g,
                         <div className="flex items-center gap-2 mt-2 ml-11">
                           <span className="text-xs text-muted-foreground">Export:</span>
                           <div className="flex gap-1">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
+                            <Button
+                              variant="outline"
+                              size="sm"
                               className="h-7 px-2 text-xs"
                               onClick={() => handleExportReport(message, 'pdf', findUserQueryForMessage(index))}
                             >
                               <FileText className="h-3 w-3 mr-1" />
                               PDF
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-7 px-2 text-xs"
-                              onClick={() => handleExportReport(message, 'xlsx', findUserQueryForMessage(index))}
-                            >
-                              <FileSpreadsheet className="h-3 w-3 mr-1" />
-                              Excel
                             </Button>
                           </div>
                         </div>
