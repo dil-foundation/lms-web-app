@@ -306,21 +306,19 @@ const UserMFAManagement = () => {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {user.mfa_enabled && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => disableMFAForUser(user.id)}
-                          disabled={disablingMFA === user.id}
-                        >
-                          {disablingMFA === user.id ? (
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          ) : (
-                            <XCircle className="w-4 h-4 mr-2" />
-                          )}
-                          Disable MFA
-                        </Button>
-                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => disableMFAForUser(user.id)}
+                        disabled={!user.mfa_enabled || disablingMFA === user.id}
+                      >
+                        {disablingMFA === user.id ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <XCircle className="w-4 h-4 mr-2" />
+                        )}
+                        Disable MFA
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
@@ -865,16 +863,16 @@ const AdminSecurity = () => {
               {/* Sub-tabs - Subtle Style */}
               <div className="border-b border-border/20 -mx-6 px-6">
                 <TabsList className="h-auto bg-transparent p-0 gap-1 w-auto">
-                  <TabsTrigger 
-                    value="system" 
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:text-primary data-[state=active]:font-semibold transition-all duration-200 hover:text-foreground"
+                  <TabsTrigger
+                    value="system"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground"
                   >
                     <Server className="w-4 h-4" />
                     System Configuration
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="notifications" 
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:text-primary data-[state=active]:font-semibold transition-all duration-200 hover:text-foreground"
+                  <TabsTrigger
+                    value="notifications"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground"
                   >
                     <Bell className="w-4 h-4" />
                     Notifications
@@ -1042,37 +1040,37 @@ const AdminSecurity = () => {
               {/* Sub-tabs - Subtle Style */}
               <div className="border-b border-border/20 -mx-6 px-6 overflow-x-auto">
                 <TabsList className="h-auto bg-transparent p-0 gap-1 w-auto min-w-full">
-                  <TabsTrigger 
-                    value="overview" 
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:text-primary data-[state=active]:font-semibold transition-all duration-200 hover:text-foreground whitespace-nowrap"
+                  <TabsTrigger
+                    value="overview"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
                   >
                     <Activity className="w-4 h-4" />
                     Overview
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="authentication" 
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:text-primary data-[state=active]:font-semibold transition-all duration-200 hover:text-foreground whitespace-nowrap"
+                  <TabsTrigger
+                    value="authentication"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
                   >
                     <Lock className="w-4 h-4" />
                     Authentication
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="mfa" 
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:text-primary data-[state=active]:font-semibold transition-all duration-200 hover:text-foreground whitespace-nowrap"
+                  <TabsTrigger
+                    value="mfa"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
                   >
                     <Key className="w-4 h-4" />
                     MFA Management
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="alerts" 
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:text-primary data-[state=active]:font-semibold transition-all duration-200 hover:text-foreground whitespace-nowrap"
+                  <TabsTrigger
+                    value="alerts"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
                   >
                     <AlertTriangle className="w-4 h-4" />
                     Security Alerts
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="logs" 
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:text-primary data-[state=active]:font-semibold transition-all duration-200 hover:text-foreground whitespace-nowrap"
+                  <TabsTrigger
+                    value="logs"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
                   >
                     <FileText className="w-4 h-4" />
                     Access Logs
