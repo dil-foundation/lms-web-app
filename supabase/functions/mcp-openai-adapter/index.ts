@@ -1225,6 +1225,306 @@ Always start by calling the appropriate tool(s) to gather information, then prov
       });
     }
 
+    // Streaming invoke endpoint - Server-Sent Events (SSE)
+    if (path.endsWith('/invoke-stream') && req.method === 'POST') {
+      const body = await req.json();
+      const { prompt, model = "gpt-4o-mini", temperature = 0.2 } = body;
+
+      if (!prompt) {
+        return new Response(JSON.stringify({
+          ok: false,
+          error: "Missing 'prompt'. Expected format: { \"prompt\": \"your request here\" }"
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      await ensureMCP();
+
+      if (!cachedTools.length) {
+        await initializeMCP();
+      }
+
+      const tools = mcpToolsToOpenAITools(cachedTools);
+
+      if (!tools.length) {
+        return new Response(JSON.stringify({
+          ok: false,
+          error: "No tools available from MCP server"
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Create Server-Sent Events stream
+      const stream = new ReadableStream({
+        async start(controller) {
+          const encoder = new TextEncoder();
+
+          // Helper function to send SSE message
+          const sendEvent = (event: string, data: any) => {
+            const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+            controller.enqueue(encoder.encode(message));
+          };
+
+          try {
+            // Send initial event
+            sendEvent('start', { message: 'Starting IRIS query...' });
+
+            console.log('🔍 [STREAMING DEBUG] Received prompt from iris-chat-simple');
+            console.log('🔍 [STREAMING DEBUG] Prompt length:', prompt.length);
+            console.log('🔍 [STREAMING DEBUG] Prompt preview (first 500 chars):', prompt.substring(0, 500));
+            console.log('🔍 [STREAMING DEBUG] Prompt preview (last 200 chars):', prompt.substring(prompt.length - 200));
+
+            // Initialize conversation with proper message structure
+            // The prompt from iris-chat-simple is a concatenated string with:
+            // 1. IRIS_SYSTEM_PROMPT (the long detailed instructions)
+            // 2. User Context
+            // 3. Conversation history (if any)
+            // 4. Current User Query (after "Current User Query: ")
+            // We need to SPLIT this into separate system and user messages for OpenAI
+
+            // Extract the user query from the end
+            const queryMarker = 'Current User Query: ';
+            const queryIndex = prompt.lastIndexOf(queryMarker);
+
+            let systemPrompt = prompt;
+            let userQuery = '';
+
+            if (queryIndex !== -1) {
+              systemPrompt = prompt.substring(0, queryIndex).trim();
+              userQuery = prompt.substring(queryIndex + queryMarker.length).trim();
+              console.log('🔍 [STREAMING DEBUG] Extracted user query:', userQuery);
+              console.log('🔍 [STREAMING DEBUG] System prompt length:', systemPrompt.length);
+            } else {
+              console.warn('⚠️ [STREAMING DEBUG] Could not find "Current User Query:" marker, using entire prompt as system');
+            }
+
+            const messages: any[] = [
+              {
+                role: "system",
+                content: systemPrompt  // IRIS instructions + context + history
+              },
+              {
+                role: "user",
+                content: userQuery || prompt  // The actual user query
+              }
+            ];
+
+            console.log('🔍 [STREAMING DEBUG] Initial messages array:', JSON.stringify(messages.map(m => ({ role: m.role, contentLength: m.content?.length }))));
+
+
+            let iteration = 0;
+            const toolInvocations: any[] = [];
+
+            // Iterative tool calling loop
+            while (iteration < MAX_ITERATIONS) {
+              iteration++;
+
+              sendEvent('iteration', { iteration, message: `Processing iteration ${iteration}...` });
+
+              const toolChoice: any = (iteration === 1 && toolInvocations.length === 0) ? "required" : "auto";
+
+              console.log(`🔍 [STREAMING DEBUG] Iteration ${iteration} - Tool choice:`, toolChoice);
+              console.log(`🔍 [STREAMING DEBUG] Iteration ${iteration} - Messages count before OpenAI:`, messages.length);
+              console.log(`🔍 [STREAMING DEBUG] Iteration ${iteration} - Messages structure:`,
+                JSON.stringify(messages.map((m, i) => ({
+                  index: i,
+                  role: m.role,
+                  hasContent: !!m.content,
+                  contentLength: m.content?.length,
+                  hasToolCalls: !!m.tool_calls,
+                  toolCallsCount: m.tool_calls?.length
+                }))));
+
+              // Call OpenAI WITHOUT streaming first for tool calls
+              const completion = await openai.chat.completions.create({
+                model: model,
+                messages: messages,
+                tools: tools,
+                tool_choice: toolChoice,
+                temperature: temperature,
+                stream: false // Tool calls don't stream well
+              });
+
+              const assistantMessage = completion.choices[0].message;
+
+              console.log(`🔍 [STREAMING DEBUG] Iteration ${iteration} - OpenAI response:`, {
+                hasContent: !!assistantMessage.content,
+                contentPreview: assistantMessage.content?.substring(0, 200),
+                hasToolCalls: !!assistantMessage.tool_calls,
+                toolCallsCount: assistantMessage.tool_calls?.length,
+                toolNames: assistantMessage.tool_calls?.map((t: any) => t.function.name)
+              });
+
+              // Check if assistant wants to use tools
+              if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+                // Only push assistant message if it has tool calls
+                messages.push(assistantMessage);
+
+                sendEvent('tools', {
+                  count: assistantMessage.tool_calls.length,
+                  tools: assistantMessage.tool_calls.map((t: any) => t.function.name)
+                });
+
+                // Process each tool call
+                for (const toolCall of assistantMessage.tool_calls) {
+                  const toolName = toolCall.function.name;
+                  const toolArgs = JSON.parse(toolCall.function.arguments || "{}");
+
+                  sendEvent('tool_call', { tool: toolName, status: 'executing' });
+
+                  try {
+                    const toolResult = await invokeMCPTool(toolName, toolArgs);
+
+                    console.log(`🔍 [STREAMING DEBUG] Tool ${toolName} result:`, {
+                      hasContent: !!toolResult.content,
+                      contentLength: toolResult.content?.length,
+                      contentPreview: toolResult.content?.substring(0, 300)
+                    });
+
+                    toolInvocations.push({
+                      iteration,
+                      tool: toolName,
+                      arguments: toolArgs,
+                      result: toolResult.content,
+                      success: true
+                    });
+
+                    sendEvent('tool_result', { tool: toolName, status: 'success' });
+
+                    const toolMessage = {
+                      role: "tool",
+                      tool_call_id: toolCall.id,
+                      name: toolName,
+                      content: toolResult.content || "Tool executed successfully."
+                    };
+
+                    console.log(`🔍 [STREAMING DEBUG] Adding tool message to conversation:`, {
+                      role: toolMessage.role,
+                      name: toolMessage.name,
+                      contentLength: toolMessage.content?.length
+                    });
+
+                    messages.push(toolMessage);
+
+                  } catch (toolError) {
+                    console.error(`Error invoking tool ${toolName}:`, toolError);
+
+                    toolInvocations.push({
+                      iteration,
+                      tool: toolName,
+                      arguments: toolArgs,
+                      error: String(toolError),
+                      success: false
+                    });
+
+                    sendEvent('tool_result', { tool: toolName, status: 'error', error: String(toolError) });
+
+                    messages.push({
+                      role: "tool",
+                      tool_call_id: toolCall.id,
+                      name: toolName,
+                      content: `Error: ${String(toolError)}`
+                    });
+                  }
+                }
+
+                continue; // Go to next iteration to process tool results
+
+              } else {
+                // No tools called - final response with STREAMING
+                console.log(`🔍 [STREAMING DEBUG] No tool calls in iteration ${iteration}`);
+                console.log(`🔍 [STREAMING DEBUG] Total tool invocations so far:`, toolInvocations.length);
+
+                if (toolInvocations.length === 0) {
+                  // Force tool usage
+                  console.log('🔍 [STREAMING DEBUG] Forcing tool usage - no tools called yet');
+                  messages.push({
+                    role: "user",
+                    content: "You must use the available tools to answer my request. Please call the appropriate tool(s) to gather the information I need."
+                  });
+                  continue;
+                }
+
+                // Stream the final response
+                console.log('🔍 [STREAMING DEBUG] Starting final streaming response');
+                console.log('🔍 [STREAMING DEBUG] Final messages array before streaming:',
+                  JSON.stringify(messages.map((m, i) => ({
+                    index: i,
+                    role: m.role,
+                    hasContent: !!m.content,
+                    contentLength: m.content?.length,
+                    contentPreview: m.role === 'tool' ? m.content?.substring(0, 100) : undefined
+                  }))));
+
+                sendEvent('response_start', { message: 'Generating response...' });
+
+                const streamCompletion = await openai.chat.completions.create({
+                  model: model,
+                  messages: messages,
+                  temperature: temperature,
+                  stream: true // NOW we stream the final response
+                });
+
+                let fullResponse = '';
+                let chunkCount = 0;
+
+                for await (const chunk of streamCompletion) {
+                  const content = chunk.choices[0]?.delta?.content;
+                  if (content) {
+                    chunkCount++;
+                    fullResponse += content;
+                    sendEvent('chunk', { content });
+
+                    if (chunkCount === 1) {
+                      console.log('🔍 [STREAMING DEBUG] First chunk received:', content);
+                    }
+                  }
+                }
+
+                console.log('🔍 [STREAMING DEBUG] Streaming complete');
+                console.log('🔍 [STREAMING DEBUG] Total chunks sent:', chunkCount);
+                console.log('🔍 [STREAMING DEBUG] Full response length:', fullResponse.length);
+                console.log('🔍 [STREAMING DEBUG] Full response preview (first 300 chars):', fullResponse.substring(0, 300));
+
+                // Send completion event
+                sendEvent('complete', {
+                  response: fullResponse,
+                  iterations: iteration,
+                  toolsUsed: toolInvocations.map((t: any) => t.tool),
+                  tokensUsed: messages.reduce((acc: number, msg: any) => acc + (msg.content?.length || 0), 0)
+                });
+
+                controller.close();
+                return;
+              }
+            }
+
+            // Max iterations reached
+            sendEvent('error', { message: 'Maximum iterations reached. The task may be incomplete.' });
+            controller.close();
+
+          } catch (error) {
+            console.error('Stream error:', error);
+            sendEvent('error', { message: String(error) });
+            controller.close();
+          }
+        }
+      });
+
+      return new Response(stream, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
+    }
+
     // Legacy invoke-tool endpoint
     if (path.endsWith('/invoke-tool') && req.method === 'POST') {
       const body = await req.json();
