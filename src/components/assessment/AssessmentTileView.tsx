@@ -75,30 +75,30 @@ export const AssessmentTileView: React.FC<AssessmentTileViewProps> = ({
 
   return (
     <div className={className}>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 w-full overflow-hidden">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 w-full overflow-hidden">
         {assessments.map((assessment) => (
           <Card
             key={assessment.id}
-            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-48 flex flex-col overflow-hidden"
+            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 min-h-[180px] sm:h-48 flex flex-col overflow-hidden"
             onClick={() => onAssessmentClick(assessment)}
           >
             <CardHeader className="p-0 relative">
-              <div className="w-full h-16 bg-gradient-to-br from-primary/10 to-primary/20">
+              <div className="w-full h-12 sm:h-16 bg-gradient-to-br from-primary/10 to-primary/20">
               </div>
               <div className="absolute top-1 left-1 right-1 flex justify-between items-start">
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-1.5 sm:gap-2 items-center">
                   {getTypeBadge(assessment.type)}
-                  <FileText className="w-4 h-4 text-primary/70" />
+                  <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary/70 flex-shrink-0" />
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-5 w-5 p-0 hover:bg-white/20 text-primary"
+                      className="h-5 w-5 sm:h-6 sm:w-6 p-0 hover:bg-white/20 text-primary flex-shrink-0"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <MoreHorizontal className="w-3 h-3" />
+                      <MoreHorizontal className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -115,31 +115,33 @@ export const AssessmentTileView: React.FC<AssessmentTileViewProps> = ({
               </div>
             </CardHeader>
             
-            <CardContent className="p-3 flex flex-col h-full overflow-hidden">
+            <CardContent className="p-2.5 sm:p-3 flex flex-col h-full overflow-hidden">
               {/* Assessment Title with Status Badge */}
               <div className="mb-2">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <h3 className="font-medium text-xs line-clamp-1 group-hover:text-primary transition-colors flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-1.5 sm:gap-2 mb-1">
+                  <h3 className="font-medium text-xs sm:text-sm line-clamp-2 sm:line-clamp-1 group-hover:text-primary transition-colors flex-1 min-w-0">
                     {assessment.title}
                   </h3>
-                  {getStatusBadge(assessment.status)}
+                  <div className="flex-shrink-0">
+                    {getStatusBadge(assessment.status)}
+                  </div>
                 </div>
                 <p className="text-xs text-muted-foreground truncate">{assessment.course_name}</p>
               </div>
 
               {/* Compact Assessment Stats - Horizontal Layout */}
-              <div className="flex items-center justify-between text-xs text-muted-foreground mb-3 flex-1 min-h-0">
-                <div className="flex items-center gap-1 min-w-0 flex-1">
+              <div className="flex items-center justify-between text-xs text-muted-foreground mb-2 sm:mb-3 flex-1 min-h-0">
+                <div className="flex items-center gap-0.5 sm:gap-1 min-w-0 flex-1">
                   <Users className="w-2.5 h-2.5 flex-shrink-0" />
-                  <span className="truncate">{assessment.submissions_count}</span>
+                  <span className="truncate text-xs">{assessment.submissions_count}</span>
                 </div>
-                <div className="flex items-center gap-1 min-w-0 flex-1 justify-center">
+                <div className="flex items-center gap-0.5 sm:gap-1 min-w-0 flex-1 justify-center">
                   <CheckCircle className="w-2.5 h-2.5 flex-shrink-0" />
-                  <span className="truncate">{assessment.graded_count}</span>
+                  <span className="truncate text-xs">{assessment.graded_count}</span>
                 </div>
-                <div className="flex items-center gap-1 min-w-0 flex-1 justify-end">
+                <div className="flex items-center gap-0.5 sm:gap-1 min-w-0 flex-1 justify-end">
                   <TrendingUp className="w-2.5 h-2.5 flex-shrink-0" />
-                  <span className={`truncate ${getScoreColor(assessment.average_score)}`}>{assessment.average_score}%</span>
+                  <span className={`truncate text-xs font-medium ${getScoreColor(assessment.average_score)}`}>{assessment.average_score}%</span>
                 </div>
               </div>
 
@@ -147,13 +149,13 @@ export const AssessmentTileView: React.FC<AssessmentTileViewProps> = ({
               <div className="mt-auto pt-2">
                 <Button
                   size="sm"
-                  className="w-full h-7 text-xs"
+                  className="w-full h-7 sm:h-8 text-xs"
                   onClick={(e) => {
                     e.stopPropagation();
                     onAssessmentClick(assessment);
                   }}
                 >
-                  <FileText className="w-3 h-3 mr-1" />
+                  <FileText className="w-3 h-3 mr-1 flex-shrink-0" />
                   View
                 </Button>
               </div>

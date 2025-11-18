@@ -1401,28 +1401,28 @@ export const UsersManagement = () => {
       {/* Premium Header Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-primary" />
+        <div className="relative p-4 sm:p-6 md:p-8 rounded-3xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ lineHeight: '3rem' }}>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
                   Users Management
                 </h1>
-                <p className="text-lg text-muted-foreground font-light">
+                <p className="text-sm sm:text-base md:text-lg text-muted-foreground font-light break-words">
                   Manage all users in the system
                 </p>
               </div>
             </div>
             
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3 w-full sm:w-auto flex-shrink-0">
               <Dialog open={isBulkUploadModalOpen} onOpenChange={setIsBulkUploadModalOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="h-10 px-6 rounded-xl border-blue-300/50 text-blue-700 bg-white hover:bg-blue-50 hover:border-blue-400 hover:text-blue-800 focus:bg-blue-100 focus:border-blue-500 focus:text-blue-900 focus-visible:bg-blue-100 focus-visible:border-blue-500 focus-visible:text-blue-900 active:bg-blue-200 active:text-blue-900 [&:focus]:text-blue-900 [&:focus-visible]:text-blue-900 [&:active]:text-blue-900 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
-                    <Upload className="mr-2 h-4 w-4" />
-                    Bulk Upload
+                  <Button variant="outline" className="h-9 sm:h-10 px-2 sm:px-3 md:px-6 rounded-xl border-blue-300/50 text-blue-700 bg-white hover:bg-blue-50 hover:border-blue-400 hover:text-blue-800 focus:bg-blue-100 focus:border-blue-500 focus:text-blue-900 focus-visible:bg-blue-100 focus-visible:border-blue-500 focus-visible:text-blue-900 active:bg-blue-200 active:text-blue-900 [&:focus]:text-blue-900 [&:focus-visible]:text-blue-900 [&:active]:text-blue-900 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-shrink-0">
+                    <Upload className="sm:mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">Bulk Upload</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col">
@@ -1616,9 +1616,11 @@ export const UsersManagement = () => {
 
               <Dialog open={isBulkUploadWithPasswordsModalOpen} onOpenChange={setIsBulkUploadWithPasswordsModalOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="h-10 px-6 rounded-xl border-orange-300/50 text-orange-700 bg-white hover:bg-orange-50 hover:border-orange-400 hover:text-orange-800 focus:bg-orange-100 focus:border-orange-500 focus:text-orange-900 focus-visible:bg-orange-100 focus-visible:border-orange-500 focus-visible:text-orange-900 active:bg-orange-200 active:text-orange-900 [&:focus]:text-orange-900 [&:focus-visible]:text-orange-900 [&:active]:text-orange-900 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
-                    <Upload className="mr-2 h-4 w-4" />
-                    Bulk Upload with Passwords
+                  <Button variant="outline" className="h-9 sm:h-10 px-2 sm:px-3 md:px-6 rounded-xl border-orange-300/50 text-orange-700 bg-white hover:bg-orange-50 hover:border-orange-400 hover:text-orange-800 focus:bg-orange-100 focus:border-orange-500 focus:text-orange-900 focus-visible:bg-orange-100 focus-visible:border-orange-500 focus-visible:text-orange-900 active:bg-orange-200 active:text-orange-900 [&:focus]:text-orange-900 [&:focus-visible]:text-orange-900 [&:active]:text-orange-900 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-1 sm:flex-none flex-shrink-0">
+                    <Upload className="sm:mr-2 h-4 w-4" />
+                    <span className="hidden md:inline">Bulk Upload with Passwords</span>
+                    <span className="hidden sm:inline md:hidden">Upload Passwords</span>
+                    <span className="sm:hidden">Passwords</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col">

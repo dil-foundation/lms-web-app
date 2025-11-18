@@ -637,17 +637,17 @@ const CourseManagement = () => {
       {/* Premium Header Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-primary" />
+        <div className="relative p-4 sm:p-6 md:p-8 rounded-3xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ lineHeight: '3rem' }}>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
                   Course Management
                 </h1>
-                <p className="text-lg text-muted-foreground font-light">
+                <p className="text-sm sm:text-base md:text-lg text-muted-foreground font-light break-words">
                   Manage all courses in the system
                 </p>
               </div>
@@ -655,32 +655,33 @@ const CourseManagement = () => {
             
             {/* Show action buttons for admins and content creators */}
             {canCreateCourses && (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto flex-shrink-0">
                 {/* Only admins can do bulk upload */}
                 {isAdmin && (
                   <Button 
                     variant="outline"
                     onClick={() => setIsBulkUploadOpen(true)}
-                    className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
+                    className="h-9 sm:h-10 px-2 sm:px-3 md:px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 text-xs sm:text-sm flex-shrink-0"
                   >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Bulk Upload
+                    <Upload className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Bulk Upload</span>
                   </Button>
                 )}
                 <Button 
                   onClick={handleCreateCourse}
-                  className="h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                  className="h-9 sm:h-10 px-2 sm:px-3 md:px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-1 sm:flex-none flex-shrink-0"
                 >
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Create Course
+                  <PlusCircle className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Create Course</span>
+                  <span className="sm:hidden">Create</span>
                 </Button>
               </div>
             )}
             
             {/* Show message for teachers (view-only) */}
             {isTeacher && !isContentCreator && (
-              <div className="flex items-center gap-3">
-                <div className="text-sm text-muted-foreground bg-muted/50 px-4 py-2 rounded-lg">
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <div className="text-xs sm:text-sm text-muted-foreground bg-muted/50 px-3 sm:px-4 py-2 rounded-lg break-words">
                   <span className="font-medium">View Mode:</span> You can view and access course content. Course creation and editing is restricted to administrators.
                 </div>
               </div>

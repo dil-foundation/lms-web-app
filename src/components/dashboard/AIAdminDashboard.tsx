@@ -106,17 +106,17 @@ export const AIAdminDashboard = ({ userProfile }: AIAdminDashboardProps) => {
       {/* Premium Header Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 md:p-10 rounded-3xl">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-                <Bot className="w-8 h-8 text-primary" />
+        <div className="relative p-4 sm:p-6 md:p-8 lg:p-10 rounded-3xl">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 sm:gap-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                <Bot className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-primary" />
               </div>
               <div>
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight">
                   AI Tutor Overview
                 </h1>
-                <p className="text-lg text-muted-foreground font-light mt-2">
+                <p className="text-sm sm:text-base md:text-lg text-muted-foreground font-light mt-2">
                   Welcome back, {userProfile?.first_name || 'Administrator'}
                 </p>
               </div>

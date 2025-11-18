@@ -75,24 +75,24 @@ export const AssessmentCardView: React.FC<AssessmentCardViewProps> = ({
 
   return (
     <div className={className}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         {assessments.map((assessment) => (
           <Card
             key={assessment.id}
-            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-md bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-96 flex flex-col overflow-hidden"
+            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-md bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 min-h-[320px] sm:h-96 flex flex-col overflow-hidden"
             onClick={() => onAssessmentClick(assessment)}
           >
-            <CardHeader className="p-6 pb-4">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors mb-3">
+            <CardHeader className="p-4 sm:p-6 pb-3 sm:pb-4">
+              <div className="flex items-start justify-between mb-3 sm:mb-4">
+                <div className="flex-1 min-w-0 pr-2">
+                  <h3 className="font-semibold text-base sm:text-lg line-clamp-2 group-hover:text-primary transition-colors mb-2 sm:mb-3">
                     {assessment.title}
                   </h3>
-                  <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3 flex-wrap">
                     {getTypeBadge(assessment.type)}
                     {getStatusBadge(assessment.status)}
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">
                     {assessment.course_name}
                   </p>
                 </div>
@@ -101,10 +101,10 @@ export const AssessmentCardView: React.FC<AssessmentCardViewProps> = ({
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-8 w-8 p-0 hover:bg-muted flex-shrink-0"
+                      className="h-7 w-7 sm:h-8 sm:w-8 p-0 hover:bg-muted flex-shrink-0"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <MoreHorizontal className="w-4 h-4" />
+                      <MoreHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -121,31 +121,31 @@ export const AssessmentCardView: React.FC<AssessmentCardViewProps> = ({
               </div>
             </CardHeader>
             
-            <CardContent className="p-6 pt-0 flex flex-col h-full overflow-hidden">
+            <CardContent className="p-4 sm:p-6 pt-0 flex flex-col h-full overflow-hidden">
               {/* Content Area - Fixed height to ensure button alignment */}
               <div className="flex-1 flex flex-col min-h-0">
                 {/* Detailed Assessment Stats - Horizontal Layout */}
-                <div className="p-3 bg-muted/30 rounded-lg mb-4">
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1 w-1/3">
-                      <Users className="w-4 h-4 flex-shrink-0" />
+                <div className="p-2.5 sm:p-3 bg-muted/30 rounded-lg mb-3 sm:mb-4">
+                  <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1 w-1/3 min-w-0">
+                      <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                       <span className="font-medium text-foreground truncate">{assessment.submissions_count}</span>
                     </div>
                     <div className="flex items-center gap-1 w-1/3 justify-center">
-                      <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                       <span className="font-medium text-foreground">{assessment.graded_count}</span>
                     </div>
-                    <div className="flex items-center gap-1 w-1/3 justify-end">
-                      <TrendingUp className="w-4 h-4 flex-shrink-0" />
+                    <div className="flex items-center gap-1 w-1/3 justify-end min-w-0">
+                      <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                       <span className={`font-medium text-foreground truncate ${getScoreColor(assessment.average_score)}`}>{assessment.average_score}%</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Due Date Section */}
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
+                <div className="mb-3 sm:mb-4">
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground flex-wrap">
+                    <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                     <span className="font-medium">Due Date:</span>
                     <span className="font-medium text-foreground">{assessment.due_date}</span>
                   </div>
@@ -153,17 +153,18 @@ export const AssessmentCardView: React.FC<AssessmentCardViewProps> = ({
               </div>
 
               {/* Action Button - Always at bottom with fixed positioning */}
-              <div className="mt-auto pt-6 pb-1">
+              <div className="mt-auto pt-4 sm:pt-6 pb-1">
                 <Button
                   size="sm"
-                  className="w-full h-10 text-sm"
+                  className="w-full h-9 sm:h-10 text-xs sm:text-sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     onAssessmentClick(assessment);
                   }}
                 >
-                  <FileText className="w-4 h-4 mr-2" />
-                  View Assessment
+                  <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                  <span className="hidden sm:inline">View Assessment</span>
+                  <span className="sm:hidden">View</span>
                 </Button>
               </div>
             </CardContent>

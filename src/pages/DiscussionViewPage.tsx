@@ -676,17 +676,18 @@ export const DiscussionViewPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="p-4 sm:p-6 lg:p-8 space-y-8">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-3 sm:space-y-4 md:space-y-6">
         {/* Premium Header Navigation */}
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-          <div className="relative p-6">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-2xl sm:rounded-3xl"></div>
+          <div className="relative p-3 sm:p-4 md:p-6">
             <Link
               to="/dashboard/discussion"
-              className="inline-flex items-center gap-3 px-4 py-2 rounded-xl bg-background/80 backdrop-blur-sm border border-border/50 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-background/90 transition-all duration-300 shadow-sm hover:shadow-md"
+              className="inline-flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-background/80 backdrop-blur-sm border border-border/50 text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-background/90 transition-all duration-300 shadow-sm hover:shadow-md"
             >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Discussions
+              <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Back to Discussions</span>
+              <span className="sm:hidden">Back</span>
             </Link>
           </div>
         </div>
@@ -694,50 +695,52 @@ export const DiscussionViewPage = () => {
         {/* Main Discussion Card - Enhanced */}
         <Card className="relative overflow-hidden bg-gradient-to-br from-card to-card/95 border-0 shadow-xl shadow-black/5">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5"></div>
-          <CardContent className="relative p-8">
-            <div className="flex items-start space-x-6">
-              <div className="relative">
-                <Avatar className="h-12 w-12 ring-4 ring-background shadow-lg">
+          <CardContent className="relative p-4 sm:p-6 md:p-8">
+            <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-3 md:gap-4">
+              <div className="relative flex-shrink-0">
+                <Avatar className="h-10 w-10 sm:h-12 sm:w-12 ring-2 sm:ring-4 ring-background shadow-lg">
                   <AvatarImage
                     src={undefined}
                   />
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold text-lg">
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold text-sm sm:text-lg">
                     {discussion.creator_first_name?.[0]}{discussion.creator_last_name?.[0]}
                   </AvatarFallback>
                 </Avatar>
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-background rounded-full"></div>
+                <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 border-2 border-background rounded-full"></div>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <p className="font-bold text-lg text-foreground">{discussion.creator_first_name} {discussion.creator_last_name}</p>
-                      <p className="text-sm text-muted-foreground">
+              <div className="flex-1 min-w-0 w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3 mb-2 sm:mb-3">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-base sm:text-lg text-foreground truncate">{discussion.creator_first_name} {discussion.creator_last_name}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">
                         {format(new Date(discussion.created_at), 'MMM d, yyyy, p')}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                     {discussion.discussion_type && (
-                      <Badge variant="blue" className="capitalize text-xs font-medium">
+                      <Badge variant="blue" className="capitalize text-[10px] sm:text-xs font-medium flex-shrink-0">
                         {discussion.discussion_type}
                       </Badge>
                     )}
                     {discussion.course_title ? (
-                      <Badge variant="outline" className="text-xs font-medium border-primary/30 text-primary">
-                        {discussion.course_title}
+                      <Badge variant="outline" className="text-[10px] sm:text-xs font-medium border-primary/30 text-primary flex-shrink-0">
+                        <span className="hidden sm:inline">{discussion.course_title}</span>
+                        <span className="sm:hidden truncate max-w-[100px]">{discussion.course_title}</span>
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="text-xs font-medium border-primary/30 text-primary">
-                        General Discussion
+                      <Badge variant="outline" className="text-[10px] sm:text-xs font-medium border-primary/30 text-primary flex-shrink-0">
+                        <span className="hidden sm:inline">General Discussion</span>
+                        <span className="sm:hidden">General</span>
                       </Badge>
                     )}
                     {!isProfileLoading && (user?.id === discussion.creator_id || profile?.role === 'admin' || profile?.role === 'super_user') && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-9 w-9 p-0 rounded-lg hover:bg-accent/50 transition-all duration-300">
+                          <Button variant="ghost" className="h-8 w-8 sm:h-9 sm:w-9 p-0 rounded-lg hover:bg-accent/50 transition-all duration-300 flex-shrink-0">
                             <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
+                            <MoreHorizontal className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
@@ -759,21 +762,21 @@ export const DiscussionViewPage = () => {
                     )}
                   </div>
                 </div>
-                <h3 className="font-bold text-2xl mb-3 text-foreground">{discussion.title}</h3>
-                <p className="text-muted-foreground text-lg leading-relaxed mb-6">{discussion.content}</p>
-                <div className="flex items-center gap-6 text-sm">
+                <h3 className="font-bold text-lg sm:text-xl md:text-2xl mb-1.5 sm:mb-2 text-foreground break-words">{discussion.title}</h3>
+                <p className="text-sm sm:text-base md:text-lg text-muted-foreground leading-relaxed mb-3 sm:mb-4 break-words">{discussion.content}</p>
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm">
                   <Button
                     variant="outline"
                     size="sm"
-                    className={`gap-2 px-4 py-2 rounded-lg border-primary/30 hover:bg-primary/5 hover:border-primary/50 transition-all duration-300 ${discussion.is_liked_by_user ? 'text-primary border-primary bg-primary/5' : ''}`}
+                    className={`gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border-primary/30 hover:bg-primary/5 hover:border-primary/50 transition-all duration-300 text-xs sm:text-sm ${discussion.is_liked_by_user ? 'text-primary border-primary bg-primary/5' : ''}`}
                     onClick={() => toggleLikeMutation.mutate({ discussionId: discussion.id })}
                     disabled={toggleLikeMutation.isPending}
                   >
-                    <ThumbsUp className={`h-4 w-4 ${discussion.is_liked_by_user ? 'fill-current' : ''}`} />
+                    <ThumbsUp className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${discussion.is_liked_by_user ? 'fill-current' : ''}`} />
                     {discussion.likes_count} {discussion.likes_count === 1 ? 'like' : 'likes'}
                   </Button>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MessageCircle className="h-4 w-4" />
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-muted-foreground">
+                    <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
                     {totalReplies} {totalReplies === 1 ? 'reply' : 'replies'}
                   </div>
                 </div>
@@ -785,30 +788,31 @@ export const DiscussionViewPage = () => {
         {/* Add Reply Section - Enhanced */}
         <Card className="relative overflow-hidden bg-gradient-to-br from-card to-card/95 border-0 shadow-xl shadow-black/5">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5"></div>
-          <CardContent className="relative p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
-                <MessageCircle className="h-5 w-5 text-primary" />
+          <CardContent className="relative p-4 sm:p-6 md:p-8">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
-              <h3 className="text-xl font-bold text-foreground">Add Your Reply</h3>
+              <h3 className="text-base sm:text-lg md:text-xl font-bold text-foreground">Add Your Reply</h3>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-2 sm:space-y-3">
               <Textarea
                 placeholder="Write your reply here..."
                 value={replyContent}
                 onChange={(e) => setReplyContent(e.target.value)}
-                className="min-h-[120px] text-base border-2 border-border/50 focus:border-primary/50 transition-all duration-300 rounded-xl resize-none"
+                className="min-h-[100px] sm:min-h-[120px] text-sm sm:text-base border-2 border-border/50 focus:border-primary/50 transition-all duration-300 rounded-xl resize-none"
               />
               <div className="flex justify-end">
                 <Button 
                   onClick={handleReplySubmit} 
                   disabled={createReplyMutation.isPending}
-                  className="px-8 py-3 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                  className="px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm w-full sm:w-auto"
                 >
                   {createReplyMutation.isPending ? 'Posting...' : (
                     <>
-                      <Send className="mr-2 h-4 w-4" />
-                      Post Reply
+                      <Send className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">Post Reply</span>
+                      <span className="sm:hidden">Post</span>
                     </>
                   )}
                 </Button>
@@ -818,17 +822,17 @@ export const DiscussionViewPage = () => {
         </Card>
 
         {/* Replies Section - Sophisticated Redesign */}
-        <div className="space-y-6" id="replies-section">
+        <div className="space-y-4 sm:space-y-6" id="replies-section">
           {/* Replies Header - Enhanced */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-secondary/10 to-secondary/20 rounded-xl flex items-center justify-center">
-                <MessageCircle className="h-5 w-5 text-secondary" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-secondary/10 to-secondary/20 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 text-secondary" />
               </div>
-              <div>
-                <h3 className="text-xl font-bold text-foreground">Replies ({totalReplies})</h3>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-lg sm:text-xl font-bold text-foreground">Replies ({totalReplies})</h3>
                 {totalReplies > 0 && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Showing {startReply}-{endReply} of {totalReplies} replies
                   </p>
                 )}
@@ -837,15 +841,15 @@ export const DiscussionViewPage = () => {
             
             {/* Replies per page selector */}
             {totalReplies > 10 && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>Show:</span>
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground flex-shrink-0">
+                <span className="hidden sm:inline">Show:</span>
                 <select 
                   value={repliesPerPage} 
                   onChange={(e) => {
                     // This would need to be implemented with state management
                     console.log('Change replies per page:', e.target.value);
                   }}
-                  className="bg-background border border-border rounded-md px-2 py-1 text-sm"
+                  className="bg-background border border-border rounded-md px-2 py-1 text-xs sm:text-sm"
                 >
                   <option value={10}>10</option>
                   <option value={20}>20</option>
@@ -856,55 +860,55 @@ export const DiscussionViewPage = () => {
           </div>
           
           {isLoadingReplies ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="flex items-center gap-3 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" />
+            <div className="flex items-center justify-center py-8 sm:py-12">
+              <div className="flex items-center gap-2 sm:gap-3 text-muted-foreground text-sm sm:text-base">
+                <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
                 <span>Loading replies...</span>
               </div>
             </div>
           ) : paginatedReplies.length === 0 ? (
             <Card className="relative overflow-hidden bg-gradient-to-br from-card to-card/95 border-0 shadow-lg shadow-black/5">
               <div className="absolute inset-0 bg-gradient-to-r from-secondary/5 via-transparent to-secondary/5"></div>
-              <CardContent className="relative p-8 text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-secondary/10 to-secondary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MessageCircle className="h-8 w-8 text-secondary" />
+              <CardContent className="relative p-6 sm:p-8 text-center">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-secondary/10 to-secondary/20 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                  <MessageCircle className="h-6 w-6 sm:h-8 sm:w-8 text-secondary" />
                 </div>
-                <h4 className="text-lg font-semibold text-foreground mb-2">No replies yet</h4>
-                <p className="text-muted-foreground">Be the first to share your thoughts on this discussion.</p>
+                <h4 className="text-base sm:text-lg font-semibold text-foreground mb-1.5 sm:mb-2">No replies yet</h4>
+                <p className="text-sm sm:text-base text-muted-foreground">Be the first to share your thoughts on this discussion.</p>
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {paginatedReplies.map((reply, index) => (
                 <div key={reply.id} className="group">
                   <Card className="relative overflow-hidden bg-gradient-to-br from-card to-card/95 border-0 shadow-sm shadow-black/5 hover:shadow-lg transition-all duration-300 group-hover:shadow-xl">
                     <div className="absolute inset-0 bg-gradient-to-r from-secondary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     
                     {/* Collapsible Header */}
-                    <div className="relative p-4 border-b border-border/20">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8 ring-2 ring-background shadow-sm">
+                    <div className="relative p-3 sm:p-4 border-b border-border/20">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                          <Avatar className="h-7 w-7 sm:h-8 sm:w-8 ring-2 ring-background shadow-sm flex-shrink-0">
                             <AvatarImage
                               src={undefined}
                             />
-                            <AvatarFallback className="bg-gradient-to-br from-secondary to-secondary/80 text-secondary-foreground font-medium text-xs">
+                            <AvatarFallback className="bg-gradient-to-br from-secondary to-secondary/80 text-secondary-foreground font-medium text-[10px] sm:text-xs">
                               {reply.user_first_name?.[0]}{reply.user_last_name?.[0]}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold text-foreground text-sm">{reply.user_first_name} {reply.user_last_name}</p>
-                            <span className="text-xs text-muted-foreground">•</span>
-                            <p className="text-xs text-muted-foreground">{format(new Date(reply.created_at), 'MMM d, p')}</p>
+                          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+                            <p className="font-semibold text-foreground text-xs sm:text-sm truncate">{reply.user_first_name} {reply.user_last_name}</p>
+                            <span className="text-[10px] sm:text-xs text-muted-foreground flex-shrink-0">•</span>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">{format(new Date(reply.created_at), 'MMM d, p')}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                           {!isProfileLoading && (user?.id === reply.user_id || profile?.role === 'admin' || profile?.role === 'super_user') && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-6 w-6 p-0 rounded-md hover:bg-accent/50 transition-all duration-300 opacity-0 group-hover:opacity-100">
+                                <Button variant="ghost" className="h-6 w-6 sm:h-7 sm:w-7 p-0 rounded-md hover:bg-accent/50 transition-all duration-300 opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
                                   <span className="sr-only">Open menu</span>
-                                  <MoreHorizontal className="h-3 w-3" />
+                                  <MoreHorizontal className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
@@ -926,12 +930,12 @@ export const DiscussionViewPage = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => toggleReplyCollapse(reply.id)}
-                            className="h-6 w-6 p-0 rounded-md hover:bg-accent/50 transition-all duration-300"
+                            className="h-6 w-6 sm:h-7 sm:w-7 p-0 rounded-md hover:bg-accent/50 transition-all duration-300"
                           >
                             {isReplyCollapsed(reply.id) ? (
-                              <ChevronDown className="h-3 w-3" />
+                              <ChevronDown className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                             ) : (
-                              <ChevronUp className="h-3 w-3" />
+                              <ChevronUp className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                             )}
                           </Button>
                         </div>
@@ -940,20 +944,20 @@ export const DiscussionViewPage = () => {
 
                     {/* Collapsible Content */}
                     {!isReplyCollapsed(reply.id) && (
-                      <CardContent className="relative p-4 pt-3">
+                      <CardContent className="relative p-3 sm:p-4 pt-2 sm:pt-3">
                         {editingReplyId === reply.id ? (
-                          <div className="space-y-3">
+                          <div className="space-y-2 sm:space-y-3">
                             <Textarea
                               value={editedReplyContent}
                               onChange={(e) => setEditedReplyContent(e.target.value)}
-                              className="min-h-[80px] text-sm border-2 border-border/50 focus:border-primary/50 transition-all duration-300 rounded-lg resize-none"
+                              className="min-h-[70px] sm:min-h-[80px] text-xs sm:text-sm border-2 border-border/50 focus:border-primary/50 transition-all duration-300 rounded-lg resize-none"
                             />
                             <div className="flex justify-end gap-2">
                               <Button 
                                 variant="outline" 
                                 size="sm" 
                                 onClick={() => setEditingReplyId(null)}
-                                className="px-3 py-1.5 text-xs rounded-lg border-border/50 hover:border-primary/50 transition-all duration-300"
+                                className="px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-lg border-border/50 hover:border-primary/50 transition-all duration-300"
                               >
                                 Cancel
                               </Button>
@@ -961,7 +965,7 @@ export const DiscussionViewPage = () => {
                                 size="sm" 
                                 onClick={handleUpdateReply} 
                                 disabled={updateReplyMutation.isPending}
-                                className="px-3 py-1.5 text-xs rounded-lg bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground font-medium shadow-md hover:shadow-lg transition-all duration-300"
+                                className="px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-lg bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground font-medium shadow-md hover:shadow-lg transition-all duration-300"
                               >
                                 {updateReplyMutation.isPending ? 'Saving...' : 'Update'}
                               </Button>
@@ -969,19 +973,19 @@ export const DiscussionViewPage = () => {
                           </div>
                         ) : (
                           <>
-                            <p className="text-foreground text-sm leading-relaxed mb-3">
+                            <p className="text-foreground text-xs sm:text-sm leading-relaxed mb-2 sm:mb-3 break-words">
                               {reply.content}
                             </p>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 sm:gap-3">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className={`gap-1.5 px-2 py-1 text-xs rounded-md hover:bg-accent/50 transition-all duration-300 ${reply.is_liked_by_user ? 'text-primary bg-primary/5' : 'text-muted-foreground'}`}
+                                className={`gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs rounded-md hover:bg-accent/50 transition-all duration-300 ${reply.is_liked_by_user ? 'text-primary bg-primary/5' : 'text-muted-foreground'}`}
                                 onClick={() => toggleLikeMutation.mutate({ replyId: reply.id })}
                                 disabled={toggleLikeMutation.isPending}
                               >
-                                <ThumbsUp className={`h-3 w-3 ${reply.is_liked_by_user ? 'fill-current' : ''}`} />
-                                {reply.likes_count > 0 && <span className="text-xs">{reply.likes_count}</span>}
+                                <ThumbsUp className={`h-3 w-3 sm:h-3.5 sm:w-3.5 ${reply.is_liked_by_user ? 'fill-current' : ''}`} />
+                                {reply.likes_count > 0 && <span className="text-[10px] sm:text-xs">{reply.likes_count}</span>}
                               </Button>
                             </div>
                           </>

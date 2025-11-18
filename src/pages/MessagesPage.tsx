@@ -1626,59 +1626,59 @@ export default function MessagesPage() {
               {/* Enhanced Chat Header */}
               <div className="relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 dark:from-primary/10 dark:via-transparent dark:to-primary/10"></div>
-                <div className="relative p-3 md:p-4 border-b border-border/50 flex-shrink-0 mt-[5px] md:mt-0">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+                <div className="relative p-2 sm:p-3 border-b border-border/50 flex-shrink-0">
+                <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                       {isMobile && (
-                        <Button variant="ghost" size="icon" onClick={() => setSelectedChat(null)} className="-ml-2">
-                          <ArrowLeft className="h-5 w-5" />
+                        <Button variant="ghost" size="icon" onClick={() => setSelectedChat(null)} className="-ml-1 h-8 w-8">
+                          <ArrowLeft className="h-4 w-4" />
                         </Button>
                       )}
-                      <div className="relative">
-                        <Avatar className="h-10 w-10 md:h-12 md:w-12 border-2 border-background dark:border-background/50">
+                      <div className="relative flex-shrink-0">
+                        <Avatar className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 border-2 border-background dark:border-background/50">
                       <AvatarImage src={selectedChat.avatar} alt={selectedChat.name} />
-                          <AvatarFallback className="bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 text-primary dark:text-primary/90 font-semibold">
+                          <AvatarFallback className="bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 text-primary dark:text-primary/90 font-semibold text-xs sm:text-sm">
                         {getUserInitials(selectedChat.name, selectedChat.email)}
                       </AvatarFallback>
                     </Avatar>
                         {selectedChat.isOnline && (
-                          <div className="absolute -bottom-1 -right-1 h-3 w-3 bg-green-500 dark:bg-green-400 rounded-full border-2 border-background dark:border-background/50 shadow-sm" />
+                          <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 sm:h-3 sm:w-3 bg-green-500 dark:bg-green-400 rounded-full border-2 border-background dark:border-background/50 shadow-sm" />
                         )}
                       </div>
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                          <h2 className="text-xl font-bold text-foreground">{selectedChat.name}</h2>
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                          <h2 className="text-base sm:text-lg md:text-xl font-bold text-foreground truncate">{selectedChat.name}</h2>
                         {selectedChat.role && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
                             {(() => {
                               const RoleIcon = getRoleIcon(selectedChat.role);
                               return (
-                                  <RoleIcon className="h-4 w-4 text-primary dark:text-primary/90" />
+                                  <RoleIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary dark:text-primary/90" />
                               );
                             })()}
-                              <span className="text-sm font-medium text-primary dark:text-primary/90 bg-primary/10 dark:bg-primary/20 px-3 py-1 rounded-full">
+                              <span className="text-[10px] sm:text-xs font-medium text-primary dark:text-primary/90 bg-primary/10 dark:bg-primary/20 px-1.5 sm:px-2 py-0.5 rounded-full">
                               {getRoleDisplayName(selectedChat.role)}
                             </span>
                           </div>
                         )}
+                        <Badge 
+                          variant={selectedChat.isOnline ? "default" : "destructive"} 
+                            className={`text-[9px] sm:text-xs font-semibold flex-shrink-0 ${selectedChat.isOnline ? 'bg-green-500 dark:bg-green-400 hover:bg-green-600 dark:hover:bg-green-500' : 'bg-red-500 dark:bg-red-400 hover:bg-red-600 dark:hover:bg-red-500'}`}
+                        >
+                          {selectedChat.isOnline ? 'Online' : 'Offline'}
+                        </Badge>
                       </div>
-                      <Badge 
-                        variant={selectedChat.isOnline ? "default" : "destructive"} 
-                          className={`text-xs font-semibold ${selectedChat.isOnline ? 'bg-green-500 dark:bg-green-400 hover:bg-green-600 dark:hover:bg-green-500' : 'bg-red-500 dark:bg-red-400 hover:bg-red-600 dark:hover:bg-red-500'}`}
-                      >
-                        {selectedChat.isOnline ? 'Online' : 'Offline'}
-                      </Badge>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
                       {canDeleteConversation(selectedChat) && (
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => setShowDeleteDialog(true)}
-                          className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 border-red-200 hover:border-red-300"
+                          className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 border-red-200 hover:border-red-300"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </Button>
                       )}
                     </div>
@@ -1693,7 +1693,7 @@ export default function MessagesPage() {
                 </div>
               ) : (
                 <div 
-                  className={`flex-1 p-4 min-h-0 overflow-y-auto scrollbar-hide ${isMobile ? 'pb-28' : ''}`} 
+                  className={`flex-1 p-4 min-h-0 overflow-y-auto scrollbar-hide ${isMobile ? 'pb-24 sm:pb-28' : 'pb-4'}`} 
                   ref={messagesContainerRef}
                   onScroll={handleScroll}
                 >
@@ -1784,10 +1784,10 @@ export default function MessagesPage() {
               )}
 
               {/* Enhanced Message Input */}
-              <div className={`${isMobile ? 'fixed inset-x-0 bottom-0 z-30' : 'sticky bottom-0 z-10 md:relative'} overflow-hidden`}>
+              <div className={`${isMobile ? 'fixed inset-x-0 bottom-0 z-30' : 'sticky bottom-0 z-10 md:relative'} overflow-hidden shadow-lg ${isMobile ? 'border-t border-border/50' : ''}`}>
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 dark:from-primary/10 dark:via-transparent dark:to-primary/10"></div>
-                <div className="relative p-4 md:p-6 border-t border-border/50 flex-shrink-0 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-                  <div className="flex gap-3">
+                <div className={`relative border-t border-border/50 flex-shrink-0 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/90 ${isMobile ? 'p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]' : 'p-4 md:p-6'}`}>
+                  <div className="flex gap-2 sm:gap-3 items-end">
                     <div className="flex-1 relative">
                   <Textarea
                     placeholder="Type a message..."
@@ -1799,15 +1799,15 @@ export default function MessagesPage() {
                         handleSendMessage();
                       }
                     }}
-                        className="min-h-[60px] max-h-[120px] resize-none bg-background/50 dark:bg-background/30 border-border/50 focus:border-primary/50 transition-all duration-300 rounded-xl"
+                        className={`min-h-[50px] sm:min-h-[60px] max-h-[120px] resize-none bg-background/50 dark:bg-background/30 border-border/50 focus:border-primary/50 transition-all duration-300 rounded-xl ${isMobile ? 'text-sm' : ''}`}
                       />
                     </div>
                     <Button 
                       onClick={handleSendMessage} 
                       disabled={!newMessage.trim()}
-                      className="h-[60px] w-[60px] p-0 bg-gradient-to-br from-primary to-primary/90 dark:from-primary/90 dark:to-primary/70 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 rounded-xl"
+                      className={`p-0 bg-gradient-to-br from-primary to-primary/90 dark:from-primary/90 dark:to-primary/70 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 rounded-xl flex-shrink-0 ${isMobile ? 'h-[50px] w-[50px]' : 'h-[60px] w-[60px]'}`}
                     >
-                      <Send className="h-5 w-5 text-primary-foreground" />
+                      <Send className={`text-primary-foreground ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
                   </Button>
                   </div>
                 </div>

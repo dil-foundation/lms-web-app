@@ -100,30 +100,30 @@ export const ReportsAnalytics = () => {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-4 sm:px-0">
       {/* Header Section */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-4 sm:p-6 lg:p-8 rounded-3xl">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6 mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
+        <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl">
+          {/* Desktop Layout: Side by side */}
+          <div className="hidden sm:flex sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0">
+                <BarChart3 className="w-5 h-5 md:w-6 md:h-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl md:text-2xl lg:text-3xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight">
                   Performance Analytics
                 </h1>
-                <p className="text-sm sm:text-base lg:text-lg text-muted-foreground font-light mt-1">
+                <p className="text-sm md:text-base text-muted-foreground font-light mt-1 leading-snug">
                   Monitor platform performance and user engagement
                 </p>
               </div>
             </div>
             
-            {/* Filter Controls */}
-            <div className="flex items-center gap-3 w-full lg:w-auto">
+            <div className="flex items-center gap-3 flex-shrink-0">
               <Select value={dateRange} onValueChange={handleTimeRangeChange}>
-                <SelectTrigger className="flex-1 lg:w-48">
+                <SelectTrigger className="w-40 md:w-48 h-9 md:h-10 text-sm">
                   <SelectValue placeholder="Select time range" />
                 </SelectTrigger>
                 <SelectContent>
@@ -137,10 +137,52 @@ export const ReportsAnalytics = () => {
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="p-2 bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors disabled:opacity-50 shrink-0"
+                className="flex items-center justify-center bg-primary/10 hover:bg-primary/20 active:bg-primary/30 rounded-lg transition-colors disabled:opacity-50 shrink-0 h-9 w-9 md:h-10 md:w-10"
                 title="Refresh reports data"
+                aria-label="Refresh reports data"
               >
                 <RefreshCw className={`w-4 h-4 text-primary ${refreshing ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Layout: Stacked */}
+          <div className="flex flex-col gap-3 sm:hidden">
+            <div className="flex items-start gap-2 min-w-0">
+              <div className="w-9 h-9 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                <BarChart3 className="w-4 h-4 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
+                  Performance Analytics
+                </h1>
+                <p className="text-xs text-muted-foreground font-light mt-0.5 leading-snug">
+                  Monitor platform performance and user engagement
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 w-full">
+              <Select value={dateRange} onValueChange={handleTimeRangeChange}>
+                <SelectTrigger className="flex-1 h-8 text-xs">
+                  <SelectValue placeholder="Select time range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="thisweek">This week</SelectItem>
+                  <SelectItem value="thismonth">This month</SelectItem>
+                  <SelectItem value="alltime">All time</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="flex items-center justify-center bg-primary/10 hover:bg-primary/20 active:bg-primary/30 rounded-lg transition-colors disabled:opacity-50 shrink-0 h-8 w-8"
+                title="Refresh reports data"
+                aria-label="Refresh reports data"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-primary ${refreshing ? 'animate-spin' : ''}`} />
               </button>
             </div>
           </div>

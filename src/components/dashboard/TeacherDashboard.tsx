@@ -1181,17 +1181,17 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         {/* Premium Header Section */}
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-          <div className="relative p-8 rounded-3xl">
-            <div className="flex items-center justify-between">
+          <div className="relative p-4 sm:p-6 md:p-8 rounded-3xl">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                  <GraduationCap className="w-6 h-6 text-primary" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+                  <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
                     Teacher Dashboard
                   </h1>
-                  <p className="text-lg text-muted-foreground mt-2 leading-relaxed">
+                  <p className="text-sm sm:text-base md:text-lg text-muted-foreground mt-2 leading-relaxed">
                     Welcome back, {userProfile?.first_name || 'Teacher'}
                   </p>
                 </div>

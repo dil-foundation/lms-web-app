@@ -952,26 +952,26 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
           {/* Premium Header Section */}
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-            <div className="relative p-4 sm:p-6 lg:p-8 rounded-3xl">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                <div className="flex items-center gap-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+            <div className="relative p-4 sm:p-6 md:p-8 rounded-3xl">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center flex-shrink-0">
                   <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 </div>
-          <div>
-                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+          <div className="min-w-0 flex-1">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
                     Admin Dashboard
                   </h1>
-                  <p className="text-sm sm:text-base lg:text-lg text-muted-foreground font-light">
+                  <p className="text-sm sm:text-base md:text-lg text-muted-foreground font-light break-words">
                     Welcome back, {userProfile?.first_name || 'Administrator'}
                   </p>
                   </div>
                 </div>
                 
                 {/* Filter Controls - Matching Reports Page Style */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto flex-shrink-0">
                   <Select value={timeRange} onValueChange={setTimeRange}>
-                    <SelectTrigger className="w-full sm:w-48 rounded-xl h-9">
+                    <SelectTrigger className="w-full sm:w-48 rounded-xl h-9 text-xs sm:text-sm">
                       <SelectValue placeholder="Select time range" />
                     </SelectTrigger>
                     <SelectContent>
@@ -987,10 +987,10 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                     <DrawerTrigger asChild>
                       <Button 
                         variant="outline"
-                        className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 w-full sm:w-auto"
+                        className="h-9 px-3 sm:px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 w-full sm:w-auto text-xs sm:text-sm"
                       >
-                        <Filter className="h-4 w-4 mr-2" />
-                        Filters
+                        <Filter className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Filters</span>
                       </Button>
                     </DrawerTrigger>
                     <DrawerContent>

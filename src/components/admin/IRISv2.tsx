@@ -538,35 +538,35 @@ formatted = formatted.replace(/💡 Recommendations:?|Recommendations:?/g,
       {/* IRIS Header */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                <Bot className="w-6 h-6 text-primary" />
+        <div className="relative p-4 sm:p-6 md:p-8 rounded-3xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <Bot className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ lineHeight: '3rem' }}>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
                   IRIS
                 </h1>
-                <p className="text-lg text-muted-foreground font-light">
+                <p className="text-xs sm:text-sm md:text-lg text-muted-foreground font-light break-words">
                   Intelligent Response & Insight System
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full border border-primary/20">
-                <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-primary">AI Powered</span>
+            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto flex-shrink-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 bg-primary/10 rounded-full border border-primary/20">
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary rounded-full animate-pulse flex-shrink-0"></div>
+                <span className="text-xs sm:text-sm font-medium text-primary whitespace-nowrap">AI Powered</span>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleResetChat}
-                className="h-8 px-3 text-xs hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+                className="h-8 px-2 sm:px-3 text-xs hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 flex-shrink-0"
                 title="Reset Chat"
               >
-                <RotateCcw className="h-3 w-3 mr-1" />
-                Reset
+                <RotateCcw className="h-3 w-3 sm:mr-1" />
+                <span className="hidden sm:inline">Reset</span>
               </Button>
             </div>
           </div>
