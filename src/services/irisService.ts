@@ -38,7 +38,167 @@ export class IRISService {
   private static readonly FUNCTION_URL = `${this.SUPABASE_URL}/functions/v1/iris-chat-simple`;
 
   /**
-   * Send a message to IRIS and get AI-powered response
+   * Send a message to IRIS with streaming support
+   */
+  static async sendMessageStream(
+    messages: IRISMessage[],
+    userContext: IRISContext,
+    onChunk: (chunk: string) => void,
+    onComplete: (data: { toolsUsed?: string[], tokensUsed?: number }) => void,
+    onError: (error: string) => void
+  ): Promise<void> {
+    try {
+      const authToken = getAuthToken();
+      if (!authToken) {
+        throw new Error('Authentication required - please log in again');
+      }
+
+      console.log('🌊 [FRONTEND DEBUG] Sending IRIS streaming request:', {
+        messageCount: messages.length,
+        userId: userContext.userId,
+        role: userContext.role,
+        functionUrl: this.FUNCTION_URL
+      });
+
+      const requestBody = {
+        messages,
+        context: userContext,
+        stream: true // Request streaming
+      };
+
+      console.log('🌊 [FRONTEND DEBUG] Request body:', {
+        messagesCount: requestBody.messages.length,
+        lastMessage: requestBody.messages[requestBody.messages.length - 1],
+        contextRole: requestBody.context.role,
+        stream: requestBody.stream
+      });
+
+      const response = await fetch(this.FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      console.log('📡 [FRONTEND DEBUG] Response status:', response.status);
+      console.log('📡 [FRONTEND DEBUG] Response headers:', Object.fromEntries(response.headers.entries()));
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ [FRONTEND DEBUG] Response error:', errorText);
+
+        // For rate limit errors, preserve the original error message
+        const errorMessage = `IRIS API error (${response.status}): ${errorText}`;
+        throw new Error(errorMessage);
+      }
+
+      // Read the SSE stream
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error('No response body reader available');
+      }
+
+      console.log('📖 [FRONTEND DEBUG] Starting to read SSE stream...');
+
+      let buffer = '';
+      let toolsUsed: string[] = [];
+      let tokensUsed = 0;
+      let totalChunks = 0;
+      let eventCount = 0;
+      let currentEventType = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          console.log('✅ [FRONTEND DEBUG] Stream completed');
+          console.log('✅ [FRONTEND DEBUG] Total events processed:', eventCount);
+          console.log('✅ [FRONTEND DEBUG] Total text chunks:', totalChunks);
+          console.log('✅ [FRONTEND DEBUG] Tools used:', toolsUsed);
+          onComplete({ toolsUsed, tokensUsed });
+          break;
+        }
+
+        // Decode the chunk
+        const rawChunk = decoder.decode(value, { stream: true });
+        buffer += rawChunk;
+
+        // Process complete SSE messages
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          if (line.startsWith('event:')) {
+            currentEventType = line.substring(6).trim();
+            eventCount++;
+            console.log(`📨 [FRONTEND DEBUG] Event ${eventCount}:`, currentEventType);
+            continue;
+          }
+
+          if (line.startsWith('data:')) {
+            const data = line.substring(5).trim();
+
+            try {
+              const parsed = JSON.parse(data);
+
+              console.log('📦 [FRONTEND DEBUG] Parsed data:', {
+                hasContent: !!parsed.content,
+                hasResponse: !!parsed.response,
+                hasMessage: !!parsed.message,
+                keys: Object.keys(parsed)
+              });
+
+              // Handle different event types
+              if (parsed.content) {
+                // This is a text chunk
+                totalChunks++;
+                if (totalChunks === 1) {
+                  console.log('📝 [FRONTEND DEBUG] First chunk received:', parsed.content);
+                }
+                onChunk(parsed.content);
+              } else if (parsed.response) {
+                // Final complete event
+                console.log('🏁 [FRONTEND DEBUG] Complete event received:', {
+                  responseLength: parsed.response?.length,
+                  iterations: parsed.iterations,
+                  toolsUsed: parsed.toolsUsed
+                });
+                toolsUsed = parsed.toolsUsed || [];
+                tokensUsed = parsed.tokensUsed || 0;
+              } else if (currentEventType === 'error' || (parsed.message && (parsed.message.includes('error') || parsed.message.includes('Error')))) {
+                // Error event - call onError and stop processing
+                console.error('❌ [FRONTEND DEBUG] Error event received:', parsed.message);
+                onError(parsed.message);
+                // Close the reader and exit
+                reader.cancel();
+                return;
+              } else {
+                console.log('ℹ️ [FRONTEND DEBUG] Other event data:', parsed);
+              }
+            } catch (e) {
+              // Not JSON, might be plain text
+              console.log('⚠️ [FRONTEND DEBUG] Non-JSON SSE data:', data);
+            }
+          }
+        }
+      }
+
+    } catch (error) {
+      console.error('❌ IRIS Streaming Error:', error);
+
+      // IMPORTANT: Pass the RAW error to onError so rate limit detection works
+      // The raw error contains: "IRIS API error (429): {...rate limit info...}"
+      const rawError = error instanceof Error ? error.message : String(error);
+      onError(rawError);
+    }
+  }
+
+  /**
+   * Send a message to IRIS and get AI-powered response (non-streaming)
    */
   static async sendMessage(
     messages: IRISMessage[],
@@ -74,7 +234,7 @@ export class IRISService {
       }
 
       const data: IRISResponse = await response.json();
-      
+
       console.log('✅ IRIS response received:', {
         success: data.success,
         toolsUsed: data.toolsUsed?.length || 0,
@@ -85,7 +245,7 @@ export class IRISService {
 
     } catch (error) {
       console.error('❌ IRIS Service Error:', error);
-      
+
       // Handle timeout specifically (though timeout is now removed)
       if (error.name === 'AbortError') {
         return {
@@ -104,7 +264,7 @@ The request was cancelled or interrupted.
           error: 'Request cancelled'
         };
       }
-      
+
       // Return user-friendly error response
       return {
         success: false,
