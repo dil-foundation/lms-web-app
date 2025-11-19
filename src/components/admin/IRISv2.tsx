@@ -359,6 +359,19 @@ Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
         // onError - handle errors
         (error: string) => {
           console.error('❌ Streaming error:', error);
+          console.error('🔍 [IRIS ERROR DEBUG] Full error details:', {
+            errorString: error,
+            errorType: typeof error,
+            errorLength: error?.length || 0,
+            contains429: error?.includes('429') || false,
+            containsRateLimit: error?.toLowerCase().includes('rate limit') || false,
+            containsMCP: error?.includes('MCP') || false,
+            containsTools: error?.includes('tools') || false,
+            containsDatabase: error?.toLowerCase().includes('database') || false,
+            containsConnection: error?.toLowerCase().includes('connection') || false,
+            errorPreview: error?.substring(0, 500) || 'N/A',
+            timestamp: new Date().toISOString()
+          });
 
           // Check if it's a rate limit error
           const rateLimitMatch = error.match(/try again in (\d+)(\w+)/i);
@@ -366,6 +379,7 @@ Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
           const resetTokensMatch = error.match(/reset-tokens[:\s]+"?(\d+\.?\d*)s/i);
 
           if (rateLimitMatch || retryAfterMatch || resetTokensMatch || error.includes('429') || error.toLowerCase().includes('rate limit')) {
+            console.log('🔍 [IRIS ERROR DEBUG] Rate limit error detected');
             // Extract wait time in seconds
             let waitSeconds = 60; // Default to 60 seconds
 
@@ -422,6 +436,7 @@ Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
             });
           } else {
             // Regular error handling
+            console.log('🔍 [IRIS ERROR DEBUG] Non-rate-limit error - displaying to user');
             setMessages(prev => {
               const updated = [...prev];
               const lastIndex = updated.length - 1;

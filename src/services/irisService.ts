@@ -189,10 +189,18 @@ export class IRISService {
 
     } catch (error) {
       console.error('❌ IRIS Streaming Error:', error);
+      console.error('🔍 [ERROR DEBUG] Catch block error details:', {
+        isError: error instanceof Error,
+        errorName: error instanceof Error ? error.name : 'N/A',
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : 'N/A',
+        rawError: error
+      });
 
       // IMPORTANT: Pass the RAW error to onError so rate limit detection works
       // The raw error contains: "IRIS API error (429): {...rate limit info...}"
       const rawError = error instanceof Error ? error.message : String(error);
+      console.error('🔍 [ERROR DEBUG] Raw error being passed to onError:', rawError);
       onError(rawError);
     }
   }
@@ -414,7 +422,14 @@ The request was cancelled or interrupted.
    */
   private static getErrorMessage(error: unknown): string {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
+    console.error('🔍 [ERROR DEBUG] getErrorMessage called with:', {
+      isError: error instanceof Error,
+      errorMessage: errorMessage,
+      errorMessageLength: errorMessage.length,
+      errorMessagePreview: errorMessage.substring(0, 300)
+    });
+
     if (errorMessage.includes('Authentication required')) {
       return `🔒 **Authentication Required**
 
@@ -471,6 +486,12 @@ I'm having trouble processing your request right now. This could be due to syste
     }
     
     if (errorMessage.includes('MCP') || errorMessage.includes('tools')) {
+      console.error('🔍 [ERROR DEBUG] MCP/tools error detected:', {
+        fullErrorMessage: errorMessage,
+        containsMCP: errorMessage.includes('MCP'),
+        containsTools: errorMessage.includes('tools')
+      });
+
       return `🔧 **Database Connection Issue**
 
 I'm having trouble connecting to the database tools right now.
@@ -478,7 +499,9 @@ I'm having trouble connecting to the database tools right now.
 **What you can try:**
 - Ask general questions that don't require database queries
 - Try again in a few moments
-- Contact support if the issue persists`;
+- Contact support if the issue persists
+
+**Debug Info:** ${errorMessage.substring(0, 200)}`;
     }
     
     if (errorMessage.includes('OpenAI') || errorMessage.includes('API')) {

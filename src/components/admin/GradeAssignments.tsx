@@ -120,12 +120,17 @@ export const GradeAssignments = () => {
   // Check if user is admin (includes super_user)
   const currentIsAdmin = profile?.role === 'admin' || profile?.role === 'super_user';
   
+  // Track if stable role just got set (to trigger fetches)
+  const [stableRoleSet, setStableRoleSet] = useState(false);
+
   // Once profile is defined, lock in the role (don't let it flicker)
   if (profile?.role && !stableRoleRef.current) {
     stableRoleRef.current = (profile.role === 'admin' || profile.role === 'super_user') ? 'admin' : 'teacher';
     console.log('🔒 [GradeAssignments] Locked stable role:', stableRoleRef.current, 'from profile role:', profile.role);
+    // Trigger state update to cause re-fetch
+    setStableRoleSet(true);
   }
-  
+
   // Use stable role if available, otherwise fall back to current
   const isAdmin = stableRoleRef.current === 'admin';
 
@@ -195,8 +200,9 @@ export const GradeAssignments = () => {
   }, [user, isAdmin]); // Removed 'profile' - using stableRoleRef instead
 
   const fetchAssignments = useCallback(async () => {
-    console.log('🔍 [fetchAssignments] Called with:', { 
-      hasUser: !!user, 
+    console.log('🔍 [fetchAssignments] Called with:', {
+      hasUser: !!user,
+      userId: user?.id,
       hasStableRole: !!stableRoleRef.current,
       stableRole: stableRoleRef.current,
       profileRole: profile?.role,
@@ -208,7 +214,7 @@ export const GradeAssignments = () => {
       selectedCourse,
       timestamp: new Date().toISOString()
     });
-    
+
     // Guard: Don't fetch if user isn't loaded or stable role isn't determined yet
     if (!user || !stableRoleRef.current) {
       console.log('⚠️ [fetchAssignments] Blocked by guard - user or stable role not ready');
@@ -230,10 +236,10 @@ export const GradeAssignments = () => {
     console.log('✅ [fetchAssignments] Starting fetch as', isAdmin ? 'admin' : 'teacher');
     isFetchingRef.current = true;
     fetchingAsAdminRef.current = isAdmin;
-    
+
     // Capture the role at the START of this fetch (immutable for this fetch's lifetime)
     const thisFetchIsForAdmin = isAdmin;
-    
+
     // Use ref to check if we have data (avoids circular dependency)
     // If we already have data, show refresh indicator instead of full loading
     if (hasFetchedRef.current) {
@@ -246,37 +252,69 @@ export const GradeAssignments = () => {
     setError(null);
 
     try {
-      let data, rpcError;
+      let data: any;
+      let rpcError: any;
       const startTime = Date.now();
-      
+
+      // Create a timeout promise (30 seconds)
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000)
+      );
+
       if (thisFetchIsForAdmin) {
-        console.log('📞 [fetchAssignments] Calling get_admin_assessments_data RPC');
-        // Use admin function to get all assessments
-        const result = await supabase.rpc('get_admin_assessments_data', {
+        console.log('📞 [fetchAssignments] Calling get_admin_assessments_data RPC', {
+          search_query: debouncedSearchTerm,
+          course_filter_id: selectedCourse === 'all' ? null : selectedCourse
+        });
+        // Use admin function to get all assessments with timeout
+        const rpcPromise = supabase.rpc('get_admin_assessments_data', {
           search_query: debouncedSearchTerm,
           course_filter_id: selectedCourse === 'all' ? null : selectedCourse,
         });
-        data = result.data;
-        rpcError = result.error;
+
+        try {
+          const result = await Promise.race([rpcPromise, timeoutPromise]);
+          data = result.data;
+          rpcError = result.error;
+        } catch (timeoutError: any) {
+          console.error('⏱️ [fetchAssignments] Request timed out:', timeoutError);
+          throw timeoutError;
+        }
         console.log(`📊 [fetchAssignments] Admin RPC returned in ${Date.now() - startTime}ms:`, {
           dataCount: data?.length || 0,
           hasError: !!rpcError,
-          error: rpcError
+          error: rpcError,
+          errorDetails: rpcError ? JSON.stringify(rpcError) : null
         });
       } else {
-        console.log('📞 [fetchAssignments] Calling get_teacher_assessments_data RPC');
-        // Use teacher function to get only their assessments
-        const result = await supabase.rpc('get_teacher_assessments_data', {
+        console.log('📞 [fetchAssignments] Calling get_teacher_assessments_data RPC', {
+          teacher_id: user.id,
+          search_query: debouncedSearchTerm,
+          course_filter_id: selectedCourse === 'all' ? null : selectedCourse
+        });
+        // Use teacher function to get only their assessments with timeout
+        const rpcPromise = supabase.rpc('get_teacher_assessments_data', {
           teacher_id: user.id,
           search_query: debouncedSearchTerm,
           course_filter_id: selectedCourse === 'all' ? null : selectedCourse,
         });
-        data = result.data;
-        rpcError = result.error;
+
+        try {
+          const result = await Promise.race([rpcPromise, timeoutPromise]);
+          data = result.data;
+          rpcError = result.error;
+        } catch (timeoutError: any) {
+          console.error('⏱️ [fetchAssignments] Request timed out:', timeoutError);
+          throw timeoutError;
+        }
         console.log(`📊 [fetchAssignments] Teacher RPC returned in ${Date.now() - startTime}ms:`, {
           dataCount: data?.length || 0,
           hasError: !!rpcError,
-          error: rpcError
+          error: rpcError,
+          errorDetails: rpcError ? JSON.stringify(rpcError) : null,
+          errorMessage: rpcError?.message,
+          errorCode: rpcError?.code,
+          errorHint: rpcError?.hint
         });
       }
       
@@ -333,6 +371,15 @@ export const GradeAssignments = () => {
     console.log('🔄 [useEffect-fetchAssignments] Triggered');
     fetchAssignments();
   }, [fetchAssignments]);
+
+  // Trigger fetches when stable role gets set
+  useEffect(() => {
+    if (stableRoleSet && user && stableRoleRef.current) {
+      console.log('🎯 [useEffect-stableRoleSet] Stable role just set, triggering fetches');
+      fetchCourses();
+      fetchAssignments();
+    }
+  }, [stableRoleSet, user, fetchCourses, fetchAssignments]);
   
   // Update items per page when view changes
   useEffect(() => {
