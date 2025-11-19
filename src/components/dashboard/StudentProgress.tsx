@@ -14,18 +14,18 @@ import { ProgressTileView } from '@/components/progress/ProgressTileView';
 import { ProgressListView } from '@/components/progress/ProgressListView';
 
 const StatCard = ({ title, value, subtext, icon, progress }: { title: string, value: string | number, subtext: string, icon: React.ReactNode, progress?: number }) => (
-  <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      {icon}
+  <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card rounded-xl sm:rounded-2xl">
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+      <CardTitle className="text-xs sm:text-sm font-medium">{title}</CardTitle>
+      <div className="flex-shrink-0">{icon}</div>
     </CardHeader>
-    <CardContent>
-      <div className="text-2xl font-bold">{value}</div>
-      <p className="text-xs text-muted-foreground">{subtext}</p>
+    <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+      <div className="text-xl sm:text-2xl font-bold">{value}</div>
+      <p className="text-[10px] sm:text-xs text-muted-foreground">{subtext}</p>
       {progress !== undefined && (
-        <div className="w-full bg-muted rounded-full h-2 mt-2">
+        <div className="w-full bg-muted rounded-full h-1.5 sm:h-2 mt-2">
           <div 
-            className="bg-primary h-2 rounded-full transition-all duration-300"
+            className="bg-primary h-1.5 sm:h-2 rounded-full transition-all duration-300"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -35,16 +35,16 @@ const StatCard = ({ title, value, subtext, icon, progress }: { title: string, va
 );
 
 const CourseProgressDetails = ({ courses }: { courses: StudentCourseWithProgress[] }) => (
-  <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
     {courses.length > 0 ? (
       courses.map(course => (
-        <Card key={course.course_id} className="bg-card border border-border flex flex-col h-full">
+        <Card key={course.course_id} className="bg-card border border-border flex flex-col h-full rounded-xl sm:rounded-2xl">
           <CardHeader className="p-0 relative">
             {course.image_url ? (
               <img 
                 src={course.image_url} 
                 alt={course.title} 
-                className="w-full h-40 object-cover rounded-t-lg"
+                className="w-full h-36 sm:h-40 object-cover rounded-t-xl sm:rounded-t-2xl"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.style.display = 'none';
@@ -52,52 +52,52 @@ const CourseProgressDetails = ({ courses }: { courses: StudentCourseWithProgress
                 }}
               />
             ) : null}
-            <div className={`w-full h-40 bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center rounded-t-lg ${course.image_url ? 'hidden' : ''}`}>
-              <BookOpen className="w-8 h-8 text-primary/60" />
+            <div className={`w-full h-36 sm:h-40 bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center rounded-t-xl sm:rounded-t-2xl ${course.image_url ? 'hidden' : ''}`}>
+              <BookOpen className="w-7 h-7 sm:w-8 sm:h-8 text-primary/60" />
             </div>
             {course.progress_percentage === 100 && (
-              <Badge className="absolute top-2 left-2 bg-green-500">
-                <CheckCircle className="w-3 h-3 mr-1" />
+              <Badge className="absolute top-2 left-2 bg-green-500 text-[10px] sm:text-xs">
+                <CheckCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
                 Completed
               </Badge>
             )}
             {course.progress_percentage > 0 && course.progress_percentage < 100 && (
-              <Badge variant="secondary" className="absolute top-2 left-2">
+              <Badge variant="secondary" className="absolute top-2 left-2 text-[10px] sm:text-xs">
                 In Progress
               </Badge>
             )}
           </CardHeader>
-          <CardContent className="p-4 space-y-2 flex-grow">
-            <h3 className="font-semibold text-lg">{course.title}</h3>
-            <p className="text-sm text-muted-foreground">{course.subtitle}</p>
-            <div className="flex justify-between text-sm text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 space-y-2 flex-grow">
+            <h3 className="font-semibold text-base sm:text-lg line-clamp-1">{course.title}</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{course.subtitle}</p>
+            <div className="flex justify-between text-xs sm:text-sm text-muted-foreground">
               <span>{course.total_lessons} lessons</span>
               <span>{course.progress_percentage}% complete</span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              <span>Last accessed: {course.last_accessed ? new Date(course.last_accessed).toLocaleDateString() : 'Never'}</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
+              <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="truncate">Last accessed: {course.last_accessed ? new Date(course.last_accessed).toLocaleDateString() : 'Never'}</span>
             </div>
           </CardContent>
-          <CardFooter className="p-4 pt-0 mt-auto">
+          <CardFooter className="p-3 sm:p-4 pt-0 mt-auto">
             <Button 
               asChild
-              className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 rounded-xl"
+              className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-2.5 sm:py-3 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 rounded-lg sm:rounded-xl"
             >
               <Link to={`/dashboard/course/${course.course_id}`}>
                 {course.progress_percentage === 100 ? (
                   <>
-                    <BookOpen className="w-4 h-4 mr-2" />
+                    <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                     Review Course
                   </>
                 ) : course.progress_percentage > 0 ? (
                   <>
-                    <TrendingUp className="w-4 h-4 mr-2" />
+                    <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                     Continue Learning
                   </>
                 ) : (
                   <>
-                    <BookOpen className="w-4 h-4 mr-2" />
+                    <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                     Start Course
                   </>
                 )}
@@ -107,11 +107,11 @@ const CourseProgressDetails = ({ courses }: { courses: StudentCourseWithProgress
         </Card>
       ))
     ) : (
-      <div className="col-span-full text-center py-8">
-        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-          <BookOpen className="w-8 h-8 text-muted-foreground" />
+      <div className="col-span-full text-center py-6 sm:py-8">
+        <div className="w-14 h-14 sm:w-16 sm:h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+          <BookOpen className="w-7 h-7 sm:w-8 sm:h-8 text-muted-foreground" />
         </div>
-        <p className="text-muted-foreground">No courses found</p>
+        <p className="text-sm sm:text-base text-muted-foreground">No courses found</p>
       </div>
     )}
   </div>
@@ -163,20 +163,20 @@ export const StudentProgress = ({ userProfile }) => {
     : 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8">
       {/* Premium Header Section */}
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-              <TrendingUp className="w-7 h-7 text-primary" />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-2xl sm:rounded-3xl"></div>
+        <div className="relative p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl">
+          <div className="flex items-start sm:items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+              <TrendingUp className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
             </div>
-            <div>
-              <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ lineHeight: '3rem' }}>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
                 Learning Progress
               </h1>
-              <p className="text-lg text-muted-foreground font-light">
+              <p className="text-sm sm:text-base md:text-lg text-muted-foreground font-light mt-1">
                 Track your learning journey and achievements.
               </p>
             </div>
@@ -185,7 +185,7 @@ export const StudentProgress = ({ userProfile }) => {
       </div>
 
       {/* Stats Grid - Preserving Clean Design */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Overall Progress"
           value={`${Math.round(overallProgress)}%`}
@@ -214,12 +214,12 @@ export const StudentProgress = ({ userProfile }) => {
       </div>
 
       {/* View Toggle and Progress Display */}
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* View Toggle */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-foreground">Course Progress</h2>
-            <p className="text-sm text-muted-foreground">Switch between different views to track your progress</p>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg sm:text-xl font-semibold text-foreground">Course Progress</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">Switch between different views to track your progress</p>
           </div>
           <ViewToggle
             currentView={preferences.progressView}

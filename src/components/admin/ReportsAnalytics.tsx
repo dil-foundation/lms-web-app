@@ -205,7 +205,7 @@ export const ReportsAnalytics = () => {
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load Reports</h3>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
-            onClick={() => fetchReportsData()}
+            onClick={handleRefresh}
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
           >
             Try Again
@@ -214,7 +214,7 @@ export const ReportsAnalytics = () => {
       )}
 
       {/* Key Metrics from Admin Dashboard */}
-      {keyMetrics && (
+      {keyMetrics ? (
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
@@ -268,10 +268,9 @@ export const ReportsAnalytics = () => {
           </CardContent>
         </Card>
       </div>
-      )}
+      ) : null}
 
       {/* Practice Stage Performance & User Engagement */}
-      {(practiceStageData || userEngagementData) && (
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
         <Card className="border-0 shadow-sm sm:shadow-lg bg-gradient-to-br from-card to-blue-50/30 dark:to-blue-950/20">
           <CardHeader className="pb-3 sm:pb-4 p-3 sm:p-4 md:p-6">
@@ -559,10 +558,8 @@ export const ReportsAnalytics = () => {
           </CardContent>
         </Card>
       </div>
-      )}
 
       {/* Time of Day Usage */}
-      {timeUsageData && (
       <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-purple-50/30 dark:to-purple-950/20">
         <CardHeader className="pb-3 sm:pb-4">
           <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg font-semibold">
@@ -668,10 +665,8 @@ export const ReportsAnalytics = () => {
           </div>
         </CardContent>
       </Card>
-      )}
 
       {/* Top Content Accessed */}
-      {topContentData && (
       <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-orange-50/30 dark:to-orange-950/20">
         <CardHeader className="pb-3 sm:pb-4">
           <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg font-semibold">
@@ -750,7 +745,6 @@ export const ReportsAnalytics = () => {
           )}
         </CardContent>
       </Card>
-      )}
     </div>
   );
 };

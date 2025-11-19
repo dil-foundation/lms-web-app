@@ -230,10 +230,10 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-center py-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+      <Card className="rounded-xl sm:rounded-2xl">
+        <CardContent className="p-3 sm:p-4 md:p-6">
+          <div className="flex items-center justify-center py-3 sm:py-4">
+            <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-primary"></div>
           </div>
         </CardContent>
       </Card>
@@ -271,26 +271,26 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <RotateCcw className="w-5 h-5" />
-            {showRetryOptions ? 'Quiz Retry Options' : hasValidScore ? `Quiz Results (Above ${retryThreshold}% Threshold)` : 'Quiz Results'}
+      <Card className="rounded-xl sm:rounded-2xl">
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+            <span className="break-words min-w-0">{showRetryOptions ? 'Quiz Retry Options' : hasValidScore ? `Quiz Results (Above ${retryThreshold}% Threshold)` : 'Quiz Results'}</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6 pt-0">
           {/* Current Score Display */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Target className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Your Score</span>
+          <div className="flex items-center justify-between p-2.5 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
+              <span className="text-xs sm:text-sm font-medium">Your Score</span>
             </div>
             {hasValidScore ? (
-              <Badge variant={currentScore >= 70 ? 'default' : 'destructive'}>
+              <Badge variant={currentScore >= 70 ? 'default' : 'destructive'} className="text-xs sm:text-sm whitespace-nowrap">
                 {currentScore}%
               </Badge>
             ) : (
-              <Badge variant="outline">
+              <Badge variant="outline" className="text-xs sm:text-sm whitespace-nowrap">
                 Pending
               </Badge>
             )}
@@ -298,9 +298,9 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
 
           {/* Message when score is pending and no retry options */}
           {!hasValidScore && !showRetryOptions && (
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription>
+            <Alert className="rounded-lg">
+              <Info className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+              <AlertDescription className="text-xs sm:text-sm break-words">
                 Your quiz has been submitted and is awaiting manual grading. Retry options will be available once your score is calculated.
               </AlertDescription>
             </Alert>
@@ -308,9 +308,9 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
 
           {/* Message when score is above threshold */}
           {hasValidScore && !showRetryOptions && (
-            <Alert>
-              <CheckCircle className="h-4 w-4" />
-              <AlertDescription>
+            <Alert className="rounded-lg">
+              <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+              <AlertDescription className="text-xs sm:text-sm break-words">
                 Great job! You scored {currentScore}%, which is above the {retryThreshold}% threshold. No retry is needed.
               </AlertDescription>
             </Alert>
@@ -318,23 +318,23 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
 
           {/* Retry Status - Only show if retry options are available */}
           {showRetryOptions && status && (
-            <Alert variant={status.type === 'error' ? 'destructive' : 'default'}>
-              <status.icon className="h-4 w-4" />
-              <AlertDescription>
-                <div className="font-medium">{status.title}</div>
-                <div className="text-sm mt-1">{status.message}</div>
+            <Alert variant={status.type === 'error' ? 'destructive' : 'default'} className="rounded-lg">
+              <status.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+              <AlertDescription className="break-words">
+                <div className="font-medium text-xs sm:text-sm">{status.title}</div>
+                <div className="text-xs sm:text-sm mt-1">{status.message}</div>
               </AlertDescription>
             </Alert>
           )}
 
           {/* Cooldown Timer - Only show if retry options are available */}
           {showRetryOptions && timeRemaining !== null && timeRemaining > 0 && (
-            <Alert>
-              <Timer className="h-4 w-4" />
+            <Alert className="rounded-lg">
+              <Timer className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
               <AlertDescription>
-                <div className="flex items-center justify-between">
-                  <span>You can retry in:</span>
-                  <span className="font-mono text-lg font-bold text-primary">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
+                  <span className="text-xs sm:text-sm">You can retry in:</span>
+                  <span className="font-mono text-base sm:text-lg font-bold text-primary">
                     {formatTimeRemaining(timeRemaining)}
                   </span>
                 </div>
@@ -345,25 +345,25 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
           {/* Attempt History */}
           {attempts.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-sm font-medium">Attempt History</h4>
+              <h4 className="text-xs sm:text-sm font-medium">Attempt History</h4>
               <div className="space-y-2">
                 {attempts.map((attempt, index) => (
-                  <div key={attempt.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">Attempt {attempt.attemptNumber}</span>
+                  <div key={attempt.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-2.5 sm:p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs sm:text-sm font-medium whitespace-nowrap">Attempt {attempt.attemptNumber}</span>
                       {attempt.teacherApprovalRequired && (
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="text-[10px] sm:text-xs">
                           {attempt.teacherApproved ? 'Approved' : 'Pending Approval'}
                         </Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 justify-between sm:justify-start">
                       {attempt.score !== null && (
-                        <Badge variant={attempt.score >= 70 ? 'default' : 'destructive'}>
+                        <Badge variant={attempt.score >= 70 ? 'default' : 'destructive'} className="text-xs sm:text-sm whitespace-nowrap">
                           {attempt.score}%
                         </Badge>
                       )}
-                      <div className="text-xs text-muted-foreground text-right">
+                      <div className="text-[10px] sm:text-xs text-muted-foreground text-right">
                         {(() => {
                           const date = new Date(attempt.submittedAt);
                           if (isNaN(date.getTime())) {
@@ -371,8 +371,8 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
                           }
                           return (
                             <div>
-                              <div>{date.toLocaleDateString()} at {date.toLocaleTimeString()}</div>
-                              <div className="text-xs opacity-75">{formatDistanceToNow(date, { addSuffix: true })}</div>
+                              <div className="whitespace-nowrap">{date.toLocaleDateString()} at {date.toLocaleTimeString()}</div>
+                              <div className="text-[10px] sm:text-xs opacity-75">{formatDistanceToNow(date, { addSuffix: true })}</div>
                             </div>
                           );
                         })()}
@@ -386,13 +386,13 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
 
           {/* Retry Button - Only show if retry options are available and cooldown has expired */}
           {showRetryOptions && eligibility.canRetry && isCooldownExpired && (
-            <div className="pt-4">
+            <div className="pt-2 sm:pt-4">
               <Button 
                 onClick={handleRetryRequest}
-                className="w-full"
+                className="w-full h-9 sm:h-10 text-sm"
                 disabled={submitting}
               >
-                <RotateCcw className="w-4 h-4 mr-2" />
+                <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                 Retry Quiz
               </Button>
             </div>
@@ -400,16 +400,16 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
 
           {/* Refresh Button - Show when there's a mismatch between frontend and backend */}
           {showRetryOptions && !eligibility.canRetry && isCooldownExpired && (
-            <div className="pt-4">
+            <div className="pt-2 sm:pt-4">
               <Button 
                 onClick={() => {
                   console.log('🔄 REFRESHING RETRY ELIGIBILITY...');
                   loadRetryData();
                 }}
                 variant="outline"
-                className="w-full"
+                className="w-full h-9 sm:h-10 text-sm"
               >
-                <RotateCcw className="w-4 h-4 mr-2" />
+                <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                 Refresh Retry Status
               </Button>
             </div>
@@ -417,10 +417,10 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
 
           {/* Study Materials Notice */}
           {eligibility.canRetry && (
-            <Alert>
-              <BookOpen className="h-4 w-4" />
+            <Alert className="rounded-lg">
+              <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
               <AlertDescription>
-                <div className="text-sm">
+                <div className="text-xs sm:text-sm break-words">
                   <strong>Before retrying:</strong> Make sure to review the course materials and 
                   understand the concepts you missed in your previous attempt.
                 </div>
