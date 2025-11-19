@@ -8,7 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info, UploadCloud, FileText, RefreshCw, Calendar, Edit, Sparkles, Image as ImageIcon, Trash2, Download, CreditCard } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info, UploadCloud, FileText, RefreshCw, Calendar, Edit, Sparkles, Image as ImageIcon, Trash2, Download, CreditCard, Building2, Users, GraduationCap, Search, ArrowUpDown, BookMarked, ClipboardCheck, BarChart3, MessageSquare, Lock } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUpload } from '@/components/ui/FileUpload';
@@ -61,6 +63,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { cn } from '@/lib/utils';
 import { ContentLoader } from '@/components/ContentLoader';
 import AccessLogService from '@/services/accessLogService';
@@ -184,9 +187,7 @@ const validateCourseData = (data: CourseData): ValidationErrors => {
   if (!data.country_ids || data.country_ids.length === 0) errors.country_ids = 'At least one country is required.';
   if (!data.region_ids || data.region_ids.length === 0) errors.region_ids = 'At least one region is required.';
   if (!data.city_ids || data.city_ids.length === 0) errors.city_ids = 'At least one city is required.';
-  if (!data.project_ids || data.project_ids.length === 0) errors.project_ids = 'At least one project is required.';
-  if (!data.board_ids || data.board_ids.length === 0) errors.board_ids = 'At least one board is required.';
-  if (!data.school_ids || data.school_ids.length === 0) errors.school_ids = 'At least one school is required.';
+  // Note: project_ids, board_ids, and school_ids are now managed in the Access tab only
 
   if (!data.requirements || data.requirements.length === 0 || data.requirements.every(r => !r.trim())) {
     errors.requirements = 'At least one requirement is required.';
@@ -2125,6 +2126,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
 const CourseBuilder = () => {
   const { courseId } = useParams();
   const { user } = useAuth();
+  const { profile } = useUserProfile();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('details');
   const [saveAction, setSaveAction] = useState<null | 'draft' | 'publish' | 'unpublish' | 'review' | 'approve' | 'reject'>(null);
@@ -2232,6 +2234,24 @@ const CourseBuilder = () => {
   // Selected classes for course enrollment
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
   
+  // Bulk assignment state
+  const [assignmentMode, setAssignmentMode] = useState<'bulk' | 'individual'>('individual');
+  const [bulkSelectedProjects, setBulkSelectedProjects] = useState<string[]>([]);
+  const [assignToAllProjects, setAssignToAllProjects] = useState(false);
+  const [allProjects, setAllProjects] = useState<Project[]>([]);
+  const [allSchools, setAllSchools] = useState<School[]>([]);
+  const [bulkPreviewData, setBulkPreviewData] = useState<{
+    schools: School[];
+    classes: ClassWithMembers[];
+    projectBreakdown: { projectId: string; projectName: string; schoolCount: number; classCount: number }[];
+  } | null>(null);
+  const [isBulkLoading, setIsBulkLoading] = useState(false);
+  const [showProjectBreakdown, setShowProjectBreakdown] = useState(false);
+  const [projectBreakdownSearch, setProjectBreakdownSearch] = useState('');
+  const [projectBreakdownSort, setProjectBreakdownSort] = useState<'name' | 'schools' | 'classes'>('name');
+  
+  // Access tab sub-tabs state
+  const [accessSubTab, setAccessSubTab] = useState<'assignment' | 'members'>('assignment');
 
   // Class management hooks
   const { classes: dbClasses, loading: classesLoading, stats: classStats, createClass, updateClass, deleteClass, refetch: refetchClasses } = useClasses();
@@ -2379,6 +2399,33 @@ const CourseBuilder = () => {
     }
     return dbClasses.filter(cls => courseData.school_ids.includes(cls.school_id));
   }, [dbClasses, courseData.school_ids]);
+
+  // Helper function to identify members from classes vs manually added
+  const getMembersFromClasses = useMemo(() => {
+    const allClassTeacherIds = dbClasses.flatMap(cls => cls.teachers.map(t => t.id));
+    const allClassStudentIds = dbClasses.flatMap(cls => cls.students.map(s => s.id));
+    
+    const teachersFromClasses = courseData.teachers.filter(teacher => 
+      allClassTeacherIds.includes(teacher.id)
+    );
+    const studentsFromClasses = courseData.students.filter(student => 
+      allClassStudentIds.includes(student.id)
+    );
+    
+    const additionalTeachers = courseData.teachers.filter(teacher => 
+      !allClassTeacherIds.includes(teacher.id)
+    );
+    const additionalStudents = courseData.students.filter(student => 
+      !allClassStudentIds.includes(student.id)
+    );
+    
+    return {
+      teachersFromClasses,
+      studentsFromClasses,
+      additionalTeachers,
+      additionalStudents
+    };
+  }, [dbClasses, courseData.teachers, courseData.students]);
 
   const handleBlur = (field: keyof ValidationErrors) => {
     setTouchedFields(prev => ({ ...prev, [field]: true }));
@@ -2623,6 +2670,181 @@ const CourseBuilder = () => {
     }
   };
 
+  // Bulk assignment helper functions
+  const fetchAllProjects = async (): Promise<Project[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('id, name, code, country_id, region_id, city_id, description, status')
+        .eq('status', 'active')
+        .order('name');
+      
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching all projects:', error);
+      toast.error('Failed to load projects');
+      return [];
+    }
+  };
+
+  const fetchAllSchools = async (): Promise<School[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('schools')
+        .select('id, name, code, school_type, country_id, region_id, city_id, project_id, board_id, status')
+        .eq('status', 'active')
+        .order('name');
+      
+      if (error) throw error;
+      return (data || []) as School[];
+    } catch (error) {
+      console.error('Error fetching all schools:', error);
+      toast.error('Failed to load schools');
+      return [];
+    }
+  };
+
+  const fetchSchoolsByProjects = async (projectIds: string[]): Promise<School[]> => {
+    if (projectIds.length === 0) return [];
+    
+    try {
+      const { data, error } = await supabase
+        .from('schools')
+        .select('id, name, code, school_type, country_id, region_id, city_id, project_id, board_id, status')
+        .in('project_id', projectIds)
+        .eq('status', 'active')
+        .order('name');
+      
+      if (error) throw error;
+      return (data || []) as School[];
+    } catch (error) {
+      console.error('Error fetching schools by projects:', error);
+      toast.error('Failed to load schools');
+      return [];
+    }
+  };
+
+  const calculateBulkPreview = async (projectIds: string[]) => {
+    setIsBulkLoading(true);
+    try {
+      // Fetch schools for selected projects
+      const schools = await fetchSchoolsByProjects(projectIds);
+      const schoolIds = schools.map(s => s.id);
+      
+      // Fetch classes for those schools (filter from existing dbClasses)
+      const classes = dbClasses.filter(c => schoolIds.includes(c.school_id));
+      
+      // Get all available projects for name lookup
+      const availableProjects = allProjects.length > 0 ? allProjects : projects;
+      
+      // Calculate breakdown by project
+      const projectBreakdown = projectIds.map(projectId => {
+        const projectSchools = schools.filter(s => s.project_id === projectId);
+        const projectSchoolIds = projectSchools.map(s => s.id);
+        const projectClasses = classes.filter(c => projectSchoolIds.includes(c.school_id));
+        
+        const projectName = availableProjects.find(p => p.id === projectId)?.name || 'Unknown';
+        
+        return {
+          projectId,
+          projectName,
+          schoolCount: projectSchools.length,
+          classCount: projectClasses.length
+        };
+      });
+      
+      setBulkPreviewData({
+        schools,
+        classes,
+        projectBreakdown
+      });
+    } catch (error) {
+      toast.error('Failed to calculate preview');
+      console.error(error);
+    } finally {
+      setIsBulkLoading(false);
+    }
+  };
+
+  const handleBulkProjectSelection = async (projectIds: string[]) => {
+    setBulkSelectedProjects(projectIds);
+    
+    // Reset breakdown view when projects change
+    setShowProjectBreakdown(false);
+    setProjectBreakdownSearch('');
+    setProjectBreakdownSort('name');
+    
+    if (projectIds.length > 0) {
+      await calculateBulkPreview(projectIds);
+    } else {
+      setBulkPreviewData(null);
+    }
+  };
+
+  const handleAssignToAllProjects = async (checked: boolean) => {
+    setAssignToAllProjects(checked);
+    
+    if (checked) {
+      const projects = await fetchAllProjects();
+      setAllProjects(projects);
+      const allProjectIds = projects.map(p => p.id);
+      setBulkSelectedProjects(allProjectIds);
+      await calculateBulkPreview(allProjectIds);
+    } else {
+      setBulkSelectedProjects([]);
+      setBulkPreviewData(null);
+    }
+  };
+
+  const applyBulkAssignment = () => {
+    if (!bulkPreviewData) return;
+    
+    // Update course data - merge with existing
+    const schoolIds = bulkPreviewData.schools.map(s => s.id);
+    const classIds = bulkPreviewData.classes.map(c => c.id);
+    
+    setCourseData(prev => ({
+      ...prev,
+      school_ids: [...new Set([...prev.school_ids, ...schoolIds])],
+      class_ids: [...new Set([...prev.class_ids, ...classIds])]
+    }));
+    
+    // Update selected classes for UI
+    setSelectedClasses(prev => [...new Set([...prev, ...classIds])]);
+    
+    // Refresh course members
+    refreshCourseMembers();
+    
+    toast.success(`Successfully assigned to ${schoolIds.length} schools and ${classIds.length} classes`);
+    
+    // Reset bulk state
+    setBulkSelectedProjects([]);
+    setAssignToAllProjects(false);
+    setBulkPreviewData(null);
+  };
+
+  const handleModeChange = (mode: 'bulk' | 'individual') => {
+    setAssignmentMode(mode);
+    if (mode === 'individual') {
+      // Clear bulk selection when switching to individual
+      setBulkSelectedProjects([]);
+      setAssignToAllProjects(false);
+      setBulkPreviewData(null);
+    }
+  };
+
+  // Load all projects and schools when component mounts or when switching modes
+  useEffect(() => {
+    if (assignmentMode === 'bulk' && allProjects.length === 0) {
+      fetchAllProjects().then(setAllProjects);
+    }
+    if (assignmentMode === 'individual' && allSchools.length === 0) {
+      fetchAllSchools().then(setAllSchools);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assignmentMode]);
+
   // Cascading dropdown handlers
   const handleCountryChange = async (countryIds: string[]) => {
     const currentCountryIds = courseData.country_ids;
@@ -2674,20 +2896,18 @@ const CourseBuilder = () => {
       setAffectedStudentsFromHierarchy(uniqueAffectedStudents);
       setIsCountryRemovalDialogOpen(true);
     } else {
+      // Only clear regions and cities when countries change
+      // Projects, boards, and schools are managed in Access tab and should not be cleared
       setCourseData(prev => ({ 
         ...prev, 
         country_ids: countryIds,
         region_ids: [],
-        city_ids: [],
-        project_ids: [],
-        board_ids: [],
-        school_ids: []
+        city_ids: []
+        // Note: project_ids, board_ids, school_ids are managed in Access tab
       }));
       setRegions([]);
       setCities([]);
-      setProjects([]);
-      setBoards([]);
-      setSchools([]);
+      // Don't clear projects, boards, schools - they're managed in Access tab
     }
     
     if (countryIds.length > 0) {
@@ -2747,18 +2967,16 @@ const CourseBuilder = () => {
       setAffectedStudentsFromRegion(uniqueAffectedStudents);
       setIsRegionRemovalDialogOpen(true);
     } else {
+      // Only clear cities when regions change
+      // Projects, boards, and schools are managed in Access tab and should not be cleared
       setCourseData(prev => ({ 
         ...prev, 
         region_ids: regionIds,
-        city_ids: [],
-        project_ids: [],
-        board_ids: [],
-        school_ids: []
+        city_ids: []
+        // Note: project_ids, board_ids, school_ids are managed in Access tab
       }));
       setCities([]);
-      setProjects([]);
-      setBoards([]);
-      setSchools([]);
+      // Don't clear projects, boards, schools - they're managed in Access tab
     }
     
     if (regionIds.length > 0) {
@@ -2814,16 +3032,14 @@ const CourseBuilder = () => {
       setAffectedStudentsFromCity(uniqueAffectedStudents);
       setIsCityRemovalDialogOpen(true);
     } else {
+      // Projects, boards, and schools are managed in Access tab and should not be cleared
       setCourseData(prev => ({ 
         ...prev, 
-        city_ids: cityIds,
-        project_ids: [],
-        board_ids: [],
-        school_ids: []
+        city_ids: cityIds
+        // Note: project_ids, board_ids, school_ids are managed in Access tab
       }));
-      setProjects([]);
-      setBoards([]);
-      setSchools([]);
+      // Don't clear projects, boards, schools - they're managed in Access tab
+      // But we can still fetch projects for reference if needed
     }
     
     if (cityIds.length > 0) {
@@ -6162,13 +6378,11 @@ const CourseBuilder = () => {
 
   if (isLoadingPage) {
     return (
-        <div className="flex items-center justify-center h-full w-full min-h-[calc(100vh-8rem)]">
-            <ContentLoader message="Loading Course Builder..." />
-        </div>
+      <div className="flex items-center justify-center h-full w-full min-h-[calc(100vh-8rem)]">
+        <ContentLoader message="Loading Course Builder..." />
+      </div>
     );
   }
-
-  
 
   return (
     <div className="min-h-screen bg-background w-full">
@@ -6429,6 +6643,12 @@ const CourseBuilder = () => {
                   Landing Page
                 </TabsTrigger>
                 <TabsTrigger
+                  value="teacher-resources"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-primary/5 px-6 h-14 text-sm font-medium transition-all duration-300 hover:bg-primary/5 hover:border-primary/50 data-[state=active]:text-primary data-[state=active]:font-semibold"
+                >
+                  Teacher Resources
+                </TabsTrigger>
+                <TabsTrigger
                   value="access"
                   className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-primary/5 px-6 h-14 text-sm font-medium transition-all duration-300 hover:bg-primary/5 hover:border-primary/50 data-[state=active]:text-primary data-[state=active]:font-semibold"
                 >
@@ -6675,7 +6895,7 @@ const CourseBuilder = () => {
                     </div>
                   </div>
 
-                  {/* Location and Board Information Grid */}
+                  {/* Location Information Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Country */}
                     <div className="space-y-3">
@@ -6770,101 +6990,23 @@ const CourseBuilder = () => {
                         </div>
                       )}
                     </div>
+                  </div>
 
-                    {/* Project */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
-                        Projects
-                        <span className="text-red-500 ml-1">*</span>
-                      </label>
-                      <div className={courseData.city_ids.length === 0 ? "opacity-50 pointer-events-none" : ""}>
-                        <MultiSelect
-                          options={projects.map(project => ({
-                            value: project.id,
-                            label: project.name,
-                            subLabel: project.description || '',
-                            imageUrl: undefined
-                          }))}
-                          onValueChange={handleProjectChange}
-                          value={courseData.project_ids}
-                          placeholder={courseData.city_ids.length > 0 ? "Search and select projects..." : "Select cities first"}
-                          className={cn(
-                            "min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300",
-                            validationErrors.project_ids && (touchedFields.project_ids || courseData.id) && 
-                            "border-red-500 focus:border-red-500 focus:ring-red-500/10"
-                          )}
-                        />
+                  {/* Info Note about Access Tab */}
+                  <div className="mt-4 p-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-xl border border-blue-200/50 dark:border-blue-700/30">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Info className="w-3 h-3 text-blue-600 dark:text-blue-400" />
                       </div>
-                      {validationErrors.project_ids && (touchedFields.project_ids || courseData.id) && (
-                        <div className="flex items-center gap-2 text-red-500 text-sm">
-                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
-                          {validationErrors.project_ids}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Board */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
-                        Boards
-                        <span className="text-red-500 ml-1">*</span>
-                      </label>
-                      <div className={courseData.project_ids.length === 0 ? "opacity-50 pointer-events-none" : ""}>
-                        <MultiSelect
-                          options={boards.map(board => ({
-                            value: board.id,
-                            label: board.name,
-                            subLabel: board.description || '',
-                            imageUrl: undefined
-                          }))}
-                          onValueChange={handleBoardChange}
-                          value={courseData.board_ids}
-                          placeholder={courseData.project_ids.length > 0 ? "Search and select boards..." : "Select projects first"}
-                          className={cn(
-                            "min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300",
-                            validationErrors.board_ids && (touchedFields.board_ids || courseData.id) && 
-                            "border-red-500 focus:border-red-500 focus:ring-red-500/10"
-                          )}
-                        />
+                      <div className="space-y-1">
+                        <h4 className="font-semibold text-blue-900 dark:text-blue-100 text-sm">
+                          Project, Board, School & Class Assignment
+                        </h4>
+                        <p className="text-xs text-blue-800 dark:text-blue-200">
+                          Projects, boards, schools, and classes are now managed in the <strong>Access</strong> tab. 
+                          Use the Access tab to assign this course to specific projects, schools, and classes using either bulk or individual selection.
+                        </p>
                       </div>
-                      {validationErrors.board_ids && (touchedFields.board_ids || courseData.id) && (
-                        <div className="flex items-center gap-2 text-red-500 text-sm">
-                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
-                          {validationErrors.board_ids}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Schools */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
-                        Schools
-                        <span className="text-red-500 ml-1">*</span>
-                      </label>
-                      <div className={courseData.board_ids.length === 0 ? "opacity-50 pointer-events-none" : ""}>
-                        <MultiSelect
-                          options={schools.map(school => ({
-                            value: school.id,
-                            label: school.name,
-                            subLabel: `${school.school_type} • ${school.code}`,
-                            imageUrl: undefined
-                          }))}
-                          onValueChange={handleSchoolChange}
-                          value={courseData.school_ids}
-                          placeholder={courseData.board_ids.length > 0 ? "Search and select schools..." : "Select boards first"}
-                          className={cn(
-                            "min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300",
-                            validationErrors.school_ids && (touchedFields.school_ids || courseData.id) && 
-                            "border-red-500 focus:border-red-500 focus:ring-red-500/10"
-                          )}
-                        />
-                      </div>
-                      {validationErrors.school_ids && (touchedFields.school_ids || courseData.id) && (
-                        <div className="flex items-center gap-2 text-red-500 text-sm">
-                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
-                          {validationErrors.school_ids}
-                        </div>
-                      )}
                     </div>
                   </div>
 
@@ -7464,70 +7606,642 @@ const CourseBuilder = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="access" className="space-y-6">
-              {/* Classes Management Card */}
-              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
+            <TabsContent value="teacher-resources" className="space-y-6">
+              {/* Role-based visibility check */}
+              {profile && (profile.role === 'teacher' || profile.role === 'admin' || profile.role === 'super_user' || profile.role === 'content_creator') ? (
+                <div className="space-y-6">
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground">Teacher Resources</h2>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Private resources and tools for teachers and administrators
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="flex items-center gap-1.5">
+                      <Lock className="h-3.5 w-3.5" />
+                      Teachers Only
+                    </Badge>
+                  </div>
+
+                  {/* Resource Cards Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Resource Library Card - Phase 1 MVP */}
+                    <Card className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20 cursor-pointer">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+                              <BookMarked className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div>
+                              <CardTitle className="text-lg font-semibold">Resource Library</CardTitle>
+                              <p className="text-xs text-muted-foreground mt-0.5">Templates & materials</p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Access lesson plan templates, teaching strategies, multimedia aids, and best practices to enhance your teaching.
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Coming Soon</span>
+                          <Button variant="outline" size="sm" disabled>
+                            View Library
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Assessment Tools Card - Phase 1 MVP */}
+                    <Card className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20 cursor-pointer">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center group-hover:bg-green-200 dark:group-hover:bg-green-900/50 transition-colors">
+                              <ClipboardCheck className="h-6 w-6 text-green-600 dark:text-green-400" />
+                            </div>
+                            <div>
+                              <CardTitle className="text-lg font-semibold">Assessment Tools</CardTitle>
+                              <p className="text-xs text-muted-foreground mt-0.5">Grading & rubrics</p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Manage answer keys, grading rubrics, test question banks, and assessment templates securely.
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Coming Soon</span>
+                          <Button variant="outline" size="sm" disabled>
+                            Manage Assessments
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Student Analytics Card - Phase 2 */}
+                    <Card className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20 cursor-pointer opacity-75">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50 transition-colors">
+                              <BarChart3 className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                            </div>
+                            <div>
+                              <CardTitle className="text-lg font-semibold">Student Analytics</CardTitle>
+                              <p className="text-xs text-muted-foreground mt-0.5">Progress & insights</p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          View student progress reports, class performance analytics, and data-driven insights for intervention.
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Phase 2</span>
+                          <Button variant="outline" size="sm" disabled>
+                            View Dashboard
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Communication Hub Card - Phase 2 */}
+                    <Card className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20 cursor-pointer opacity-75">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center group-hover:bg-orange-200 dark:group-hover:bg-orange-900/50 transition-colors">
+                              <MessageSquare className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                            </div>
+                            <div>
+                              <CardTitle className="text-lg font-semibold">Communication Hub</CardTitle>
+                              <p className="text-xs text-muted-foreground mt-0.5">Templates & tools</p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Access communication templates for parents, students, and administrators to streamline your workflow.
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Phase 2</span>
+                          <Button variant="outline" size="sm" disabled>
+                            Manage Templates
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Access Restricted</h3>
+                    <p className="text-sm text-muted-foreground">
+                      This section is only available to teachers and administrators.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="access" className="space-y-0">
+              {/* Nested Sub-Tabs for Access Management */}
+              <Tabs value={accessSubTab} onValueChange={(value) => setAccessSubTab(value as 'assignment' | 'members')} className="w-full">
+                <TabsList className="grid w-full max-w-md grid-cols-2 mb-6 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+                  <TabsTrigger 
+                    value="assignment" 
+                    className="data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 rounded-md transition-all"
+                  >
+                    <Building2 className="w-4 h-4 mr-2" />
+                    Assignment
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="members"
+                    className="data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 rounded-md transition-all"
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Members
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* Assignment Sub-Tab */}
+                <TabsContent value="assignment" className="space-y-6 mt-0">
+                  {/* Assignment Mode Selector */}
+                  <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
                 <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl flex items-center justify-center">
-                        <BookOpen className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl flex items-center justify-center">
+                        <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                       </div>
                       <div>
                         <CardTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
-                          Manage Classes
+                          Course Assignment Mode
                         </CardTitle>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Organize students into classes with specific schedules and teachers
+                          Choose how to assign this course to schools and classes
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-700">
-                        {enrolledClasses.length} Classes
-                      </Badge>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsClassCreateDialogOpen(true)}
-                        className="h-8 px-3 text-xs bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-700 rounded-lg"
-                      >
-                        <Plus className="w-3 h-3 mr-1" />
-                        Add Class
-                      </Button>
-                    </div>
                   </div>
                 </CardHeader>
-                <CardContent className="p-6 space-y-4">
+                <CardContent className="p-6">
+                  <RadioGroup value={assignmentMode} onValueChange={(value) => handleModeChange(value as 'bulk' | 'individual')} className="space-y-4">
+                    <div className="flex items-center space-x-2 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-primary/50 transition-colors">
+                      <RadioGroupItem value="bulk" id="bulk" />
+                      <Label htmlFor="bulk" className="flex-1 cursor-pointer">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-semibold text-gray-900 dark:text-white">Bulk Assignment</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">Assign to all schools under selected projects at once</div>
+                          </div>
+                          <Badge variant="outline" className="ml-4">Recommended for Scale</Badge>
+                        </div>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-primary/50 transition-colors">
+                      <RadioGroupItem value="individual" id="individual" />
+                      <Label htmlFor="individual" className="flex-1 cursor-pointer">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-semibold text-gray-900 dark:text-white">Individual Selection</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">Select schools and classes individually for granular control</div>
+                          </div>
+                        </div>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </CardContent>
+              </Card>
 
-                  {/* Select Classes for Course Enrollment */}
-                  <div className="space-y-3">
-                    <label className="block text-sm font-semibold text-gray-900 dark:text-white">
-                      Select Classes for Course Enrollment
-                    </label>
-                    <div className="relative">
-                      <div className={courseData.school_ids.length === 0 ? "opacity-50 pointer-events-none" : ""}>
-                        <MultiSelect
-                          options={filteredClasses.map(cls => ({
-                            value: cls.id,
-                            label: cls.name,
-                            subLabel: `${cls.school} • Grade ${cls.grade} • ${cls.code} • ${cls.teachers.length} Teachers • ${cls.students.length} Students`,
-                            imageUrl: undefined
-                          }))}
-                          onValueChange={handleClassSelection}
-                          value={selectedClasses}
-                          placeholder={courseData.school_ids.length > 0 ? "Search and select classes to enroll for this course..." : "Select schools first to see available classes"}
-                          className="min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
-                        />
+              {/* Bulk Assignment Panel */}
+              {assignmentMode === 'bulk' && (
+                <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
+                  <CardHeader className="bg-gradient-to-r from-blue-50/50 via-blue-100/50 to-blue-50/50 dark:from-blue-900/10 dark:via-blue-800/10 dark:to-blue-900/10 border-b border-blue-200/50 dark:border-blue-700/30 pb-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl flex items-center justify-center">
+                          <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
+                            Bulk School Assignment
+                          </CardTitle>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Assign this course to all schools under selected projects
+                          </p>
+                        </div>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {courseData.school_ids.length > 0 
-                        ? "Choose which classes will have access to this course. Students and teachers from selected classes will be automatically enrolled."
-                        : "Please select schools first to see available classes for enrollment."
-                      }
-                    </p>
-                  </div>
+                  </CardHeader>
+                  <CardContent className="p-6 space-y-6">
+                    {/* Assignment Scope Selection */}
+                    <div className="space-y-4">
+                      <div className="mb-4">
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2">
+                          Assignment Scope
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Choose whether to assign this course to all projects or select specific ones
+                        </p>
+                      </div>
+
+                      <RadioGroup 
+                        value={assignToAllProjects ? 'all' : 'specific'} 
+                        onValueChange={(value) => handleAssignToAllProjects(value === 'all')}
+                        className="space-y-3"
+                      >
+                        {/* Option 1: All Projects */}
+                        <div className="flex items-start space-x-3 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-primary/50 transition-colors cursor-pointer group">
+                          <RadioGroupItem value="all" id="assign-all" className="mt-1" />
+                          <Label htmlFor="assign-all" className="flex-1 cursor-pointer">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <div className="font-semibold text-gray-900 dark:text-white mb-1 group-hover:text-primary transition-colors">
+                                  Assign to All Projects
+                                </div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
+                                  Automatically assign this course to every school under every active project in the system
+                                </div>
+                              </div>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300 border-green-200 dark:border-green-700 whitespace-nowrap">
+                                Quick & Easy
+                              </Badge>
+                            </div>
+                          </Label>
+                        </div>
+
+                        {/* Option 2: Specific Projects */}
+                        <div className="flex items-start space-x-3 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-primary/50 transition-colors cursor-pointer group">
+                          <RadioGroupItem value="specific" id="assign-specific" className="mt-1" />
+                          <Label htmlFor="assign-specific" className="flex-1 cursor-pointer">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <div className="font-semibold text-gray-900 dark:text-white mb-1 group-hover:text-primary transition-colors">
+                                  Select Specific Projects
+                                </div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
+                                  Choose which projects to assign this course to. You'll see a preview before applying.
+                                </div>
+                              </div>
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border-blue-200 dark:border-blue-700 whitespace-nowrap">
+                                Custom
+                              </Badge>
+                            </div>
+                          </Label>
+                        </div>
+                      </RadioGroup>
+
+                      {/* Project Selection - Only shown when "Specific Projects" is selected */}
+                      {!assignToAllProjects && (
+                        <div className="mt-6 p-5 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-xl border border-blue-200/50 dark:border-blue-700/30">
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                              <Label className="text-sm font-semibold text-gray-900 dark:text-white">
+                                Select Projects
+                              </Label>
+                            </div>
+                            <MultiSelect
+                              options={(allProjects.length > 0 ? allProjects : projects).map(project => ({
+                                value: project.id,
+                                label: project.name,
+                                subLabel: project.description || project.code || '',
+                                imageUrl: undefined
+                              }))}
+                              onValueChange={handleBulkProjectSelection}
+                              value={bulkSelectedProjects}
+                              placeholder="Search and select projects..."
+                              className="min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
+                            />
+                            <p className="text-xs text-gray-600 dark:text-gray-500 mt-2">
+                              💡 All schools under the selected projects will be assigned this course. You can select multiple projects.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Preview Section */}
+                      {isBulkLoading && (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                          <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Calculating preview...</span>
+                        </div>
+                      )}
+
+                      {bulkPreviewData && !isBulkLoading && (
+                        <div className="space-y-4 p-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-xl border border-blue-200/50 dark:border-blue-700/30">
+                          <div className="flex items-center gap-2 mb-4">
+                            <Info className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                            <h4 className="font-semibold text-blue-900 dark:text-blue-100">Assignment Preview</h4>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-700">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Schools</span>
+                              </div>
+                              <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                                {bulkPreviewData.schools.length}
+                              </div>
+                            </div>
+                            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-700">
+                              <div className="flex items-center gap-2 mb-2">
+                                <GraduationCap className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Classes</span>
+                              </div>
+                              <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                                {bulkPreviewData.classes.length}
+                              </div>
+                            </div>
+                            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-700">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Projects</span>
+                              </div>
+                              <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                                {bulkPreviewData.projectBreakdown.length}
+                              </div>
+                            </div>
+                          </div>
+
+                          {bulkPreviewData.projectBreakdown.length > 0 && (
+                            <div className="space-y-3">
+                              {/* Collapsible Breakdown Header */}
+                              <button
+                                onClick={() => setShowProjectBreakdown(!showProjectBreakdown)}
+                                className="w-full flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 transition-colors group"
+                              >
+                                <div className="flex items-center gap-3 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <h5 className="text-sm font-semibold text-gray-900 dark:text-white">
+                                      Project Breakdown
+                                    </h5>
+                                    <Badge variant="secondary" className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border-blue-200 dark:border-blue-700 text-xs">
+                                      {bulkPreviewData.projectBreakdown.length} {bulkPreviewData.projectBreakdown.length === 1 ? 'project' : 'projects'}
+                                    </Badge>
+                                  </div>
+                                  {!showProjectBreakdown && bulkPreviewData.projectBreakdown.length <= 5 && (
+                                    <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 ml-auto">
+                                      {bulkPreviewData.projectBreakdown.slice(0, 3).map((p, idx) => (
+                                        <span key={p.projectId} className="truncate max-w-[120px]">
+                                          {p.projectName}
+                                          {idx < Math.min(2, bulkPreviewData.projectBreakdown.length - 1) && ','}
+                                        </span>
+                                      ))}
+                                      {bulkPreviewData.projectBreakdown.length > 3 && (
+                                        <span>+{bulkPreviewData.projectBreakdown.length - 3} more</span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {!showProjectBreakdown && bulkPreviewData.projectBreakdown.length > 5 && (
+                                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 ml-auto">
+                                      <span>Top projects: </span>
+                                      {bulkPreviewData.projectBreakdown
+                                        .sort((a, b) => (b.schoolCount + b.classCount) - (a.schoolCount + a.classCount))
+                                        .slice(0, 2)
+                                        .map((p, idx) => (
+                                          <span key={p.projectId}>
+                                            {p.projectName}
+                                            {idx < 1 && ','}
+                                          </span>
+                                        ))}
+                                      <span> +{bulkPreviewData.projectBreakdown.length - 2} more</span>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 ml-2">
+                                  {showProjectBreakdown ? (
+                                    <ChevronUp className="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+                                  )}
+                                </div>
+                              </button>
+
+                              {/* Expandable Breakdown Content */}
+                              {showProjectBreakdown && (
+                                <div className="space-y-3 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                                  {/* Search and Sort Controls */}
+                                  <div className="flex flex-col sm:flex-row gap-3">
+                                    <div className="relative flex-1">
+                                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                      <Input
+                                        type="text"
+                                        placeholder="Search projects..."
+                                        value={projectBreakdownSearch}
+                                        onChange={(e) => setProjectBreakdownSearch(e.target.value)}
+                                        className="pl-9 h-9 text-sm border-gray-200 dark:border-gray-700"
+                                      />
+                                    </div>
+                                    <Select value={projectBreakdownSort} onValueChange={(value) => setProjectBreakdownSort(value as 'name' | 'schools' | 'classes')}>
+                                      <SelectTrigger className="w-full sm:w-[180px] h-9 text-sm border-gray-200 dark:border-gray-700">
+                                        <div className="flex items-center gap-2">
+                                          <ArrowUpDown className="w-3 h-3" />
+                                          <SelectValue placeholder="Sort by" />
+                                        </div>
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="name">Sort by Name</SelectItem>
+                                        <SelectItem value="schools">Sort by Schools</SelectItem>
+                                        <SelectItem value="classes">Sort by Classes</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  {/* Filtered and Sorted Breakdown List */}
+                                  {(() => {
+                                    // Filter projects
+                                    let filtered = bulkPreviewData.projectBreakdown.filter(project =>
+                                      project.projectName.toLowerCase().includes(projectBreakdownSearch.toLowerCase())
+                                    );
+
+                                    // Sort projects
+                                    filtered = [...filtered].sort((a, b) => {
+                                      switch (projectBreakdownSort) {
+                                        case 'schools':
+                                          return b.schoolCount - a.schoolCount;
+                                        case 'classes':
+                                          return b.classCount - a.classCount;
+                                        case 'name':
+                                        default:
+                                          return a.projectName.localeCompare(b.projectName);
+                                      }
+                                    });
+
+                                    return (
+                                      <div className="space-y-2">
+                                        {filtered.length > 0 ? (
+                                          <>
+                                            <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1">
+                                              {filtered.map((breakdown) => (
+                                                <div
+                                                  key={breakdown.projectId}
+                                                  className="flex items-center justify-between p-2.5 bg-gray-50 dark:bg-gray-900/50 rounded-md border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
+                                                >
+                                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                    <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                                                    <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                                      {breakdown.projectName}
+                                                    </span>
+                                                  </div>
+                                                  <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400 flex-shrink-0 ml-2">
+                                                    <div className="flex items-center gap-1">
+                                                      <Building2 className="w-3 h-3" />
+                                                      <span className="font-medium">{breakdown.schoolCount}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                      <GraduationCap className="w-3 h-3" />
+                                                      <span className="font-medium">{breakdown.classCount}</span>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                            {projectBreakdownSearch && (
+                                              <p className="text-xs text-gray-500 dark:text-gray-400 text-center pt-1">
+                                                Showing {filtered.length} of {bulkPreviewData.projectBreakdown.length} projects
+                                              </p>
+                                            )}
+                                          </>
+                                        ) : (
+                                          <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                                            <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                            <p className="text-sm">No projects found</p>
+                                            <p className="text-xs mt-1">Try adjusting your search</p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          <Button
+                            onClick={applyBulkAssignment}
+                            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
+                            size="lg"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Apply Bulk Assignment
+                          </Button>
+                        </div>
+                      )}
+
+                      {!bulkPreviewData && !isBulkLoading && !assignToAllProjects && bulkSelectedProjects.length === 0 && (
+                        <div className="text-center py-12 px-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-900/50 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700">
+                          <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                            <Building2 className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                          </div>
+                          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Ready to Preview</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
+                            Select one or more projects above to see a preview of how many schools and classes will be assigned this course
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Individual Selection Panel */}
+              {assignmentMode === 'individual' && (
+                <>
+                  {/* Classes Management Card */}
+                  <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
+                    <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl flex items-center justify-center">
+                            <BookOpen className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
+                              Manage Classes
+                            </CardTitle>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Organize students into classes with specific schedules and teachers
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-700">
+                            {enrolledClasses.length} Classes
+                          </Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsClassCreateDialogOpen(true)}
+                            className="h-8 px-3 text-xs bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-700 rounded-lg"
+                          >
+                            <Plus className="w-3 h-3 mr-1" />
+                            Add Class
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-6 space-y-4">
+                      {/* Select Schools for Course Enrollment */}
+                      <div className="space-y-3">
+                        <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                          Select Schools
+                        </label>
+                        <MultiSelect
+                          options={allSchools.map(school => ({
+                            value: school.id,
+                            label: school.name,
+                            subLabel: `${school.school_type} • ${school.code}`,
+                            imageUrl: undefined
+                          }))}
+                          onValueChange={handleSchoolChange}
+                          value={courseData.school_ids}
+                          placeholder="Search and select schools..."
+                          className="min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
+                        />
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Select one or more schools. Classes from selected schools will be available for enrollment below.
+                        </p>
+                      </div>
+
+                      {/* Select Classes for Course Enrollment */}
+                      <div className="space-y-3">
+                        <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                          Select Classes for Course Enrollment
+                        </label>
+                        <div className="relative">
+                          <div className={courseData.school_ids.length === 0 ? "opacity-50 pointer-events-none" : ""}>
+                            <MultiSelect
+                              options={filteredClasses.map(cls => ({
+                                value: cls.id,
+                                label: cls.name,
+                                subLabel: `${cls.school} • Grade ${cls.grade} • ${cls.code} • ${cls.teachers.length} Teachers • ${cls.students.length} Students`,
+                                imageUrl: undefined
+                              }))}
+                              onValueChange={handleClassSelection}
+                              value={selectedClasses}
+                              placeholder={courseData.school_ids.length > 0 ? "Search and select classes to enroll for this course..." : "Select schools first to see available classes"}
+                              className="min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
+                            />
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {courseData.school_ids.length > 0 
+                            ? "Choose which classes will have access to this course. Students and teachers from selected classes will be automatically enrolled."
+                            : "Please select schools first to see available classes for enrollment."
+                          }
+                        </p>
+                      </div>
 
                   {/* Classes List */}
                   {classesLoading ? (
@@ -7675,48 +8389,203 @@ const CourseBuilder = () => {
                   </div>
                 </CardContent>
               </Card>
+                </>
+              )}
+                </TabsContent>
 
-              {/* Teachers Management Card */}
-              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
+                {/* Members Sub-Tab */}
+                <TabsContent value="members" className="space-y-6 mt-0">
+                  {/* Info Banner */}
+                  <div className="p-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-xl border border-blue-200/50 dark:border-blue-700/30">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Info className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="font-semibold text-blue-900 dark:text-blue-100 text-sm">
+                          How Course Members Work
+                        </h4>
+                        <p className="text-xs text-blue-800 dark:text-blue-200">
+                          <strong>Most members are automatically added</strong> when you assign classes in the Assignment tab. 
+                          Use direct assignment below only for special cases like course administrators, self-paced learners, or paid course enrollments.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Teachers Management Card */}
+                  <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
                 <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
-                        <BookOpen className="w-5 h-5 text-primary" />
+                        <Users className="w-5 h-5 text-primary" />
                       </div>
                       <div>
                         <CardTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
-                          Manage Teachers
+                          Course Teachers
                         </CardTitle>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Add or remove teachers who can manage this course
+                          Teachers who can manage this course
                         </p>
                       </div>
                     </div>
-                    <Badge variant="secondary" className="bg-primary/10 text-primary-700 dark:text-primary-300 border-primary/20">
-                      {courseData.teachers.length} Assigned
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      {getMembersFromClasses.teachersFromClasses.length > 0 && (
+                        <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-700">
+                          {getMembersFromClasses.teachersFromClasses.length} from classes
+                        </Badge>
+                      )}
+                      {getMembersFromClasses.additionalTeachers.length > 0 && (
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-700">
+                          {getMembersFromClasses.additionalTeachers.length} manually added
+                        </Badge>
+                      )}
+                      {courseData.teachers.length === 0 && (
+                        <Badge variant="secondary" className="bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                          0 Teachers
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
-                <CardContent className="p-6 space-y-4">
-                  {/* Teacher Selection */}
+                <CardContent className="p-6 space-y-6">
+                  {/* Teachers from Classes - Read-only Section */}
+                  {getMembersFromClasses.teachersFromClasses.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <GraduationCap className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            Teachers from Classes ({getMembersFromClasses.teachersFromClasses.length})
+                          </h4>
+                        </div>
+                        <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 border-purple-200 dark:border-purple-700">
+                          Auto-synced
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                        These teachers are automatically added from enrolled classes. To manage them, update class assignments in the Assignment tab.
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                        {getMembersFromClasses.teachersFromClasses.map(user => (
+                          <div key={user.id} className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50/50 to-purple-100/50 dark:from-purple-900/10 dark:to-purple-800/10 rounded-xl border border-purple-200/50 dark:border-purple-700/30 opacity-90">
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {user.avatar_url ? (
+                                <img 
+                                  src={user.avatar_url} 
+                                  alt={user.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    target.nextElementSibling?.classList.remove('hidden');
+                                  }}
+                                />
+                              ) : null}
+                              <div className={`w-full h-full bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/30 dark:to-purple-800/30 rounded-full flex items-center justify-center ${user.avatar_url ? 'hidden' : ''}`}>
+                                <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">
+                                  {user.name.split(' ').map(n => n[0]).join('')}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{user.name}</p>
+                              <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{user.email}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Additional Teachers - Editable Section */}
                   <div className="space-y-3">
-                    <label className="block text-sm font-semibold text-gray-900 dark:text-white">
-                      Select Teachers
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          Additional Teachers ({getMembersFromClasses.additionalTeachers.length})
+                        </h4>
+                      </div>
+                      {getMembersFromClasses.additionalTeachers.length > 0 && (
+                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border-blue-200 dark:border-blue-700">
+                          Manually managed
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                      Add course administrators, content creators, or other teachers who need access but aren't assigned to specific classes.
+                    </p>
                     <div className="relative">
-                  <MultiSelect
-                    options={allTeachers}
-                    onValueChange={(selectedIds) => handleMembersChange('teachers', selectedIds)}
-                    value={courseData.teachers.map(i => i.id)}
-                        placeholder="Search and select teachers..."
+                      <MultiSelect
+                        options={allTeachers.filter(t => !getMembersFromClasses.teachersFromClasses.some(ct => ct.id === t.value))}
+                        onValueChange={(selectedIds) => {
+                          // Merge with class-based teachers
+                          const classTeacherIds = getMembersFromClasses.teachersFromClasses.map(t => t.id);
+                          handleMembersChange('teachers', [...classTeacherIds, ...selectedIds]);
+                        }}
+                        value={getMembersFromClasses.additionalTeachers.map(t => t.id)}
+                        placeholder="Search and select additional teachers..."
                         className="min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
                       />
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Teachers can edit course content, manage students, and view analytics
-                    </p>
+                    {getMembersFromClasses.additionalTeachers.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mt-3">
+                        {getMembersFromClasses.additionalTeachers.map(user => (
+                          <div key={user.id} className="flex items-center gap-3 p-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border border-primary/20 hover:border-primary/30 transition-all duration-300 group hover:scale-105">
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {user.avatar_url ? (
+                                <img 
+                                  src={user.avatar_url} 
+                                  alt={user.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    target.nextElementSibling?.classList.remove('hidden');
+                                  }}
+                                />
+                              ) : null}
+                              <div className={`w-full h-full bg-gradient-to-br from-primary/100 to-primary-200 dark:from-primary-900/30 dark:to-primary-800/30 rounded-full flex items-center justify-center ${user.avatar_url ? 'hidden' : ''}`}>
+                                <span className="text-xs font-semibold text-primary-700 dark:text-primary-300">
+                                  {user.name.split(' ').map(n => n[0]).join('')}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{user.name}</p>
+                              <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{user.email}</p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                const classTeacherIds = getMembersFromClasses.teachersFromClasses.map(t => t.id);
+                                const newAdditionalTeachers = getMembersFromClasses.additionalTeachers.filter(t => t.id !== user.id);
+                                handleMembersChange('teachers', [...classTeacherIds, ...newAdditionalTeachers.map(t => t.id)]);
+                              }}
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-lg"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
+
+                  {courseData.teachers.length === 0 && (
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      <div className="w-16 h-16 mx-auto mb-3 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                        <Users className="w-8 h-8" />
+                      </div>
+                      <p className="text-sm font-medium mb-1">No teachers assigned yet</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                        Assign classes in the Assignment tab to automatically add teachers, or add them manually above
+                      </p>
+                    </div>
+                  )}
 
                   {/* Selected Teachers List - Compact Grid Layout */}
                   {courseData.teachers.length > 0 ? (
@@ -7795,66 +8664,121 @@ const CourseBuilder = () => {
                 <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
-                        <BookOpen className="w-5 h-5 text-primary" />
+                      <div className="w-10 h-10 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/20 dark:to-green-800/20 rounded-xl flex items-center justify-center">
+                        <Users className="w-5 h-5 text-green-600 dark:text-green-400" />
                       </div>
                       <div>
                         <CardTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
-                          Manage Students
+                          Course Students
                         </CardTitle>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Enroll or unenroll students from this course
+                          Students enrolled in this course
                         </p>
                       </div>
                     </div>
-                    <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-700">
-                      {courseData.students.length} Enrolled
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      {getMembersFromClasses.studentsFromClasses.length > 0 && (
+                        <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-700">
+                          {getMembersFromClasses.studentsFromClasses.length} from classes
+                        </Badge>
+                      )}
+                      {getMembersFromClasses.additionalStudents.length > 0 && (
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-700">
+                          {getMembersFromClasses.additionalStudents.length} manually added
+                        </Badge>
+                      )}
+                      {courseData.students.length === 0 && (
+                        <Badge variant="secondary" className="bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                          0 Students
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
-                <CardContent className="p-6 space-y-4">
-                  {/* Student Selection */}
+                <CardContent className="p-6 space-y-6">
+                  {/* Students from Classes - Read-only Section */}
+                  {getMembersFromClasses.studentsFromClasses.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <GraduationCap className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            Students from Classes ({getMembersFromClasses.studentsFromClasses.length})
+                          </h4>
+                        </div>
+                        <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 border-purple-200 dark:border-purple-700">
+                          Auto-synced
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                        These students are automatically added from enrolled classes. To manage them, update class assignments in the Assignment tab.
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
+                        {getMembersFromClasses.studentsFromClasses.map(user => (
+                          <div key={user.id} className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50/50 to-purple-100/50 dark:from-purple-900/10 dark:to-purple-800/10 rounded-xl border border-purple-200/50 dark:border-purple-700/30 opacity-90">
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {user.avatar_url ? (
+                                <img 
+                                  src={user.avatar_url} 
+                                  alt={user.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    target.nextElementSibling?.classList.remove('hidden');
+                                  }}
+                                />
+                              ) : null}
+                              <div className={`w-full h-full bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/30 dark:to-purple-800/30 rounded-full flex items-center justify-center ${user.avatar_url ? 'hidden' : ''}`}>
+                                <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">
+                                  {user.name.split(' ').map(n => n[0]).join('')}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{user.name}</p>
+                              <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{user.email}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Additional Students - Editable Section */}
                   <div className="space-y-3">
-                    <label className="block text-sm font-semibold text-gray-900 dark:text-white">
-                      Select Students
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          Additional Students ({getMembersFromClasses.additionalStudents.length})
+                        </h4>
+                      </div>
+                      {getMembersFromClasses.additionalStudents.length > 0 && (
+                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border-blue-200 dark:border-blue-700">
+                          Manually managed
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                      Add self-paced learners, students who purchased the course directly, or independent study students who aren't part of any class.
+                    </p>
                     <div className="relative">
-                   <MultiSelect
-                    options={allStudents}
-                    onValueChange={(selectedIds) => handleMembersChange('students', selectedIds)}
-                    value={courseData.students.map(s => s.id)}
-                        placeholder="Search and select students..."
+                      <MultiSelect
+                        options={allStudents.filter(s => !getMembersFromClasses.studentsFromClasses.some(cs => cs.id === s.value))}
+                        onValueChange={(selectedIds) => {
+                          // Merge with class-based students
+                          const classStudentIds = getMembersFromClasses.studentsFromClasses.map(s => s.id);
+                          handleMembersChange('students', [...classStudentIds, ...selectedIds]);
+                        }}
+                        value={getMembersFromClasses.additionalStudents.map(s => s.id)}
+                        placeholder="Search and select additional students..."
                         className="min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
                       />
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Students can access course content, submit assignments, and track progress
-                    </p>
-                  </div>
-
-                  {/* Selected Students List - Compact Grid Layout */}
-                  {courseData.students.length > 0 ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
-                          Enrolled Students
-                        </h4>
-                        <div className="flex items-center gap-2">
-
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleMembersChange('students', [])}
-                            className="h-8 px-3 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20 dark:hover:text-red-300 rounded-lg"
-                          >
-                            Clear All
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      {/* Compact Grid for Large Numbers */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
-                    {courseData.students.map(user => (
+                    {getMembersFromClasses.additionalStudents.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 mt-3">
+                        {getMembersFromClasses.additionalStudents.map(user => (
                           <div key={user.id} className="flex items-center gap-3 p-3 bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-900/10 dark:to-green-800/10 rounded-xl border border-green-200/50 dark:border-green-700/30 hover:border-green-300 dark:hover:border-green-600 transition-all duration-300 group hover:scale-105">
                             <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
                               {user.avatar_url ? (
@@ -7863,7 +8787,6 @@ const CourseBuilder = () => {
                                   alt={user.name}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
-                                    // Fallback to initials if image fails to load
                                     const target = e.target as HTMLImageElement;
                                     target.style.display = 'none';
                                     target.nextElementSibling?.classList.remove('hidden');
@@ -7875,7 +8798,7 @@ const CourseBuilder = () => {
                                   {user.name.split(' ').map(n => n[0]).join('')}
                                 </span>
                               </div>
-                        </div>
+                            </div>
                             <div className="flex-1 min-w-0">
                               <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{user.name}</p>
                               <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{user.email}</p>
@@ -7884,90 +8807,97 @@ const CourseBuilder = () => {
                               variant="ghost"
                               size="icon"
                               onClick={() => {
-                                const newStudents = courseData.students.filter(s => s.id !== user.id);
-                                handleMembersChange('students', newStudents.map(s => s.id));
+                                const classStudentIds = getMembersFromClasses.studentsFromClasses.map(s => s.id);
+                                const newAdditionalStudents = getMembersFromClasses.additionalStudents.filter(s => s.id !== user.id);
+                                handleMembersChange('students', [...classStudentIds, ...newAdditionalStudents.map(s => s.id)]);
                               }}
                               className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-lg"
                             >
                               <X className="w-3 h-3" />
                             </Button>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                      </div>
-                    </div>
-                  ) : (
+                    )}
+                  </div>
+
+                  {courseData.students.length === 0 && (
                     <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                       <div className="w-16 h-16 mx-auto mb-3 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-                        <BookOpen className="w-8 h-8" />
+                        <Users className="w-8 h-8" />
                       </div>
                       <p className="text-sm font-medium mb-1">No students enrolled yet</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">Select students from the dropdown above</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                        Assign classes in the Assignment tab to automatically add students, or add them manually above
+                      </p>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
-              {/* Access Control Info Card - Compact */}
-              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 border border-blue-200/50 dark:border-blue-700/30">
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Info className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100 mb-2">
-                          Access Control & Permissions
-                        </h3>
-                        <p className="text-blue-800 dark:text-blue-200 text-sm">
-                          Understand how different user roles interact with your course
-                        </p>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="space-y-3">
-                          <h4 className="font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2 text-sm">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            Teachers ({courseData.teachers.length})
-                          </h4>
-                          <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
-                            <li>• Edit course content and structure</li>
-                            <li>• Manage student enrollments</li>
-                            <li>• View student progress and analytics</li>
-                            <li>• Grade assignments and provide feedback</li>
-                          </ul>
+                  {/* Access Control Info Card - Compact */}
+                  <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 border border-blue-200/50 dark:border-blue-700/30">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <Info className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                         </div>
-                        
-                        <div className="space-y-3">
-                          <h4 className="font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2 text-sm">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            Students ({courseData.students.length})
-                          </h4>
-                          <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
-                            <li>• Access course content and materials</li>
-                            <li>• Submit assignments and take quizzes</li>
-                            <li>• Track learning progress</li>
-                            <li>• Participate in discussions</li>
-                          </ul>
-                        </div>
+                        <div className="space-y-4">
+                          <div>
+                            <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100 mb-2">
+                              Access Control & Permissions
+                            </h3>
+                            <p className="text-blue-800 dark:text-blue-200 text-sm">
+                              Understand how different user roles interact with your course
+                            </p>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="space-y-3">
+                              <h4 className="font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2 text-sm">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                Teachers ({courseData.teachers.length})
+                              </h4>
+                              <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
+                                <li>• Edit course content and structure</li>
+                                <li>• Manage student enrollments</li>
+                                <li>• View student progress and analytics</li>
+                                <li>• Grade assignments and provide feedback</li>
+                              </ul>
+                            </div>
+                            
+                            <div className="space-y-3">
+                              <h4 className="font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2 text-sm">
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                Students ({courseData.students.length})
+                              </h4>
+                              <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
+                                <li>• Access course content and materials</li>
+                                <li>• Submit assignments and take quizzes</li>
+                                <li>• Track learning progress</li>
+                                <li>• Participate in discussions</li>
+                              </ul>
+                            </div>
 
-                        <div className="space-y-3">
-                          <h4 className="font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2 text-sm">
-                            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                            Classes ({enrolledClasses.length})
-                          </h4>
-                          <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
-                            <li>• Organize students into groups</li>
-                            <li>• Set specific schedules and capacity</li>
-                            <li>• Assign dedicated teachers</li>
-                            <li>• Track class-specific progress</li>
-                          </ul>
+                            <div className="space-y-3">
+                              <h4 className="font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2 text-sm">
+                                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                Classes ({enrolledClasses.length})
+                              </h4>
+                              <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
+                                <li>• Organize students into groups</li>
+                                <li>• Set specific schedules and capacity</li>
+                                <li>• Assign dedicated teachers</li>
+                                <li>• Track class-specific progress</li>
+                              </ul>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
             </TabsContent>
           </div>
         </Tabs>

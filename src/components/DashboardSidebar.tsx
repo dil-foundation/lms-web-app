@@ -67,12 +67,14 @@ export const DashboardSidebar = ({
               </div>
               <div className="flex-1 flex flex-col h-full">
                 <UserProfileSection />
-                <div className='flex-1 overflow-y-auto'>
+                <div className='flex-1 overflow-y-auto overflow-x-hidden'>
                   <nav className="px-2 space-y-2">
                     {navigationCategories.map(category => (
                       <div key={category.title} className="mb-6">
-                        <div className="px-4 pt-4 pb-3">
-                          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{category.title}</h3>
+                        <div className="px-3 pt-4 pb-2">
+                          <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider leading-tight break-words">
+                            {category.title}
+                          </h3>
                         </div>
                         <div className="space-y-1">
                           {category.items.map(item => (
@@ -82,15 +84,30 @@ export const DashboardSidebar = ({
                               end={item.path === '/dashboard'}
                               onClick={() => setIsMobileMenuOpen(false)}
                               className={({ isActive }) => 
-                                `flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
+                                `flex items-center gap-2.5 px-2.5 py-2 mx-1.5 rounded-lg transition-all duration-200 min-w-0 ${
                                   isActive 
                                     ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary font-medium shadow-sm' 
                                     : 'text-foreground hover:bg-primary/10 dark:hover:bg-primary/20 hover:text-primary dark:hover:text-primary'
                                 }`
                               }
                             >
-                              <item.icon className="h-5 w-5" />
-                              <span className="font-medium">{item.title}</span>
+                              <item.icon className="h-4 w-4 flex-shrink-0" />
+                              <span className="text-sm font-medium truncate flex-1 min-w-0">{item.title}</span>
+                              {item.badge && (
+                                <span className="ml-auto bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap">
+                                  {item.badge}
+                                </span>
+                              )}
+                              {item.isNew && (
+                                <span className="ml-auto bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 whitespace-nowrap">
+                                  New
+                                </span>
+                              )}
+                              {item.isComingSoon && (
+                                <span className="ml-auto bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap font-medium">
+                                  Soon
+                                </span>
+                              )}
                             </NavLink>
                           ))}
                         </div>
@@ -120,15 +137,17 @@ export const DashboardSidebar = ({
 
       {/* Desktop Layout */}
       <div className="hidden md:flex min-h-full w-full">
-        <div className="w-72 flex-shrink-0 fixed left-0 top-20 h-[calc(100vh-5rem)] bg-background border-r border-border z-40">
-          <div className="flex flex-col h-full">
+        <div className="w-72 flex-shrink-0 fixed left-0 top-20 h-[calc(100vh-5rem)] bg-background border-r border-border z-40 overflow-x-hidden">
+          <div className="flex flex-col h-full overflow-x-hidden">
             <UserProfileSection />
-            <div className="flex-1 overflow-y-auto px-2 pb-4">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 pb-4">
               <nav className="space-y-2">
                 {navigationCategories.map(category => (
                   <div key={category.title} className="mb-6">
-                    <div className="px-4 pt-4 pb-3">
-                      <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{category.title}</h3>
+                    <div className="px-3 pt-4 pb-2">
+                      <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider leading-tight break-words">
+                        {category.title}
+                      </h3>
                     </div>
                     <div className="space-y-1">
                       {category.items.map(item => (
@@ -138,18 +157,28 @@ export const DashboardSidebar = ({
                           end={item.path === '/dashboard'}
                           onClick={() => setIsMobileMenuOpen(false)}
                           className={({ isActive }) => 
-                            `flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
+                            `flex items-center gap-2.5 px-2.5 py-2 mx-1.5 rounded-lg transition-all duration-200 min-w-0 ${
                               isActive 
                                 ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary font-medium shadow-sm' 
                                 : 'text-foreground hover:bg-primary/10 dark:hover:bg-primary/20 hover:text-primary dark:hover:text-primary'
                             }`
                           }
                         >
-                          <item.icon className="h-5 w-5" />
-                          <span className="font-medium">{item.title}</span>
+                          <item.icon className="h-4 w-4 flex-shrink-0" />
+                          <span className="text-sm font-medium truncate flex-1 min-w-0">{item.title}</span>
                           {item.badge && (
-                            <span className="ml-auto bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded-full">
+                            <span className="ml-auto bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap">
                               {item.badge}
+                            </span>
+                          )}
+                          {item.isNew && (
+                            <span className="ml-auto bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 whitespace-nowrap">
+                              New
+                            </span>
+                          )}
+                          {item.isComingSoon && (
+                            <span className="ml-auto bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap">
+                              Soon
                             </span>
                           )}
                         </NavLink>

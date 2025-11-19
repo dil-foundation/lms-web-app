@@ -1,5 +1,5 @@
 
-import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye, MessageCircle, Bot, Brain, Zap, Target, Sparkles, BookCheck, FileText, Cog, Settings2, ShieldCheck, Plug, Building2, Download, MapPin, Users2, MessageCircle as AIAssistant, Video, CreditCard } from 'lucide-react';
+import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye, MessageCircle, Bot, Brain, Zap, Target, Sparkles, BookCheck, FileText, Cog, Settings2, ShieldCheck, Plug, Building2, Download, MapPin, Users2, MessageCircle as AIAssistant, Video, CreditCard, LayoutDashboard, Sparkles as SparklesIcon, Calendar, CalendarDays, Package, TrendingDown, Wrench, FileText as FileTextIcon, AlertCircle } from 'lucide-react';
 
 export type UserRole = 'student' | 'teacher' | 'admin' | 'content_creator' | 'super_user' | 'view_only';
 
@@ -8,6 +8,8 @@ export interface NavigationItem {
   path: string;
   icon: any;
   badge?: string;
+  isNew?: boolean;
+  isComingSoon?: boolean;
 }
 
 export interface NavigationCategory {
@@ -96,31 +98,31 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean, is
     case 'student':
       return [
         {
-          title: 'LEARNING',
+          title: 'DASHBOARD',
           items: [
             { title: 'Overview', path: '/dashboard', icon: Home },
             { title: 'My Courses', path: '/dashboard/courses', icon: BookOpen },
-            { title: 'Assignments', path: '/dashboard/assignments', icon: ClipboardList },
           ]
         },
         {
-          title: 'PROGRESS',
+          title: 'LEARNING',
+          items: [
+            { title: 'Assignments', path: '/dashboard/assignments', icon: ClipboardList },
+            { title: 'Offline Learning', path: '/dashboard/offline-learning', icon: Download },
+          ]
+        },
+        {
+          title: 'PROGRESS & ANALYTICS',
           items: [
             { title: 'Progress', path: '/dashboard/progress', icon: TrendingUp },
           ]
         },
         {
-          title: 'COMMUNICATION',
+          title: 'COMMUNICATION & ENGAGEMENT',
           items: [
             { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
-            { title: 'Discussions', path: '/dashboard/discussion', icon: MessageCircle },
+            { title: 'Discussion Forums', path: '/dashboard/discussion', icon: MessageCircle },
             ...(isZoomEnabled ? [{ title: 'Meetings', path: '/dashboard/meetings', icon: Video }] : []),
-          ]
-        },
-        {
-          title: 'OFFLINE',
-          items: [
-            { title: 'Offline Learning', path: '/dashboard/offline-learning', icon: Download },
           ]
         }
       ];
@@ -128,26 +130,31 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean, is
     case 'teacher':
       return [
         {
-          title: 'MAIN',
+          title: 'DASHBOARD',
           items: [
             { title: 'Overview', path: '/dashboard', icon: Home },
             { title: 'My Courses', path: '/dashboard/courses', icon: BookOpen },
           ]
         },
         {
-          title: 'CLASSROOM',
+          title: 'CLASSROOM MANAGEMENT',
           items: [
+            { title: 'Classes', path: '/dashboard/classes', icon: Calendar },
             { title: 'Students', path: '/dashboard/students', icon: Users },
-            { title: 'Classes', path: '/dashboard/classes', icon: Users2 },
             { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
+          ]
+        },
+        {
+          title: 'ANALYTICS & INSIGHTS',
+          items: [
             { title: 'Performance Analytics', path: '/dashboard/reports', icon: FileQuestion },
           ]
         },
         {
-          title: 'COMMUNICATION',
+          title: 'COMMUNICATION & ENGAGEMENT',
           items: [
             { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
-            { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
+            { title: 'Discussion Forums', path: '/dashboard/discussion', icon: MessageCircle },
             ...(isZoomEnabled ? [{ title: 'Meetings', path: '/dashboard/meetings', icon: Video }] : []),
           ]
         }
@@ -156,45 +163,53 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean, is
     case 'admin':
       return [
         {
-          title: 'MAIN',
+          title: 'DASHBOARD',
           items: [
             { title: 'Overview', path: '/dashboard', icon: Home },
-            { title: 'IRIS', path: '/dashboard/iris', icon: Bot },
+            { title: 'IRIS', path: '/dashboard/iris', icon: Bot, badge: 'AI Insights' },
           ]
         },
         {
-          title: 'MANAGEMENT',
+          title: 'ACADEMIC MANAGEMENT',
           items: [
-            { title: 'Users', path: '/dashboard/users', icon: Users },
-            { title: 'Classes', path: '/dashboard/classes', icon: Users2 },
-            { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
-            { title: 'Course Categories', path: '/dashboard/course-categories', icon: BookCheck },
+            { title: 'AI Content Development', path: '/dashboard/ai-content-development', icon: SparklesIcon, isNew: true },
+            { title: 'Courses & Categories', path: '/dashboard/courses', icon: BookOpen },
+            { title: 'Classes', path: '/dashboard/classes', icon: Calendar },
+            { title: 'Calendar Management', path: '/dashboard/calendar-management', icon: CalendarDays, isComingSoon: true },
+            { title: 'Users & Permissions', path: '/dashboard/users', icon: Users },
             { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
-            { title: 'Orders', path: '/dashboard/orders', icon: CreditCard },
+          ]
+        },
+        {
+          title: 'COMMUNICATION & ENGAGEMENT',
+          items: [
             { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
-            { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
+            { title: 'Discussion Forums', path: '/dashboard/discussion', icon: MessageCircle },
             ...(isZoomEnabled ? [{ title: 'Meetings', path: '/dashboard/meetings', icon: Video }] : []),
           ]
         },
         {
-          title: 'ANALYTICS',
+          title: 'BUSINESS OPERATIONS',
           items: [
-            { title: 'Performance Analytics', path: '/dashboard/reports', icon: FileQuestion },
+            { title: 'Orders & Enrollment', path: '/dashboard/orders', icon: CreditCard },
+            { title: 'Inventory Management', path: '/dashboard/inventory-management', icon: Package, isComingSoon: true },
           ]
         },
         {
-          title: 'OBSERVATION',
+          title: 'ANALYTICS & INSIGHTS',
           items: [
+            { title: 'Performance Analytics', path: '/dashboard/reports', icon: FileQuestion },
+            { title: 'Predictive Intervention System', path: '/dashboard/predictive-intervention', icon: TrendingDown, isComingSoon: true },
             { title: 'Observation Reports', path: '/dashboard/observation-reports', icon: Eye },
           ]
         },
         {
-          title: 'SYSTEM',
+          title: 'SUPPORT & ADMINISTRATION',
           items: [
-            { title: 'Settings and Security', path: '/dashboard/admin-settings', icon: Settings },
-            { title: 'APEX Admin', path: '/dashboard/apex-admin', icon: AIAssistant },
+            { title: 'APEX', path: '/dashboard/apex-admin', icon: AIAssistant, badge: 'AI Support' },
+            { title: 'Settings & Security', path: '/dashboard/admin-settings', icon: Settings },
             { title: 'Integration APIs', path: '/dashboard/integration-apis', icon: Plug },
-            { title: 'Multitenancy', path: '/dashboard/multitenancy', icon: Building2 },
+            { title: 'Advanced Tools', path: '/dashboard/advanced-tools', icon: Wrench },
           ]
         }
       ];
@@ -219,45 +234,54 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean, is
     case 'super_user':
       return [
         {
-          title: 'MAIN',
+          title: 'DASHBOARD',
           items: [
             { title: 'Overview', path: '/dashboard', icon: Home },
-            { title: 'IRIS', path: '/dashboard/iris', icon: Bot },
+            { title: 'Executive Dashboard', path: '/dashboard/executive-dashboard', icon: LayoutDashboard, isComingSoon: true },
+            { title: 'IRIS', path: '/dashboard/iris', icon: Bot, badge: 'AI Insights' },
           ]
         },
         {
-          title: 'MANAGEMENT',
+          title: 'ACADEMIC MANAGEMENT',
           items: [
-            { title: 'Users', path: '/dashboard/users', icon: Users },
-            { title: 'Classes', path: '/dashboard/classes', icon: Users2 },
-            { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
-            { title: 'Course Categories', path: '/dashboard/course-categories', icon: BookCheck },
+            { title: 'AI Content Development', path: '/dashboard/ai-content-development', icon: SparklesIcon, isNew: true },
+            { title: 'Courses & Categories', path: '/dashboard/courses', icon: BookOpen },
+            { title: 'Classes', path: '/dashboard/classes', icon: Calendar },
+            { title: 'Calendar Management', path: '/dashboard/calendar-management', icon: CalendarDays, isComingSoon: true },
+            { title: 'Users & Permissions', path: '/dashboard/users', icon: Users },
             { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
-            { title: 'Orders', path: '/dashboard/orders', icon: CreditCard },
+          ]
+        },
+        {
+          title: 'COMMUNICATION & ENGAGEMENT',
+          items: [
             { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
-            { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
+            { title: 'Discussion Forums', path: '/dashboard/discussion', icon: MessageCircle },
             ...(isZoomEnabled ? [{ title: 'Meetings', path: '/dashboard/meetings', icon: Video }] : []),
           ]
         },
         {
-          title: 'ANALYTICS',
+          title: 'BUSINESS OPERATIONS',
           items: [
-            { title: 'Performance Analytics', path: '/dashboard/reports', icon: FileQuestion },
+            { title: 'Orders & Enrollment', path: '/dashboard/orders', icon: CreditCard },
+            { title: 'Inventory Management', path: '/dashboard/inventory-management', icon: Package, isComingSoon: true },
           ]
         },
         {
-          title: 'OBSERVATION',
+          title: 'ANALYTICS & INSIGHTS',
           items: [
+            { title: 'Performance Analytics', path: '/dashboard/reports', icon: FileQuestion },
+            { title: 'Predictive Intervention System', path: '/dashboard/predictive-intervention', icon: TrendingDown, isComingSoon: true },
             { title: 'Observation Reports', path: '/dashboard/observation-reports', icon: Eye },
           ]
         },
         {
-          title: 'SYSTEM',
+          title: 'SUPPORT & ADMINISTRATION',
           items: [
-            { title: 'Settings and Security', path: '/dashboard/admin-settings', icon: Settings },
-            { title: 'APEX Admin', path: '/dashboard/apex-admin', icon: AIAssistant },
+            { title: 'APEX', path: '/dashboard/apex-admin', icon: AIAssistant, badge: 'AI Support' },
+            { title: 'Settings & Security', path: '/dashboard/admin-settings', icon: Settings },
             { title: 'Integration APIs', path: '/dashboard/integration-apis', icon: Plug },
-            { title: 'Multitenancy', path: '/dashboard/multitenancy', icon: Building2 },
+            { title: 'Advanced Tools', path: '/dashboard/advanced-tools', icon: Wrench },
           ]
         }
       ];

@@ -42,6 +42,7 @@ import { OfflineLearning as StudentOfflineLearning } from '@/components/student/
 const UsersManagement = lazy(() => import('@/components/admin/UsersManagement').then(module => ({ default: module.UsersManagement })));
 const ClassManagement = lazy(() => import('@/components/admin/ClassManagement'));
 const CourseManagement = lazy(() => import('@/components/admin/CourseManagement'));
+const CoursesAndCategories = lazy(() => import('./CoursesAndCategories'));
 const OrdersManagement = lazy(() => import('@/components/admin/OrdersManagement'));
 const ReportsAnalytics = lazy(() => import('@/components/admin/ReportsAnalytics').then(module => ({ default: module.ReportsAnalytics })));
 const APEXAdmin = lazy(() => import('@/components/admin/AIAssistantAdmin').then(module => ({ default: module.APEXAdmin })));
@@ -86,6 +87,13 @@ const IntegrationAPIs = lazy(() => import('@/components/admin/IntegrationAPIs').
 const Multitenancy = lazy(() => import('@/components/admin/Multitenancy').then(module => ({ default: module.Multitenancy })));
 const CourseCategories = lazy(() => import('@/components/admin/CourseCategories').then(module => ({ default: module.CourseCategories })));
 const CourseBuilder = lazy(() => import('./CourseBuilder'));
+const AdvancedTools = lazy(() => import('./AdvancedTools'));
+const ExecutiveDashboard = lazy(() => import('./ExecutiveDashboard'));
+const PolicyManagement = lazy(() => import('./PolicyManagement'));
+const InventoryManagement = lazy(() => import('./InventoryManagement'));
+const PredictiveIntervention = lazy(() => import('./PredictiveIntervention'));
+const AIContentDevelopment = lazy(() => import('./AIContentDevelopment'));
+const CalendarManagement = lazy(() => import('./CalendarManagement'));
 const CourseOverview = lazy(() => import('./CourseOverview').then(module => ({ default: module.CourseOverview })));
 // Import CourseContent eagerly since it might be needed for offline course viewing
 import { CourseContent } from './CourseContent';
@@ -487,7 +495,7 @@ const Dashboard = () => {
                         <>
                           <Route path="/users" element={<UsersManagement />} />
                           <Route path="/classes" element={<ClassManagement />} />
-                          <Route path="/courses" element={<CourseManagement />} />
+                          <Route path="/courses" element={<CoursesAndCategories />} />
                           <Route path="/course-categories" element={<CourseCategories />} />
                           <Route path="/orders" element={<OrdersManagement />} />
                           <Route path="/courses/builder/new" element={<CourseBuilder />} />
@@ -507,7 +515,13 @@ const Dashboard = () => {
                           <Route path="/test-admin-settings" element={<AdminSecurity />} />
                           <Route path="/security" element={<AdminSecurity />} />
                           <Route path="/integration-apis" element={<IntegrationAPIs userProfile={finalProfile} />} />
-                          <Route path="/multitenancy" element={<Multitenancy userProfile={finalProfile} />} />
+                          <Route path="/advanced-tools" element={<AdvancedTools />} />
+                          <Route path="/executive-dashboard" element={<ExecutiveDashboard />} />
+                          <Route path="/policy-management" element={<PolicyManagement />} />
+                          <Route path="/inventory-management" element={<InventoryManagement />} />
+                          <Route path="/predictive-intervention" element={<PredictiveIntervention />} />
+                          <Route path="/ai-content-development" element={<AIContentDevelopment />} />
+                          <Route path="/calendar-management" element={<CalendarManagement />} />
                         </>
                       )}
                     </>
