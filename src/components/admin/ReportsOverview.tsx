@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,6 +11,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ContentLoader } from '@/components/ContentLoader';
 import { Button } from '@/components/ui/button';
+import { ExportButton } from '@/components/ui/ExportButton';
+import { ReportData, ExportColumn } from '@/services/universalExportService';
 
 // TypeScript interfaces for database data
 interface DashboardStats {
@@ -318,6 +320,122 @@ export const ReportsOverview = () => {
     return engagementMetricsData;
   })();
 
+  // Prepare report data for export
+  const exportReportData = useMemo((): ReportData | null => {
+    if (!stats) return null;
+
+    const timeRangeLabels: Record<string, string> = {
+      '7days': 'Last 7 Days',
+      '30days': 'Last 30 Days',
+      '3months': 'Last 3 Months',
+      '6months': 'Last 6 Months',
+      '1year': 'Last Year',
+      'alltime': 'All Time',
+    };
+
+    return {
+      metadata: {
+        title: 'Admin Performance Analytics Report',
+        description: 'Comprehensive platform performance and analytics report',
+        generatedBy: user?.email || 'Unknown',
+        generatedAt: new Date(),
+        timeRange: timeRangeLabels[timeRange] || timeRange,
+      },
+      summary: `This report contains comprehensive analytics for the platform. Total users: ${stats.total_users}, Total courses: ${stats.total_courses}, Engagement rate: ${stats.avg_engagement}%.`,
+      metrics: [
+        { label: 'Total Users', value: stats.total_users },
+        { label: 'Total Teachers', value: stats.total_teachers },
+        { label: 'Total Students', value: stats.total_students },
+        { label: 'Total Admins', value: stats.total_admins },
+        { label: 'Total Courses', value: stats.total_courses },
+        { label: 'Active Courses', value: stats.active_courses },
+        { label: 'Completed Assignments', value: stats.completed_assignments },
+        { label: 'Active Discussions', value: stats.active_discussions },
+        { label: 'Average Engagement', value: `${stats.avg_engagement}%` },
+        { label: 'New Users This Month', value: stats.new_users_this_month },
+        { label: 'Course Completion Rate', value: `${stats.course_completion_rate}%` },
+        { label: 'Total Logins', value: stats.total_logins },
+        { label: 'Active Users Percentage', value: `${stats.active_users_percentage}%` },
+        { label: 'Course Engagement Percentage', value: `${stats.course_engagement_percentage}%` },
+        { label: 'Discussion Participation', value: `${stats.discussion_participation_percentage}%` },
+        { label: 'Assignment Completion', value: `${stats.assignment_completion_percentage}%` },
+      ],
+      tables: [
+        {
+          title: 'User Growth Trends',
+          columns: [
+            { header: 'Period', key: 'period_label', width: 20 },
+            { header: 'New Users', key: 'new_users', width: 15 },
+            { header: 'Active Users', key: 'active_users', width: 15 },
+            { header: 'Churn Rate %', key: 'churn_rate', width: 15, format: (v) => `${v}%` },
+          ],
+          data: userGrowthData,
+        },
+        {
+          title: 'Platform Statistics',
+          columns: [
+            { header: 'Category', key: 'category_name', width: 30 },
+            { header: 'Value', key: 'value', width: 15 },
+          ],
+          data: platformStatsData,
+        },
+        {
+          title: 'Course Analytics',
+          columns: [
+            { header: 'Course Title', key: 'course_title', width: 40 },
+            { header: 'Enrolled Students', key: 'enrolled_students', width: 18 },
+            { header: 'Completion Rate %', key: 'completion_rate', width: 18, format: (v) => `${v}%` },
+            { header: 'Avg Rating', key: 'avg_rating', width: 15 },
+          ],
+          data: courseAnalyticsData,
+        },
+        {
+          title: 'Course Performance',
+          columns: [
+            { header: 'Course Title', key: 'course_title', width: 40 },
+            { header: 'Enrollments', key: 'enrollments', width: 15 },
+            { header: 'Completion Rate %', key: 'completion_rate', width: 18, format: (v) => `${v}%` },
+            { header: 'Avg Rating', key: 'avg_rating', width: 15 },
+          ],
+          data: coursePerformanceData,
+        },
+        {
+          title: 'Engagement Data',
+          columns: [
+            { header: 'Period', key: 'period_label', width: 20 },
+            { header: 'Active Users', key: 'active_users', width: 15 },
+            { header: 'Time Spent (min)', key: 'time_spent', width: 18 },
+            { header: 'Courses', key: 'courses', width: 15 },
+            { header: 'Discussions', key: 'discussions', width: 15 },
+          ],
+          data: engagementData,
+        },
+        {
+          title: 'User Analytics',
+          columns: [
+            { header: 'Period', key: 'period_label', width: 20 },
+            { header: 'Active Users', key: 'active_users', width: 15 },
+            { header: 'New Signups', key: 'new_signups', width: 15 },
+            { header: 'Churn Rate %', key: 'churn_rate', width: 15, format: (v) => `${v}%` },
+          ],
+          data: userAnalyticsData,
+        },
+        {
+          title: 'Engagement Metrics',
+          columns: [
+            { header: 'Period', key: 'period_label', width: 20 },
+            { header: 'Active Users', key: 'active_users', width: 15 },
+            { header: 'Assignments Submitted', key: 'assignments_submitted', width: 20 },
+            { header: 'Quiz Submissions', key: 'quiz_submissions', width: 18 },
+            { header: 'Lessons Completed', key: 'lessons_completed', width: 18 },
+            { header: 'Discussions Created', key: 'discussions_created', width: 18 },
+          ],
+          data: engagementMetricsData,
+        },
+      ],
+    };
+  }, [stats, userGrowthData, platformStatsData, courseAnalyticsData, coursePerformanceData, engagementData, userAnalyticsData, engagementMetricsData, timeRange, user]);
+
   // Debug: Log the data being passed to the chart
   console.log('User Analytics Data:', processedUserAnalyticsData);
   console.log('Data length:', processedUserAnalyticsData.length);
@@ -394,6 +512,14 @@ export const ReportsOverview = () => {
                 </p>
               </div>
             </div>
+            {exportReportData && (
+              <ExportButton
+                reportData={exportReportData}
+                filename="admin-performance-analytics"
+                variant="outline"
+                className="shrink-0"
+              />
+            )}
             
             <Select value={timeRange} onValueChange={setTimeRange}>
               <SelectTrigger className="w-full sm:w-48">

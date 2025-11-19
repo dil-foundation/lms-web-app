@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +6,9 @@ import { Progress } from '@/components/ui/progress';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Legend, Area, AreaChart } from 'recharts';
 import { ContentLoader } from '@/components/ContentLoader';
 import { toast } from 'sonner';
+import { ExportButton } from '@/components/ui/ExportButton';
+import { ReportData, ExportColumn } from '@/services/universalExportService';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -99,6 +102,125 @@ export const ReportsAnalytics = () => {
     }
   };
 
+  const { user } = useAuth();
+
+  // Prepare report data for export
+  const exportReportData = useMemo((): ReportData | null => {
+    if (!analyticsOverview && !practiceStageData && !userEngagementData) return null;
+
+    const timeRangeLabels: Record<string, string> = {
+      'today': 'Today',
+      'thisweek': 'This Week',
+      'thismonth': 'This Month',
+      'alltime': 'All Time',
+    };
+
+    const tables: ReportData['tables'] = [];
+    const metrics: ReportData['metrics'] = [];
+
+    // Add analytics overview metrics
+    if (analyticsOverview) {
+      metrics.push(
+        { label: 'Total Users', value: analyticsOverview.totalUsers },
+        { label: 'Active Users', value: analyticsOverview.activeUsers },
+        { label: 'Total Sessions', value: analyticsOverview.totalSessions },
+        { label: 'Avg Session Duration', value: `${analyticsOverview.avgSessionDuration} min` },
+        { label: 'Completion Rate', value: `${analyticsOverview.completionRate}%` },
+        { label: 'Engagement Score', value: `${analyticsOverview.engagementScore}%` },
+        { label: 'Growth Rate', value: `${analyticsOverview.growthRate}%` },
+        { label: 'Retention Rate', value: `${analyticsOverview.retentionRate}%` }
+      );
+    }
+
+    // Add key metrics
+    if (keyMetrics) {
+      metrics.push(
+        { label: 'Total Users', value: keyMetrics.totalUsers || 0 },
+        { label: 'Active Today', value: keyMetrics.activeToday || 0 },
+        { label: 'Students', value: keyMetrics.students || 0 },
+        { label: 'Teachers', value: keyMetrics.teachers || 0 },
+        { label: 'Students Percentage', value: `${Math.round(keyMetrics.studentsPercentage || 0)}%` },
+        { label: 'Teachers Percentage', value: `${Math.round(keyMetrics.teachersPercentage || 0)}%` }
+      );
+    }
+
+    // Add practice stage performance table
+    if (practiceStageData?.stages && practiceStageData.stages.length > 0) {
+      tables.push({
+        title: 'Practice Stage Performance',
+        columns: [
+          { header: 'Stage', key: 'stage', width: 20 },
+          { header: 'Performance', key: 'performance', width: 15, format: (v) => `${v}%` },
+          { header: 'Users', key: 'users', width: 15 },
+          { header: 'Avg Score', key: 'avgScore', width: 15, format: (v) => `${v}%` },
+          { header: 'Status', key: 'status', width: 20 },
+          { header: 'Completion Rate', key: 'completionRate', width: 18, format: (v) => v ? `${v}%` : 'N/A' },
+        ],
+        data: practiceStageData.stages,
+      });
+    }
+
+    // Add user engagement table
+    if (userEngagementData?.engagementTypes && userEngagementData.engagementTypes.length > 0) {
+      tables.push({
+        title: 'User Engagement',
+        columns: [
+          { header: 'Engagement Type', key: 'name', width: 30 },
+          { header: 'Value', key: 'value', width: 15 },
+          { header: 'Users', key: 'users', width: 15 },
+          { header: 'Percentage', key: 'percentage', width: 15, format: (v) => v ? `${v}%` : 'N/A' },
+          { header: 'Growth', key: 'growth', width: 15, format: (v) => v ? `${v}%` : 'N/A' },
+        ],
+        data: userEngagementData.engagementTypes,
+      });
+    }
+
+    // Add time usage patterns table
+    if (timeUsageData?.patterns && timeUsageData.patterns.length > 0) {
+      tables.push({
+        title: 'Time Usage Patterns',
+        columns: [
+          { header: 'Hour', key: 'hour', width: 15 },
+          { header: 'Users', key: 'users', width: 15 },
+          { header: 'Sessions', key: 'sessions', width: 15, format: (v) => v ? String(v) : 'N/A' },
+          { header: 'Avg Duration (min)', key: 'avgDuration', width: 20, format: (v) => v ? `${v} min` : 'N/A' },
+        ],
+        data: timeUsageData.patterns,
+      });
+    }
+
+    // Add top content accessed table
+    if (topContentData?.content && topContentData.content.length > 0) {
+      tables.push({
+        title: 'Top Content Accessed',
+        columns: [
+          { header: 'Title', key: 'title', width: 40 },
+          { header: 'Type', key: 'type', width: 15 },
+          { header: 'Stage', key: 'stage', width: 15 },
+          { header: 'Access Count', key: 'accessCount', width: 15 },
+          { header: 'Completion Rate', key: 'completionRate', width: 18, format: (v) => `${v}%` },
+          { header: 'Avg Rating', key: 'avgRating', width: 15 },
+        ],
+        data: topContentData.content,
+      });
+    }
+
+    return {
+      metadata: {
+        title: 'AI Performance Analytics Report',
+        description: 'Comprehensive AI tutor performance and engagement analytics',
+        generatedBy: user?.email || 'Unknown',
+        generatedAt: new Date(),
+        timeRange: timeRangeLabels[dateRange] || dateRange,
+      },
+      summary: analyticsOverview 
+        ? `This report contains AI performance analytics. Total users: ${analyticsOverview.totalUsers}, Active users: ${analyticsOverview.activeUsers}, Engagement score: ${analyticsOverview.engagementScore}%, Completion rate: ${analyticsOverview.completionRate}%.`
+        : 'AI Performance Analytics Report',
+      metrics,
+      tables,
+    };
+  }, [analyticsOverview, practiceStageData, userEngagementData, timeUsageData, topContentData, keyMetrics, dateRange, user]);
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header Section */}
@@ -122,6 +244,15 @@ export const ReportsAnalytics = () => {
             
             {/* Filter Controls */}
             <div className="flex items-center gap-3 w-full lg:w-auto">
+              {exportReportData && (
+                <ExportButton
+                  reportData={exportReportData}
+                  filename="ai-performance-analytics"
+                  variant="outline"
+                  className="shrink-0"
+                />
+              )}
+              
               <Select value={dateRange} onValueChange={handleTimeRangeChange}>
                 <SelectTrigger className="flex-1 lg:w-48">
                   <SelectValue placeholder="Select time range" />
@@ -163,7 +294,7 @@ export const ReportsAnalytics = () => {
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load Reports</h3>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
-            onClick={() => fetchReportsData()}
+            onClick={handleRefresh}
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
           >
             Try Again
