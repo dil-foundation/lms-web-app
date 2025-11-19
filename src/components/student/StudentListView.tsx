@@ -178,8 +178,101 @@ export const StudentListView: React.FC<StudentListViewProps> = ({
             className="group cursor-pointer hover:shadow-md transition-all duration-200 hover:bg-muted/50 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-border dark:hover:border-border border-l-4 border-l-transparent hover:border-l-primary"
             onClick={() => handleStudentClick(student)}
           >
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
+            <CardContent className="p-3 sm:p-4">
+              {/* Mobile Layout - Stacked */}
+              <div className="flex flex-col gap-3 sm:hidden">
+                <div className="flex items-start gap-3">
+                  {/* Avatar */}
+                  <Avatar className="h-12 w-12 flex-shrink-0">
+                    <AvatarImage src={student.avatar_url || student.avatar} />
+                    <AvatarFallback className="bg-primary/20 text-primary font-semibold">
+                      {student.firstName?.[0]}{student.lastName?.[0]}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  {/* Student Info */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors line-clamp-1 mb-1">
+                      {student.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
+                      {student.email}
+                    </p>
+                    
+                    {/* Badges */}
+                    <div className="flex flex-wrap items-center gap-1">
+                      <Badge variant="outline" className="text-xs">
+                        <BookOpen className="w-2.5 h-2.5 mr-1" />
+                        {student.course}
+                      </Badge>
+                      {student.grade && getGradeBadge(student.grade)}
+                      <Badge 
+                        variant="default" 
+                        className={`text-xs ${getStatusColor(student.status)} text-white`}
+                      >
+                        {getStatusIcon(student.status)}
+                        <span className="ml-1 capitalize">{student.status}</span>
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Actions Menu */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 hover:bg-muted flex-shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={(e) => handleMessage(e, student)}>
+                        <Mail className="w-4 h-4 mr-2" />
+                        Message
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => handleViewProfile(e, student)}>
+                        <Users className="w-4 h-4 mr-2" />
+                        Profile
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={(e) => handleEdit(e, student)}>
+                        <Users className="w-4 h-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {/* Progress */}
+                <div className="border-t border-border/50 pt-3">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                    <span>Progress</span>
+                    <span className="font-medium text-primary">{student.progress}%</span>
+                  </div>
+                  <Progress 
+                    value={student.progress} 
+                    className="h-2"
+                  />
+                </div>
+
+                {/* Stats */}
+                <div className="flex items-center justify-between text-xs text-muted-foreground border-t border-border/50 pt-3">
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    <span>{formatDate(student.enrolledDate)}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Activity className="w-3 h-3" />
+                    <span>{student.lastActive}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Desktop Layout - Horizontal */}
+              <div className="hidden sm:flex items-center gap-4">
                 {/* Avatar */}
                 <div className="flex-shrink-0">
                   <Avatar className="h-12 w-12">
@@ -195,7 +288,7 @@ export const StudentListView: React.FC<StudentListViewProps> = ({
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       {/* Name and badges */}
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <h3 className="font-semibold text-base text-foreground group-hover:text-primary transition-colors truncate">
                           {student.name}
                         </h3>
@@ -239,7 +332,7 @@ export const StudentListView: React.FC<StudentListViewProps> = ({
                     </div>
 
                     {/* Progress and Actions */}
-                    <div className="flex items-center gap-4 ml-4">
+                    <div className="flex items-center gap-4 ml-4 flex-shrink-0">
                       {/* Progress */}
                       <div className="w-32">
                         <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
@@ -257,7 +350,7 @@ export const StudentListView: React.FC<StudentListViewProps> = ({
                         <Button
                           size="sm"
                           variant="outline"
-                          className="hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                          className="hover:bg-primary/10 hover:text-primary transition-all duration-200 text-xs"
                           onClick={(e) => handleMessage(e, student)}
                         >
                           <Mail className="w-4 h-4 mr-2" />
@@ -267,7 +360,7 @@ export const StudentListView: React.FC<StudentListViewProps> = ({
                         <Button
                           size="sm"
                           variant="outline"
-                          className="hover:bg-blue-500/10 hover:text-blue-500 transition-all duration-200"
+                          className="hover:bg-blue-500/10 hover:text-blue-500 transition-all duration-200 text-xs"
                           onClick={(e) => handleViewProfile(e, student)}
                         >
                           <Users className="w-4 h-4 mr-2" />

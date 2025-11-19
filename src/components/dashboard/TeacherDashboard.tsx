@@ -1156,13 +1156,13 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     color: string; 
   }) => (
     <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-lg bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <Icon className={`h-4 w-4 ${color}`} />
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+        <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground truncate">{title}</CardTitle>
+        <Icon className={`h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 ${color}`} />
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
         <div className="space-y-1">
-            <div className="text-2xl font-bold">{typeof value === 'number' ? value.toLocaleString() : value}</div>
+            <div className="text-xl sm:text-2xl font-bold">{typeof value === 'number' ? value.toLocaleString() : value}</div>
         </div>
       </CardContent>
     </Card>
@@ -1171,7 +1171,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8 p-3 sm:p-4 md:p-6 lg:p-8">
       {loading ? (
         <div className="min-h-screen flex items-center justify-center">
           <ContentLoader message="Loading dashboard..." />
@@ -1179,26 +1179,26 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       ) : (
         <>
         {/* Premium Header Section */}
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-          <div className="relative p-8 rounded-3xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                  <GraduationCap className="w-6 h-6 text-primary" />
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
+          <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg sm:rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0">
+                  <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 </div>
-                <div>
-                  <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
                     Teacher Dashboard
                   </h1>
-                  <p className="text-lg text-muted-foreground mt-2 leading-relaxed">
+                  <p className="text-xs sm:text-sm md:text-base lg:text-lg text-muted-foreground mt-0.5 sm:mt-1 md:mt-2 leading-relaxed">
                     Welcome back, {userProfile?.first_name || 'Teacher'}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
                 <Select value={timeRange} onValueChange={setTimeRange}>
-                  <SelectTrigger className="w-40 h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5">
+                  <SelectTrigger className="w-full sm:w-32 md:w-40 h-8 sm:h-9 rounded-lg sm:rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 text-xs sm:text-sm">
                     <SelectValue placeholder="Time range" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1214,10 +1214,10 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                   <DrawerTrigger asChild>
                     <Button
                       variant="outline"
-                      className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
+                      className="h-8 sm:h-9 px-3 sm:px-4 rounded-lg sm:rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 text-xs sm:text-sm"
                     >
-                      <Filter className="h-4 w-4 mr-2" />
-                      Filters
+                      <Filter className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">Filters</span>
                     </Button>
                   </DrawerTrigger>
                   <DrawerContent>
@@ -1439,7 +1439,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         </div>
 
         {/* Metric Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             title="Total Students"
             value={stats?.totalStudents || 0}
@@ -1469,15 +1469,15 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         {/* Tabs Section */}
         <div className="relative">
           <div className="relative">
-            <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="performance">Performance</TabsTrigger>
-                <TabsTrigger value="feedback">Reports</TabsTrigger>
+            <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
+              <TabsList className="grid w-full grid-cols-3 gap-1 sm:gap-2 h-auto p-1">
+                <TabsTrigger value="overview" className="text-xs sm:text-sm py-2 sm:py-2.5">Overview</TabsTrigger>
+                <TabsTrigger value="performance" className="text-xs sm:text-sm py-2 sm:py-2.5">Performance</TabsTrigger>
+                <TabsTrigger value="feedback" className="text-xs sm:text-sm py-2 sm:py-2.5">Reports</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="overview" className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <TabsContent value="overview" className="space-y-4 sm:space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">

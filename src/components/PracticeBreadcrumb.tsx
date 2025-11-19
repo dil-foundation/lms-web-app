@@ -113,32 +113,32 @@ export const PracticeBreadcrumb: React.FC<PracticeBreadcrumbProps> = ({ classNam
   return (
     <div className={className}>
       <Breadcrumb>
-        <BreadcrumbList>
+        <BreadcrumbList className="text-xs sm:text-sm">
           <BreadcrumbItem>
             <BreadcrumbLink
               onClick={handleDashboardClick}
-              className="flex items-center gap-2 cursor-pointer hover:text-primary"
+              className="flex items-center gap-1 sm:gap-2 cursor-pointer hover:text-primary"
             >
-              <Home className="h-4 w-4" />
-              Dashboard
+              <Home className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline">Dashboard</span>
             </BreadcrumbLink>
           </BreadcrumbItem>
           
-          <BreadcrumbSeparator />
+          <BreadcrumbSeparator className="text-xs sm:text-sm" />
           
           <BreadcrumbItem>
             <BreadcrumbLink
               onClick={handlePracticeClick}
-              className="flex items-center gap-2 cursor-pointer hover:text-primary"
+              className="flex items-center gap-1 sm:gap-2 cursor-pointer hover:text-primary"
             >
-              <GraduationCap className="h-4 w-4" />
-              Practice
+              <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span>Practice</span>
             </BreadcrumbLink>
           </BreadcrumbItem>
 
           {currentStage && (
             <>
-              <BreadcrumbSeparator />
+              <BreadcrumbSeparator className="text-xs sm:text-sm" />
               <BreadcrumbItem>
                 {currentLesson || currentLessonTitle ? (
                   <BreadcrumbLink
@@ -156,18 +156,18 @@ export const PracticeBreadcrumb: React.FC<PracticeBreadcrumbProps> = ({ classNam
 
           {currentLesson && (
             <>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>{currentLesson.title}</BreadcrumbPage>
+              <BreadcrumbSeparator className="text-xs sm:text-sm hidden sm:block" />
+              <BreadcrumbItem className="hidden sm:block">
+                <BreadcrumbPage className="truncate max-w-[150px] sm:max-w-none">{currentLesson.title}</BreadcrumbPage>
               </BreadcrumbItem>
             </>
           )}
 
           {currentLessonTitle && (
             <>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>{currentLessonTitle}</BreadcrumbPage>
+              <BreadcrumbSeparator className="text-xs sm:text-sm hidden xs:block" />
+              <BreadcrumbItem className="hidden xs:block">
+                <BreadcrumbPage className="truncate max-w-[120px] sm:max-w-[200px] md:max-w-none">{currentLessonTitle}</BreadcrumbPage>
               </BreadcrumbItem>
             </>
           )}

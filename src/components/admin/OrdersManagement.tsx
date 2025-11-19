@@ -293,34 +293,67 @@ const OrdersManagement: React.FC = () => {
   })) as any[];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-4 sm:px-0">
       {/* Header */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-                <CreditCard className="w-8 h-8 text-primary" />
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
+        <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl">
+          {/* Desktop Layout */}
+          <div className="hidden lg:flex lg:items-center lg:justify-between gap-3 lg:gap-4 overflow-hidden">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1 overflow-hidden max-w-[60%]">
+              <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0">
+                <CreditCard className="w-6 h-6 md:w-7 md:h-7 text-primary" />
               </div>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <h1 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
                   Orders Management
                 </h1>
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-xs md:text-sm lg:text-base xl:text-lg text-muted-foreground font-light mt-0.5 md:mt-1 break-words">
                   Manage course payments and process refunds
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-primary/20">
+            <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+              <Badge variant="secondary" className="px-2 py-0.5 bg-primary/10 text-primary border-primary/20 text-[10px] md:text-xs whitespace-nowrap">
                 <DollarSign className="h-3 w-3 mr-1" />
-                Payment Management
+                <span className="hidden xl:inline">Payment Management</span>
+                <span className="xl:hidden">Payment</span>
               </Badge>
-              <Badge variant="outline" className="px-3 py-1">
+              <Badge variant="outline" className="px-2 py-0.5 text-[10px] md:text-xs whitespace-nowrap">
                 <Clock className="h-3 w-3 mr-1" />
-                Live Data
+                <span className="hidden xl:inline">Live Data</span>
+                <span className="xl:hidden">Live</span>
+              </Badge>
+            </div>
+          </div>
+
+          {/* Mobile & Tablet Layout */}
+          <div className="flex flex-col gap-3 md:gap-4 lg:hidden">
+            <div className="flex items-start gap-2 md:gap-3 min-w-0">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                <CreditCard className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg md:text-xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
+                  Orders Management
+                </h1>
+                <p className="text-xs md:text-sm text-muted-foreground font-light mt-0.5 break-words">
+                  Manage course payments and process refunds
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-2 w-full">
+              <Badge variant="secondary" className="px-2 py-0.5 bg-primary/10 text-primary border-primary/20 text-xs whitespace-nowrap">
+                <DollarSign className="h-3 w-3 mr-1" />
+                <span className="hidden sm:inline">Payment Management</span>
+                <span className="sm:hidden">Payment</span>
+              </Badge>
+              <Badge variant="outline" className="px-2 py-0.5 text-xs whitespace-nowrap">
+                <Clock className="h-3 w-3 mr-1" />
+                <span className="hidden sm:inline">Live Data</span>
+                <span className="sm:hidden">Live</span>
               </Badge>
             </div>
           </div>
@@ -328,72 +361,72 @@ const OrdersManagement: React.FC = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium truncate pr-2">Total Orders</CardTitle>
+            <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalOrders}</div>
-            <p className="text-xs text-muted-foreground">All payment transactions</p>
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold truncate">{stats.totalOrders}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">All payment transactions</p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium truncate pr-2">Total Revenue</CardTitle>
+            <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
-            <p className="text-xs text-muted-foreground">From completed orders</p>
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold truncate">{formatCurrency(stats.totalRevenue)}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">From completed orders</p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed Orders</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium truncate pr-2">Completed Orders</CardTitle>
+            <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.completedOrders}</div>
-            <p className="text-xs text-muted-foreground">Successfully processed</p>
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold truncate">{stats.completedOrders}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Successfully processed</p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Refunded Orders</CardTitle>
-            <Undo2 className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium truncate pr-2">Refunded Orders</CardTitle>
+            <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.refundedOrders}</div>
-            <p className="text-xs text-muted-foreground">Refund transactions</p>
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold truncate">{stats.refundedOrders}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Refund transactions</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Search and Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle>Order Directory</CardTitle>
-          <CardDescription>Search and filter payment orders</CardDescription>
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-lg sm:text-xl">Order Directory</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">Search and filter payment orders</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
+        <CardContent className="p-4 sm:p-6 pt-0">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Search by customer name or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-9 sm:h-10"
               />
             </div>
 
             <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
-              <SelectTrigger className="w-40 bg-background border-border hover:border-primary/30 focus:border-primary dark:bg-background dark:border-border">
+              <SelectTrigger className="w-full sm:w-40 bg-background border-border hover:border-primary/30 focus:border-primary dark:bg-background dark:border-border h-9 sm:h-10">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border dark:bg-popover dark:border-border">
@@ -405,7 +438,7 @@ const OrdersManagement: React.FC = () => {
               </SelectContent>
             </Select>
 
-            <Button variant="outline" size="icon" onClick={() => { fetchOrders(); fetchStats(); }}>
+            <Button variant="outline" size="icon" onClick={() => { fetchOrders(); fetchStats(); }} className="h-9 w-9 sm:h-10 sm:w-10">
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
@@ -423,22 +456,24 @@ const OrdersManagement: React.FC = () => {
               </div>
             </div>
           ) : orders.length > 0 ? (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* View Toggle */}
-              <div className="flex items-center justify-between px-6 pt-6">
-                <div>
-                  <h2 className="text-xl font-semibold text-foreground">Orders</h2>
-                  <p className="text-sm text-muted-foreground">Switch between different views to manage orders</p>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 px-4 sm:px-6 pt-4 sm:pt-6">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-lg sm:text-xl font-semibold text-foreground">Orders</h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Switch between different views to manage orders</p>
                 </div>
-                <ViewToggle
-                  currentView={preferences.ordersView}
-                  onViewChange={setOrdersView}
-                  availableViews={['card', 'tile', 'list']}
-                />
+                <div className="flex-shrink-0">
+                  <ViewToggle
+                    currentView={preferences.ordersView}
+                    onViewChange={setOrdersView}
+                    availableViews={['card', 'tile', 'list']}
+                  />
+                </div>
               </div>
 
               {/* Order Display based on selected view */}
-              <div className="px-6 pb-6">
+              <div className="px-4 sm:px-6 pb-4 sm:pb-6">
                 {preferences.ordersView === 'card' && (
                   <OrderCardView
                     orders={transformedOrders}
@@ -466,7 +501,7 @@ const OrdersManagement: React.FC = () => {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="py-4 border-t px-6">
+                <div className="py-3 sm:py-4 border-t px-4 sm:px-6">
                   <PaginationControls
                     currentPage={currentPage}
                     totalPages={totalPages}

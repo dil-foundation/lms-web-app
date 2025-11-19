@@ -100,30 +100,30 @@ export const ReportsAnalytics = () => {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-3 sm:space-y-4 md:space-y-6 px-3 sm:px-4 md:px-0">
       {/* Header Section */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-4 sm:p-6 lg:p-8 rounded-3xl">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6 mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl"></div>
+        <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl">
+          {/* Desktop Layout: Side by side */}
+          <div className="hidden sm:flex sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0">
+                <BarChart3 className="w-5 h-5 md:w-6 md:h-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl md:text-2xl lg:text-3xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight">
                   Performance Analytics
                 </h1>
-                <p className="text-sm sm:text-base lg:text-lg text-muted-foreground font-light mt-1">
+                <p className="text-sm md:text-base text-muted-foreground font-light mt-1 leading-snug">
                   Monitor platform performance and user engagement
                 </p>
               </div>
             </div>
             
-            {/* Filter Controls */}
-            <div className="flex items-center gap-3 w-full lg:w-auto">
+            <div className="flex items-center gap-3 flex-shrink-0">
               <Select value={dateRange} onValueChange={handleTimeRangeChange}>
-                <SelectTrigger className="flex-1 lg:w-48">
+                <SelectTrigger className="w-40 md:w-48 h-9 md:h-10 text-sm">
                   <SelectValue placeholder="Select time range" />
                 </SelectTrigger>
                 <SelectContent>
@@ -137,10 +137,52 @@ export const ReportsAnalytics = () => {
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="p-2 bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors disabled:opacity-50 shrink-0"
+                className="flex items-center justify-center bg-primary/10 hover:bg-primary/20 active:bg-primary/30 rounded-lg transition-colors disabled:opacity-50 shrink-0 h-9 w-9 md:h-10 md:w-10"
                 title="Refresh reports data"
+                aria-label="Refresh reports data"
               >
                 <RefreshCw className={`w-4 h-4 text-primary ${refreshing ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Layout: Stacked */}
+          <div className="flex flex-col gap-3 sm:hidden">
+            <div className="flex items-start gap-2 min-w-0">
+              <div className="w-9 h-9 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                <BarChart3 className="w-4 h-4 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
+                  Performance Analytics
+                </h1>
+                <p className="text-xs text-muted-foreground font-light mt-0.5 leading-snug">
+                  Monitor platform performance and user engagement
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 w-full">
+              <Select value={dateRange} onValueChange={handleTimeRangeChange}>
+                <SelectTrigger className="flex-1 h-8 text-xs">
+                  <SelectValue placeholder="Select time range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="thisweek">This week</SelectItem>
+                  <SelectItem value="thismonth">This month</SelectItem>
+                  <SelectItem value="alltime">All time</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="flex items-center justify-center bg-primary/10 hover:bg-primary/20 active:bg-primary/30 rounded-lg transition-colors disabled:opacity-50 shrink-0 h-8 w-8"
+                title="Refresh reports data"
+                aria-label="Refresh reports data"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-primary ${refreshing ? 'animate-spin' : ''}`} />
               </button>
             </div>
           </div>
@@ -163,7 +205,7 @@ export const ReportsAnalytics = () => {
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load Reports</h3>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
-            onClick={() => fetchReportsData()}
+            onClick={handleRefresh}
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
           >
             Try Again
@@ -172,80 +214,79 @@ export const ReportsAnalytics = () => {
       )}
 
       {/* Key Metrics from Admin Dashboard */}
-      {keyMetrics && (
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {keyMetrics ? (
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Users</CardTitle>
+            <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{keyMetrics.totalUsers?.toLocaleString() || '0'}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{keyMetrics.totalUsers?.toLocaleString() || '0'}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1">
               {keyMetrics.students || 0} students, {keyMetrics.teachers || 0} teachers
             </p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Today</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Active Today</CardTitle>
+            <Activity className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{keyMetrics.activeToday?.toLocaleString() || '0'}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{keyMetrics.activeToday?.toLocaleString() || '0'}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1">
               Users active today
             </p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Students</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Students</CardTitle>
+            <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{keyMetrics.students?.toLocaleString() || '0'}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{keyMetrics.students?.toLocaleString() || '0'}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1">
               {Math.round(keyMetrics.studentsPercentage || 0)}% of total users
             </p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Teachers</CardTitle>
-            <Award className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Teachers</CardTitle>
+            <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{keyMetrics.teachers?.toLocaleString() || '0'}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{keyMetrics.teachers?.toLocaleString() || '0'}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1">
               {Math.round(keyMetrics.teachersPercentage || 0)}% of total users
             </p>
           </CardContent>
         </Card>
       </div>
-      )}
+      ) : null}
 
       {/* Practice Stage Performance & User Engagement */}
-      {(practiceStageData || userEngagementData) && (
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-blue-50/30 dark:to-blue-950/20">
-          <CardHeader className="pb-3 sm:pb-4">
-            <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg font-semibold">
-              <div className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
+        <Card className="border-0 shadow-sm sm:shadow-lg bg-gradient-to-br from-card to-blue-50/30 dark:to-blue-950/20">
+          <CardHeader className="pb-3 sm:pb-4 p-3 sm:p-4 md:p-6">
+            <CardTitle className="flex items-center gap-2 text-sm sm:text-base md:text-lg font-semibold">
+              <div className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex-shrink-0">
+                <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 text-blue-600 dark:text-blue-400" />
               </div>
-              Practice Stage Performance
+              <span className="leading-tight">Practice Stage Performance</span>
             </CardTitle>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-1">
               Performance metrics across all learning stages
             </p>
           </CardHeader>
-          <CardContent className="pt-0">
+          <CardContent className="pt-0 p-3 sm:p-4 md:p-6">
 
-            <div className="h-[280px] sm:h-[320px] practice-stage-chart">
+            <div className="h-[240px] sm:h-[280px] md:h-[320px] practice-stage-chart">
               {(() => {
                 // Create stages 1-6 with data from API or default values
                 const stageNumbers = [1, 2, 3, 4, 5, 6];
@@ -439,20 +480,20 @@ export const ReportsAnalytics = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-green-50/30 dark:to-green-950/20">
-          <CardHeader className="pb-3 sm:pb-4">
-            <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg font-semibold">
-              <div className="p-1.5 sm:p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <Users className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
+        <Card className="border-0 shadow-sm sm:shadow-lg bg-gradient-to-br from-card to-green-50/30 dark:to-green-950/20">
+          <CardHeader className="pb-3 sm:pb-4 p-3 sm:p-4 md:p-6">
+            <CardTitle className="flex items-center gap-2 text-sm sm:text-base md:text-lg font-semibold">
+              <div className="p-1.5 sm:p-2 bg-green-100 dark:bg-green-900/30 rounded-lg flex-shrink-0">
+                <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 text-green-600 dark:text-green-400" />
               </div>
-              User Engagement Overview
+              <span className="leading-tight">User Engagement Overview</span>
             </CardTitle>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-1">
               Distribution of user activity types
             </p>
           </CardHeader>
-          <CardContent className="pt-0">
-            <div className="h-[200px] sm:h-[240px] mb-4 sm:mb-6">
+          <CardContent className="pt-0 p-3 sm:p-4 md:p-6">
+            <div className="h-[180px] sm:h-[200px] md:h-[240px] mb-3 sm:mb-4 md:mb-6">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <defs>
@@ -517,10 +558,8 @@ export const ReportsAnalytics = () => {
           </CardContent>
         </Card>
       </div>
-      )}
 
       {/* Time of Day Usage */}
-      {timeUsageData && (
       <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-purple-50/30 dark:to-purple-950/20">
         <CardHeader className="pb-3 sm:pb-4">
           <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg font-semibold">
@@ -626,10 +665,8 @@ export const ReportsAnalytics = () => {
           </div>
         </CardContent>
       </Card>
-      )}
 
       {/* Top Content Accessed */}
-      {topContentData && (
       <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-orange-50/30 dark:to-orange-950/20">
         <CardHeader className="pb-3 sm:pb-4">
           <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg font-semibold">
@@ -708,7 +745,6 @@ export const ReportsAnalytics = () => {
           )}
         </CardContent>
       </Card>
-      )}
     </div>
   );
 };

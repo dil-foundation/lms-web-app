@@ -238,14 +238,14 @@ const UserMFAManagement = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="relative flex-1 max-w-full sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
             placeholder="Search users..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-9 sm:h-10 text-sm"
           />
         </div>
         <Button
@@ -253,7 +253,7 @@ const UserMFAManagement = () => {
           size="sm"
           onClick={handleExportMFAUsers}
           disabled={exporting || loading}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 h-9 sm:h-10 px-3 sm:px-4 text-xs sm:text-sm w-full sm:w-auto"
         >
           {exporting ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -270,6 +270,7 @@ const UserMFAManagement = () => {
         </div>
       ) : (
         <>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -325,30 +326,35 @@ const UserMFAManagement = () => {
               )}
             </TableBody>
           </Table>
+          </div>
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0">
               <p className="text-sm text-muted-foreground">
                 Page {currentPage} of {totalPages} ({totalUsers} total users)
               </p>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1 || paginationLoading}
+                  className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm flex-1 sm:flex-none"
                 >
-                  <ChevronLeft className="w-4 h-4" />
-                  Previous
+                  <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
+                  <span className="hidden sm:inline">Previous</span>
+                  <span className="sm:hidden">Prev</span>
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages || paginationLoading}
+                  className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm flex-1 sm:flex-none"
                 >
-                  Next
-                  <ChevronRight className="w-4 h-4" />
+                  <span className="hidden sm:inline">Next</span>
+                  <span className="sm:hidden">Next</span>
+                  <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1" />
                 </Button>
               </div>
             </div>
@@ -817,100 +823,114 @@ const AdminSecurity = () => {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-4 md:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
-            <Settings className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">Settings and Security</h1>
-            <p className="text-muted-foreground">Configure system-wide settings and security policies</p>
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
+        <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0">
+                <Settings className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
+                  Settings and Security
+                </h1>
+                <p className="text-xs sm:text-sm md:text-base text-muted-foreground font-light mt-0.5 sm:mt-1 break-words">
+                  Configure system-wide settings and security policies
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Tabs: Settings and Security - Prominent Style */}
-      <Tabs defaultValue="settings" className="space-y-6">
-        <div className="border-b border-border/40 pb-0">
-          <TabsList className="h-auto bg-transparent p-0 gap-2 w-full justify-start">
+      <Tabs defaultValue="settings" className="space-y-4 sm:space-y-6">
+        <div className="border-b border-border/40 pb-0 overflow-x-auto">
+          <TabsList className="h-auto bg-transparent p-0 gap-1 sm:gap-2 w-full justify-start">
             <TabsTrigger 
               value="settings" 
-              className="flex items-center gap-3 px-6 py-4 text-base font-semibold rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card data-[state=active]:shadow-sm transition-all duration-200 hover:bg-muted/50"
+              className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 text-sm sm:text-base font-semibold rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card data-[state=active]:shadow-sm transition-all duration-200 hover:bg-muted/50 whitespace-nowrap"
             >
-              <div className="w-5 h-5 flex items-center justify-center">
-                <Settings className="w-5 h-5" />
+              <div className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center flex-shrink-0">
+                <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              Settings
+              <span className="hidden sm:inline">Settings</span>
             </TabsTrigger>
             <TabsTrigger 
               value="security" 
-              className="flex items-center gap-3 px-6 py-4 text-base font-semibold rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card data-[state=active]:shadow-sm transition-all duration-200 hover:bg-muted/50"
+              className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 text-sm sm:text-base font-semibold rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card data-[state=active]:shadow-sm transition-all duration-200 hover:bg-muted/50 whitespace-nowrap"
             >
-              <div className="w-5 h-5 flex items-center justify-center">
-                <Shield className="w-5 h-5" />
+              <div className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center flex-shrink-0">
+                <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              Security
+              <span className="hidden sm:inline">Security</span>
             </TabsTrigger>
           </TabsList>
         </div>
 
         {/* Settings Tab with Sub-tabs */}
-        <TabsContent value="settings" className="mt-6">
-          <div className="bg-card border rounded-lg p-6 space-y-6">
-            <Tabs defaultValue="system" className="space-y-6">
+        <TabsContent value="settings" className="mt-4 sm:mt-6">
+          <div className="bg-card border rounded-lg p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
+            <Tabs defaultValue="system" className="space-y-4 sm:space-y-6">
               {/* Sub-tabs - Subtle Style */}
-              <div className="border-b border-border/20 -mx-6 px-6">
+              <div className="border-b border-border/20 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 overflow-x-auto">
                 <TabsList className="h-auto bg-transparent p-0 gap-1 w-auto">
                   <TabsTrigger
                     value="system"
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground"
+                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
                   >
-                    <Server className="w-4 h-4" />
-                    System Configuration
+                    <Server className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                    <span className="hidden sm:inline">System Configuration</span>
+                    <span className="sm:hidden">System</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="notifications"
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground"
+                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
                   >
-                    <Bell className="w-4 h-4" />
-                    Notifications
+                    <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                    <span className="hidden sm:inline">Notifications</span>
+                    <span className="sm:hidden">Notify</span>
                   </TabsTrigger>
                 </TabsList>
               </div>
 
             {/* System Configuration Sub-tab */}
             <TabsContent value="system">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-semibold">System Configuration</h2>
-                    <p className="text-sm text-muted-foreground">Configure system-wide settings and preferences</p>
+              <div className="space-y-4 sm:space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-base sm:text-lg md:text-xl font-semibold break-words">System Configuration</h2>
+                    <p className="text-xs sm:text-sm text-muted-foreground break-words">Configure system-wide settings and preferences</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <Button 
                       variant="outline" 
                       onClick={handleAdminSettingsReset}
                       disabled={adminSettingsResetting || adminSettingsSaving || adminSettingsLoading}
+                      className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm"
                     >
                       {adminSettingsResetting ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 animate-spin" />
                       ) : (
-                        <RefreshCw className="w-4 h-4 mr-2" />
+                        <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
                       )}
                       {adminSettingsResetting ? 'Resetting...' : 'Reset'}
                     </Button>
                     <Button 
                       onClick={handleAdminSettingsSave} 
                       disabled={adminSettingsSaving || adminSettingsResetting || adminSettingsLoading || !hasUnsavedAdminChanges}
+                      className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm whitespace-nowrap"
                     >
                       {adminSettingsSaving ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 animate-spin" />
                       ) : (
-                        <Save className="w-4 h-4 mr-2" />
+                        <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
                       )}
-                      {adminSettingsSaving ? 'Saving...' : 'Save Changes'}
+                      <span className="hidden sm:inline">{adminSettingsSaving ? 'Saving...' : 'Save Changes'}</span>
+                      <span className="sm:hidden">{adminSettingsSaving ? 'Saving...' : 'Save'}</span>
                     </Button>
                   </div>
                 </div>
@@ -955,35 +975,38 @@ const AdminSecurity = () => {
 
             {/* Notifications Sub-tab */}
             <TabsContent value="notifications">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-semibold">Notification Settings</h2>
-                    <p className="text-sm text-muted-foreground">Configure system notification preferences</p>
+              <div className="space-y-4 sm:space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-base sm:text-lg md:text-xl font-semibold break-words">Notification Settings</h2>
+                    <p className="text-xs sm:text-sm text-muted-foreground break-words">Configure system notification preferences</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <Button 
                       variant="outline" 
                       onClick={handleAdminSettingsReset}
                       disabled={adminSettingsResetting || adminSettingsSaving || adminSettingsLoading}
+                      className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm"
                     >
                       {adminSettingsResetting ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 animate-spin" />
                       ) : (
-                        <RefreshCw className="w-4 h-4 mr-2" />
+                        <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
                       )}
                       {adminSettingsResetting ? 'Resetting...' : 'Reset'}
                     </Button>
                     <Button 
                       onClick={handleAdminSettingsSave} 
                       disabled={adminSettingsSaving || adminSettingsResetting || adminSettingsLoading || !hasUnsavedAdminChanges}
+                      className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm whitespace-nowrap"
                     >
                       {adminSettingsSaving ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 animate-spin" />
                       ) : (
-                        <Save className="w-4 h-4 mr-2" />
+                        <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
                       )}
-                      {adminSettingsSaving ? 'Saving...' : 'Save Changes'}
+                      <span className="hidden sm:inline">{adminSettingsSaving ? 'Saving...' : 'Save Changes'}</span>
+                      <span className="sm:hidden">{adminSettingsSaving ? 'Saving...' : 'Save'}</span>
                     </Button>
                   </div>
                 </div>
@@ -1034,56 +1057,60 @@ const AdminSecurity = () => {
         </TabsContent>
 
         {/* Security Tab with Sub-tabs */}
-        <TabsContent value="security" className="mt-6">
-          <div className="bg-card border rounded-lg p-6 space-y-6">
-            <Tabs defaultValue="overview" className="space-y-6">
+        <TabsContent value="security" className="mt-4 sm:mt-6">
+          <div className="bg-card border rounded-lg p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
+            <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
               {/* Sub-tabs - Subtle Style */}
-              <div className="border-b border-border/20 -mx-6 px-6 overflow-x-auto">
+              <div className="border-b border-border/20 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 overflow-x-auto">
                 <TabsList className="h-auto bg-transparent p-0 gap-1 w-auto min-w-full">
                   <TabsTrigger
                     value="overview"
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
+                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
                   >
-                    <Activity className="w-4 h-4" />
-                    Overview
+                    <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                    <span className="hidden sm:inline">Overview</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="authentication"
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
+                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
                   >
-                    <Lock className="w-4 h-4" />
-                    Authentication
+                    <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                    <span className="hidden sm:inline">Authentication</span>
+                    <span className="sm:hidden">Auth</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="mfa"
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
+                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
                   >
-                    <Key className="w-4 h-4" />
-                    MFA Management
+                    <Key className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                    <span className="hidden sm:inline">MFA Management</span>
+                    <span className="sm:hidden">MFA</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="alerts"
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
+                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
                   >
-                    <AlertTriangle className="w-4 h-4" />
-                    Security Alerts
+                    <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                    <span className="hidden sm:inline">Security Alerts</span>
+                    <span className="sm:hidden">Alerts</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="logs"
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
+                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
                   >
-                    <FileText className="w-4 h-4" />
-                    Access Logs
+                    <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                    <span className="hidden sm:inline">Access Logs</span>
+                    <span className="sm:hidden">Logs</span>
                   </TabsTrigger>
                 </TabsList>
               </div>
 
             {/* Security Overview Sub-tab */}
             <TabsContent value="overview">
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
-                  <h2 className="text-xl font-semibold">Security Overview</h2>
-                  <p className="text-sm text-muted-foreground">Current security status and key metrics</p>
+                  <h2 className="text-base sm:text-lg md:text-xl font-semibold break-words">Security Overview</h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground break-words">Current security status and key metrics</p>
                 </div>
 
                 <Card>
@@ -1276,33 +1303,34 @@ const AdminSecurity = () => {
 
             {/* Access Logs Sub-tab */}
             <TabsContent value="logs">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-semibold">Access Logs</h2>
-                    <p className="text-sm text-muted-foreground">Recent user access and activity logs</p>
+              <div className="space-y-4 sm:space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-base sm:text-lg md:text-xl font-semibold break-words">Access Logs</h2>
+                    <p className="text-xs sm:text-sm text-muted-foreground break-words">Recent user access and activity logs</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleExportAccessLogs}
                       disabled={accessLogsExporting || accessLogsLoading}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm whitespace-nowrap"
                     >
                       {accessLogsExporting ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
                       ) : (
-                        <Download className="w-4 h-4" />
+                        <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       )}
-                      {accessLogsExporting ? 'Exporting...' : 'Export to Excel'}
+                      <span className="hidden sm:inline">{accessLogsExporting ? 'Exporting...' : 'Export to Excel'}</span>
+                      <span className="sm:hidden">{accessLogsExporting ? 'Exporting...' : 'Export'}</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => loadAccessLogs(true)}
                       disabled={accessLogsLoading}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm"
                     >
                       {accessLogsLoading ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -1324,7 +1352,7 @@ const AdminSecurity = () => {
                   <CardContent>
                     <div 
                       ref={accessLogsRef}
-                      className="max-h-96 overflow-y-auto"
+                      className="max-h-96 overflow-y-auto overflow-x-auto"
                     >
                       {accessLogs.length === 0 ? (
                         <div className="text-center py-8">

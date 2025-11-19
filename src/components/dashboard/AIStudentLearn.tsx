@@ -783,21 +783,21 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
   // Greeting Screen (View 1)
   if (currentView === 'greeting') {
     return (
-      <div className="space-y-8">
+      <div className="space-y-4 sm:space-y-6 md:space-y-8 p-3 sm:p-4 md:p-6">
         {/* Premium Header Section */}
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-          <div className="relative p-8 md:p-10 rounded-3xl">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-                  <BookOpen className="w-8 h-8 text-primary" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-2xl sm:rounded-3xl"></div>
+          <div className="relative p-4 sm:p-6 md:p-8 lg:p-10 rounded-2xl sm:rounded-3xl">
+            <div className="flex flex-col gap-3 sm:gap-4 md:gap-6">
+              <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg">
+                  <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-primary leading-[1.2]">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-primary leading-[1.2]">
                     AI Learning Hub
                   </h1>
-                  <p className="text-lg text-muted-foreground font-light mt-4 leading-relaxed">
+                  <p className="text-sm sm:text-base md:text-lg text-muted-foreground font-light mt-1 sm:mt-2 md:mt-4 leading-relaxed">
                     Master English through intelligent conversation and personalized guidance
                   </p>
                 </div>
@@ -807,11 +807,11 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
         </div>
 
         {/* Welcome Content */}
-        <div className="flex flex-col items-center justify-center space-y-8">
+        <div className="flex flex-col items-center justify-center space-y-4 sm:space-y-6 md:space-y-8">
           {/* Enhanced Logo/Icon */}
           <div className="relative">
-            <div className="w-24 h-24 bg-gradient-to-br from-primary/10 to-primary/20 rounded-full flex items-center justify-center shadow-lg border border-primary/20">
-              <Target className="h-10 w-10 text-primary" />
+            <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-gradient-to-br from-primary/10 to-primary/20 rounded-full flex items-center justify-center shadow-lg border border-primary/20">
+              <Target className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 text-primary" />
             </div>
             {isAudioPlaying && (
               <div className="absolute -inset-2 border-2 border-primary rounded-full animate-ping opacity-75"></div>
@@ -819,22 +819,22 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
           </div>
 
           {/* Enhanced Welcome Text */}
-          <div className="text-center space-y-4 max-w-md">
-            <h2 className="text-3xl font-bold text-foreground">
+          <div className="text-center space-y-2 sm:space-y-3 md:space-y-4 max-w-md px-4 sm:px-0">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
               Welcome to Your Learning Journey
             </h2>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-sm sm:text-base md:text-lg text-muted-foreground">
               Let's begin your English speaking adventure with AI-powered guidance
             </p>
           </div>
 
           {/* Enhanced Greeting Message Card */}
-          <Card className="p-6 max-w-md w-full bg-gradient-to-br from-white/50 via-white/30 to-gray-50/30 dark:from-gray-900/50 dark:via-gray-900/30 dark:to-gray-800/30 rounded-2xl border border-border/50">
-            <div className="text-center space-y-3">
-              <p className="text-lg font-medium text-foreground" dir="rtl">
+          <Card className="p-4 sm:p-5 md:p-6 max-w-md w-full mx-3 sm:mx-0 bg-gradient-to-br from-white/50 via-white/30 to-gray-50/30 dark:from-gray-900/50 dark:via-gray-900/30 dark:to-gray-800/30 rounded-xl sm:rounded-2xl border border-border/50">
+            <div className="text-center space-y-2 sm:space-y-3">
+              <p className="text-base sm:text-lg font-medium text-foreground" dir="rtl">
                 سیکھنے کے پلیٹ فارم میں خوش آمدید، آئیے انگریزی سیکھتے ہیں؟
               </p>
-              <p className="text-base text-muted-foreground">
+              <p className="text-sm sm:text-base text-muted-foreground">
                 Welcome to the learning platform, shall we learn English?
               </p>
             </div>
@@ -842,9 +842,9 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
 
           {/* Enhanced Audio Playing Indicator */}
           {isAudioPlaying && (
-            <div className="flex items-center gap-3 text-primary bg-primary/10 px-4 py-2 rounded-full">
-              <Volume2 className="h-5 w-5 animate-pulse" />
-              <span className="text-sm font-medium">Playing greeting...</span>
+            <div className="flex items-center gap-2 sm:gap-3 text-primary bg-primary/10 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full">
+              <Volume2 className="h-4 w-4 sm:h-5 sm:w-5 animate-pulse" />
+              <span className="text-xs sm:text-sm font-medium">Playing greeting...</span>
             </div>
           )}
 
@@ -855,9 +855,9 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
             <Button
               onClick={handleStartPracticing}
               size="lg"
-              className="group bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105"
+              className="group bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold px-5 sm:px-6 md:px-8 py-3 sm:py-3.5 md:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 text-sm sm:text-base"
             >
-              <Target className="h-5 w-5 mr-2 group-hover:animate-pulse" />
+              <Target className="h-4 w-4 sm:h-5 sm:w-5 mr-2 group-hover:animate-pulse" />
               Continue to Learning
               <span className="ml-2">→</span>
             </Button>
@@ -869,32 +869,32 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
 
   // Practice Conversation Screen (View 2)
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8 p-3 sm:p-4 md:p-6">
       {/* Premium Header Section */}
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-[#1582B4]/5 rounded-3xl"></div>
-        <div className="relative p-6 md:p-8 rounded-3xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center shadow-lg">
-                <BookOpen className="w-6 h-6 text-primary" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-[#1582B4]/5 rounded-2xl sm:rounded-3xl"></div>
+        <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-2xl sm:rounded-3xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
+                <BookOpen className="w-5 h-5 sm:w-5.5 sm:h-5.5 md:w-6 md:h-6 text-primary" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-primary">AI Learning Hub</h2>
-                <p className="text-sm text-muted-foreground">Active Learning Session</p>
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-primary">AI Learning Hub</h2>
+                <p className="text-xs sm:text-sm text-muted-foreground">Active Learning Session</p>
               </div>
             </div>
             
             {/* Enhanced Connection Status Indicator */}
-            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/60 dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50">
+            <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-white/60 dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50">
               {connectionState === 'connected' ? (
-                <Wifi className="h-4 w-4 text-green-500" />
+                <Wifi className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-500" />
               ) : connectionState === 'connecting' ? (
-                <Wifi className="h-4 w-4 text-yellow-500 animate-pulse" />
+                <Wifi className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-yellow-500 animate-pulse" />
               ) : (
-                <WifiOff className="h-4 w-4 text-red-500" />
+                <WifiOff className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-500" />
               )}
-              <span className="text-xs font-medium">
+              <span className="text-[10px] sm:text-xs font-medium">
                 {connectionState === 'connected' ? 'Connected' : 
                  connectionState === 'connecting' ? 'Connecting...' : 
                  connectionState === 'error' ? 'Error' : 'Disconnected'}
@@ -905,15 +905,15 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
       </div>
 
       {/* Main Conversation Interface */}
-      <div className="flex flex-col items-center justify-center space-y-8">
+      <div className="flex flex-col items-center justify-center space-y-4 sm:space-y-6 md:space-y-8">
         {/* Enhanced Main Conversation Blob */}
         <div className={`relative transition-all duration-300 ${
-          isActiveState ? 'scale-110' : 'scale-100'
+          isActiveState ? 'scale-105 sm:scale-110' : 'scale-100'
         }`}>
           {/* Main Blob with dynamic colors */}
-          <div className={`w-80 h-80 rounded-full backdrop-blur-sm border transition-all duration-500 ${blobState.bgColor}`}>
+          <div className={`w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-80 lg:h-80 rounded-full backdrop-blur-sm border transition-all duration-500 ${blobState.bgColor}`}>
             {/* Inner glow effect with dynamic colors */}
-            <div className={`absolute inset-4 rounded-full transition-all duration-500 ${blobState.innerGlow}`}></div>
+            <div className={`absolute inset-3 sm:inset-4 rounded-full transition-all duration-500 ${blobState.innerGlow}`}></div>
             
             {/* Pulse effect with dynamic colors */}
             {isActiveState && (
@@ -926,11 +926,11 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
 
           {/* Enhanced Status indicator */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center space-y-3 px-4">
-              <div className={`w-3 h-3 rounded-full mx-auto transition-all duration-300 ${
+            <div className="text-center space-y-2 sm:space-y-3 px-3 sm:px-4">
+              <div className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full mx-auto transition-all duration-300 ${
                 isActiveState ? `${blobState.dotColor} animate-pulse` : blobState.dotColor
               }`}></div>
-              <p className="text-sm text-muted-foreground font-medium">
+              <p className="text-xs sm:text-sm text-muted-foreground font-medium">
                 {getStatusMessage()}
               </p>
             </div>
@@ -939,22 +939,22 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
 
         {/* Response Text Display (Streaming Optimization) */}
         {getDisplayText() && (
-          <Card className="w-full max-w-2xl p-4 sm:p-6 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg">
+          <Card className="w-full max-w-2xl mx-3 sm:mx-0 p-3 sm:p-4 md:p-6 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-xl sm:rounded-2xl shadow-lg">
             <CardContent className="p-0">
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 {transcribedText && (
-                  <div className="text-xs sm:text-sm text-muted-foreground mb-2">
+                  <div className="text-xs sm:text-sm text-muted-foreground mb-1.5 sm:mb-2">
                     <span className="font-semibold">You:</span> {transcribedText}
                   </div>
                 )}
                 {(partialResponse || finalResponse) && (
-                  <div className="text-sm sm:text-base text-foreground">
+                  <div className="text-xs sm:text-sm md:text-base text-foreground">
                     <span className="font-semibold text-primary">AI:</span>{' '}
                     <span className={partialResponse && !finalResponse ? 'opacity-70' : ''}>
                       {finalResponse || partialResponse}
                     </span>
                     {partialResponse && !finalResponse && (
-                      <span className="inline-block w-2 h-4 ml-1 bg-primary animate-pulse" />
+                      <span className="inline-block w-1.5 sm:w-2 h-3 sm:h-4 ml-1 bg-primary animate-pulse" />
                     )}
                   </div>
                 )}
@@ -964,26 +964,26 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
         )}
 
         {/* Enhanced Microphone Button */}
-        <div className="flex flex-col items-center space-y-4">
+        <div className="flex flex-col items-center space-y-3 sm:space-y-4">
           <button
             onClick={handleMicToggle}
             disabled={connectionState !== 'connected' || isGreetingAudioPlaying || isAIResponsePlaying || isProcessing || isWaitingForAudio}
-            className={`w-20 h-20 rounded-full shadow-lg transition-all duration-200 ${
+            className={`w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-full shadow-lg transition-all duration-200 ${
               (connectionState !== 'connected' || isGreetingAudioPlaying || isAIResponsePlaying || isProcessing || isWaitingForAudio)
                 ? 'bg-muted cursor-not-allowed opacity-50'
                 : isListening 
-                  ? 'bg-primary hover:bg-primary/90 scale-110' 
+                  ? 'bg-primary hover:bg-primary/90 scale-105 sm:scale-110' 
                   : 'bg-primary hover:bg-primary/90'
             }`}
           >
-            <Mic className={`h-8 w-8 mx-auto ${
+            <Mic className={`h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 mx-auto ${
               (connectionState !== 'connected' || isGreetingAudioPlaying || isAIResponsePlaying || isProcessing || isWaitingForAudio) 
                 ? 'text-muted-foreground' 
                 : 'text-primary-foreground'
             }`} />
           </button>
           
-          <p className="text-xs text-muted-foreground text-center max-w-xs">
+          <p className="text-[10px] sm:text-xs text-muted-foreground text-center max-w-xs px-3 sm:px-0">
             Tap the microphone to start speaking with your AI tutor
           </p>
         </div>
@@ -993,9 +993,9 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
       <div className="flex justify-center">
         <button
           onClick={handleBackToGreeting}
-          className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
-          <X className="h-4 w-4" />
+          <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           End Session
         </button>
       </div>

@@ -950,28 +950,29 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
       ) : (
         <>
           {/* Premium Header Section */}
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-            <div className="relative p-4 sm:p-6 lg:p-8 rounded-3xl">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                <div className="flex items-center gap-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                  <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-                </div>
-          <div>
-                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
-                    Admin Dashboard
-                  </h1>
-                  <p className="text-sm sm:text-base lg:text-lg text-muted-foreground font-light">
-                    Welcome back, {userProfile?.first_name || 'Administrator'}
-                  </p>
+          <div className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
+            <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl">
+              {/* Desktop Layout: Side by side */}
+              <div className="hidden lg:flex lg:items-center lg:justify-between gap-4 lg:gap-6 mb-4 lg:mb-6">
+                <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0">
+                    <Shield className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h1 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight whitespace-nowrap">
+                      Admin Dashboard
+                    </h1>
+                    <p className="text-xs md:text-sm lg:text-base xl:text-lg text-muted-foreground font-light mt-0.5 md:mt-1">
+                      Welcome back, {userProfile?.first_name || 'Administrator'}
+                    </p>
                   </div>
                 </div>
                 
-                {/* Filter Controls - Matching Reports Page Style */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                {/* Filter Controls - Desktop */}
+                <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
                   <Select value={timeRange} onValueChange={setTimeRange}>
-                    <SelectTrigger className="w-full sm:w-48 rounded-xl h-9">
+                    <SelectTrigger className="w-[140px] md:w-[160px] lg:w-48 rounded-lg md:rounded-xl h-8 md:h-9 text-xs md:text-sm">
                       <SelectValue placeholder="Select time range" />
                     </SelectTrigger>
                     <SelectContent>
@@ -987,10 +988,10 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                     <DrawerTrigger asChild>
                       <Button 
                         variant="outline"
-                        className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 w-full sm:w-auto"
+                        className="h-8 md:h-9 px-2.5 md:px-3 lg:px-4 rounded-lg md:rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 text-xs md:text-sm"
                       >
-                        <Filter className="h-4 w-4 mr-2" />
-                        Filters
+                        <Filter className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
+                        <span>Filters</span>
                       </Button>
                     </DrawerTrigger>
                     <DrawerContent>
@@ -1206,10 +1207,267 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                       </div>
                     </DrawerContent>
                   </Drawer>
+                </div>
+              </div>
+
+              {/* Mobile & Tablet Layout: Stacked */}
+              <div className="flex flex-col gap-3 md:gap-4 lg:hidden">
+                <div className="flex items-start gap-2 md:gap-3 min-w-0">
+                  <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Shield className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h1 className="text-lg md:text-xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
+                      Admin Dashboard
+                    </h1>
+                    <p className="text-xs md:text-sm text-muted-foreground font-light mt-0.5 break-words">
+                      Welcome back, {userProfile?.first_name || 'Administrator'}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Filter Controls - Mobile & Tablet */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full">
+                  <Select value={timeRange} onValueChange={setTimeRange}>
+                    <SelectTrigger className="w-full sm:w-[160px] md:w-[180px] rounded-lg md:rounded-xl h-9 md:h-10 text-xs md:text-sm">
+                      <SelectValue placeholder="Select time range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7days">Last 7 days</SelectItem>
+                      <SelectItem value="30days">Last 30 days</SelectItem>
+                      <SelectItem value="3months">Last 3 months</SelectItem>
+                      <SelectItem value="6months">Last 6 months</SelectItem>
+                      <SelectItem value="1year">Last year</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Drawer>
+                    <DrawerTrigger asChild>
+                      <Button 
+                        variant="outline"
+                        className="h-9 md:h-10 px-3 md:px-4 rounded-lg md:rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 w-full sm:w-auto text-xs md:text-sm"
+                      >
+                        <Filter className="h-4 w-4 md:mr-2" />
+                        <span>Filters</span>
+                      </Button>
+                    </DrawerTrigger>
+                    <DrawerContent>
+                      <div className="mx-auto w-full max-w-4xl">
+                        <DrawerHeader>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <DrawerTitle>Filter Dashboard Data</DrawerTitle>
+                              <DrawerDescription>Apply filters to refine the data shown on the dashboard.</DrawerDescription>
+                            </div>
+                            <DrawerClose asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400">
+                                <X className="h-4 w-4" />
+                                <span className="sr-only">Close</span>
+                              </Button>
+                            </DrawerClose>
+                          </div>
+                        </DrawerHeader>
+                        <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {/* Country */}
+                          <div className="space-y-2">
+                            <Label htmlFor="country-mobile">Country</Label>
+                            <Select 
+                              value={filters.country} 
+                              onValueChange={(value) => handleFilterChange('country', value)}
+                              disabled={filterLoading.countries}
+                            >
+                              <SelectTrigger id="country-mobile">
+                                <SelectValue placeholder={filterLoading.countries ? "Loading..." : "Select country"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Countries</SelectItem>
+                                {countries.map((country) => (
+                                  <SelectItem key={country.id} value={country.id}>
+                                    {country.name} ({country.code})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Region */}
+                          <div className="space-y-2">
+                            <Label htmlFor="region-mobile">Region</Label>
+                            <Select 
+                              value={filters.region} 
+                              onValueChange={(value) => handleFilterChange('region', value)}
+                              disabled={filterLoading.regions}
+                            >
+                              <SelectTrigger id="region-mobile">
+                                <SelectValue placeholder={filterLoading.regions ? "Loading..." : "Select region"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Regions</SelectItem>
+                                {regions.map((region) => (
+                                  <SelectItem key={region.id} value={region.id}>
+                                    {region.name} ({region.code})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* City */}
+                          <div className="space-y-2">
+                            <Label htmlFor="city-mobile">City</Label>
+                            <Select 
+                              value={filters.city} 
+                              onValueChange={(value) => handleFilterChange('city', value)}
+                              disabled={filterLoading.cities}
+                            >
+                              <SelectTrigger id="city-mobile">
+                                <SelectValue placeholder={filterLoading.cities ? "Loading..." : "Select city"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Cities</SelectItem>
+                                {cities.map((city) => (
+                                  <SelectItem key={city.id} value={city.id}>
+                                    {city.name} ({city.code})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Project */}
+                          <div className="space-y-2">
+                            <Label htmlFor="project-mobile">Project</Label>
+                            <Select 
+                              value={filters.project} 
+                              onValueChange={(value) => handleFilterChange('project', value)}
+                              disabled={filterLoading.projects}
+                            >
+                              <SelectTrigger id="project-mobile">
+                                <SelectValue placeholder={filterLoading.projects ? "Loading..." : "Select project"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Projects</SelectItem>
+                                {projects.map((project) => (
+                                  <SelectItem key={project.id} value={project.id}>
+                                    {project.name} ({project.code})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Board */}
+                          <div className="space-y-2">
+                            <Label htmlFor="board-mobile">Board</Label>
+                            <Select 
+                              value={filters.board} 
+                              onValueChange={(value) => handleFilterChange('board', value)}
+                              disabled={filterLoading.boards}
+                            >
+                              <SelectTrigger id="board-mobile">
+                                <SelectValue placeholder={filterLoading.boards ? "Loading..." : "Select board"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Boards</SelectItem>
+                                {boards.map((board) => (
+                                  <SelectItem key={board.id} value={board.id}>
+                                    {board.name} ({board.code})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Schools */}
+                          <div className="space-y-2">
+                            <Label htmlFor="schools-mobile">Schools</Label>
+                            <Select 
+                              value={filters.school} 
+                              onValueChange={(value) => handleFilterChange('school', value)}
+                              disabled={filterLoading.schools}
+                            >
+                              <SelectTrigger id="schools-mobile">
+                                <SelectValue placeholder={filterLoading.schools ? "Loading..." : "Select school"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Schools</SelectItem>
+                                {schools.map((school) => (
+                                  <SelectItem key={school.id} value={school.id}>
+                                    {school.name} ({school.school_type})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Grade */}
+                          <div className="space-y-2">
+                            <Label htmlFor="grade-mobile">Grade</Label>
+                            <Select 
+                              value={filters.grade} 
+                              onValueChange={(value) => handleFilterChange('grade', value)}
+                              disabled={filterLoading.grades}
+                            >
+                              <SelectTrigger id="grade-mobile">
+                                <SelectValue placeholder={filterLoading.grades ? "Loading..." : "Select grade"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Grades</SelectItem>
+                                {grades.map((grade) => (
+                                  <SelectItem key={grade.id} value={grade.id}>
+                                    {grade.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Class */}
+                          <div className="space-y-2">
+                            <Label htmlFor="class-mobile">Class</Label>
+                            <Select 
+                              value={filters.class} 
+                              onValueChange={(value) => handleFilterChange('class', value)}
+                              disabled={filterLoading.classes}
+                            >
+                              <SelectTrigger id="class-mobile">
+                                <SelectValue placeholder={filterLoading.classes ? "Loading..." : "Select class"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Classes</SelectItem>
+                                {classes.map((classItem) => (
+                                  <SelectItem key={classItem.id} value={classItem.id}>
+                                    {classItem.name} (Grade {classItem.grade})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <DrawerFooter>
+                          <Button 
+                            onClick={applyFilters}
+                            className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20"
+                          >
+                            Apply Filters
+                          </Button>
+                          <DrawerClose asChild>
+                            <Button 
+                              variant="outline" 
+                              onClick={clearAllFilters}
+                              className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+                            >
+                              Clear All
+                            </Button>
+                          </DrawerClose>
+                        </DrawerFooter>
+                      </div>
+                    </DrawerContent>
+                  </Drawer>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-                  </div>
-                  </div>
 
           {/* Stats Grid - Clean Design */}
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

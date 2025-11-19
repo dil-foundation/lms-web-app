@@ -17,7 +17,7 @@ export const Logo = memo(({
     navigate('/');
   };
   return <button onClick={handleLogoClick} className={`flex items-center hover-scale transition-all duration-300 ${className}`}>
-      <img src="/lovable-uploads/016ec8c7-bb16-4595-ab96-d96c8c779aa2.png" alt="DIL" className="h-14 w-auto" />
+      <img src="/lovable-uploads/016ec8c7-bb16-4595-ab96-d96c8c779aa2.png" alt="DIL" className="h-10 sm:h-12 md:h-14 w-auto" />
     </button>;
 });
 

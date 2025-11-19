@@ -121,96 +121,109 @@ export const AISafetyEthicsSettings = ({ userProfile }: AISafetyEthicsSettingsPr
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
+      <div className="flex items-center justify-center p-4 sm:p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <span className="ml-2">Loading AI Safety & Ethics settings...</span>
+        <span className="ml-2 text-sm sm:text-base">Loading AI Safety & Ethics settings...</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 md:p-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
-            <Shield className="w-5 h-5 text-primary" />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center flex-shrink-0">
+            <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold">AI Safety & Ethics</h1>
-            <p className="text-muted-foreground">Configure safety monitoring and ethical guidelines</p>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold truncate">AI Safety & Ethics</h1>
+            <p className="text-sm sm:text-base text-muted-foreground hidden sm:block">Configure safety monitoring and ethical guidelines</p>
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleReset}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Reset
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={handleReset} className="flex-1 sm:flex-none">
+            <RefreshCw className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Reset</span>
           </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            <Save className="w-4 h-4 mr-2" />
-            {saving ? 'Saving...' : 'Save Changes'}
+          <Button onClick={handleSave} disabled={saving} className="flex-1 sm:flex-none">
+            <Save className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">{saving ? 'Saving...' : 'Save Changes'}</span>
+            <span className="sm:hidden">{saving ? 'Saving...' : 'Save'}</span>
           </Button>
         </div>
       </div>
 
 
-      <Tabs defaultValue="content" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="content">Content Safety</TabsTrigger>
-          <TabsTrigger value="privacy">Privacy</TabsTrigger>
-          <TabsTrigger value="bias">Bias & Fairness</TabsTrigger>
+      <Tabs defaultValue="content" className="space-y-4 sm:space-y-6">
+        <TabsList className="grid w-full grid-cols-3 h-auto">
+          <TabsTrigger value="content" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
+            <span className="hidden sm:inline">Content Safety</span>
+            <span className="sm:hidden">Content</span>
+          </TabsTrigger>
+          <TabsTrigger value="privacy" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
+            <span className="hidden sm:inline">Privacy</span>
+            <span className="sm:hidden">Privacy</span>
+          </TabsTrigger>
+          <TabsTrigger value="bias" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
+            <span className="hidden sm:inline">Bias & Fairness</span>
+            <span className="sm:hidden">Bias</span>
+          </TabsTrigger>
         </TabsList>
 
         {/* Content Safety */}
         <TabsContent value="content">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Content Safety & Filtering
+            <CardHeader className="px-4 sm:px-6 py-4">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Shield className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                <span className="truncate">Content Safety & Filtering</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
+            <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
+              <div className="space-y-4 sm:space-y-5">
                 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Toxicity Detection</Label>
-                    <p className="text-sm text-muted-foreground">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 py-2 sm:py-0">
+                  <div className="space-y-0.5 flex-1">
+                    <Label className="text-sm sm:text-base">Toxicity Detection</Label>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Detect and prevent toxic language and behavior
                     </p>
                   </div>
                   <Switch
                     checked={settings.toxicityDetection}
                     onCheckedChange={(checked) => setSettings({...settings, toxicityDetection: checked})}
+                    className="self-start sm:self-auto"
                   />
                 </div>
                 
                 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Inappropriate Content Blocking</Label>
-                    <p className="text-sm text-muted-foreground">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 py-2 sm:py-0">
+                  <div className="space-y-0.5 flex-1">
+                    <Label className="text-sm sm:text-base">Inappropriate Content Blocking</Label>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Block content that violates community guidelines
                     </p>
                   </div>
                   <Switch
                     checked={settings.inappropriateContentBlocking}
                     onCheckedChange={(checked) => setSettings({...settings, inappropriateContentBlocking: checked})}
+                    className="self-start sm:self-auto"
                   />
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Harmful Content Prevention</Label>
-                    <p className="text-sm text-muted-foreground">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 py-2 sm:py-0">
+                  <div className="space-y-0.5 flex-1">
+                    <Label className="text-sm sm:text-base">Harmful Content Prevention</Label>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Prevent generation of potentially harmful content
                     </p>
                   </div>
                   <Switch
                     checked={settings.harmfulContentPrevention}
                     onCheckedChange={(checked) => setSettings({...settings, harmfulContentPrevention: checked})}
+                    className="self-start sm:self-auto"
                   />
                 </div>
                 
@@ -222,32 +235,33 @@ export const AISafetyEthicsSettings = ({ userProfile }: AISafetyEthicsSettingsPr
         {/* Privacy & Data Protection */}
         <TabsContent value="privacy">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lock className="w-5 h-5" />
-                Privacy & Data Protection
+            <CardHeader className="px-4 sm:px-6 py-4">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Lock className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                <span className="truncate">Privacy & Data Protection</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
+            <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
+              <div className="space-y-4 sm:space-y-5">
                 
                 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Conversation Logging</Label>
-                    <p className="text-sm text-muted-foreground">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 py-2 sm:py-0">
+                  <div className="space-y-0.5 flex-1">
+                    <Label className="text-sm sm:text-base">Conversation Logging</Label>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Log conversations for safety and improvement purposes
                     </p>
                   </div>
                   <Switch
                     checked={settings.conversationLogging}
                     onCheckedChange={(checked) => setSettings({...settings, conversationLogging: checked})}
+                    className="self-start sm:self-auto"
                   />
                 </div>
               </div>
               
-              <div className="space-y-2">
-                <Label>Data Retention Limit: {settings.dataRetentionLimit} days</Label>
+              <div className="space-y-2 sm:space-y-3">
+                <Label className="text-sm sm:text-base">Data Retention Limit: <span className="font-semibold">{settings.dataRetentionLimit}</span> days</Label>
                 <Slider
                   value={[settings.dataRetentionLimit]}
                   onValueChange={(value) => setSettings({...settings, dataRetentionLimit: value[0]})}
@@ -256,7 +270,7 @@ export const AISafetyEthicsSettings = ({ userProfile }: AISafetyEthicsSettingsPr
                   step={30}
                   className="w-full"
                 />
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   How long to retain user data for safety analysis
                 </p>
               </div>
@@ -267,76 +281,81 @@ export const AISafetyEthicsSettings = ({ userProfile }: AISafetyEthicsSettingsPr
         {/* Bias & Fairness */}
         <TabsContent value="bias">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Bias & Fairness Monitoring
+            <CardHeader className="px-4 sm:px-6 py-4">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                <span className="truncate">Bias & Fairness Monitoring</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Gender Bias Monitoring</Label>
-                    <p className="text-sm text-muted-foreground">
+            <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
+              <div className="space-y-4 sm:space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 py-2 sm:py-0">
+                  <div className="space-y-0.5 flex-1">
+                    <Label className="text-sm sm:text-base">Gender Bias Monitoring</Label>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Monitor for gender-based bias in responses
                     </p>
                   </div>
                   <Switch
                     checked={settings.genderBiasMonitoring}
                     onCheckedChange={(checked) => setSettings({...settings, genderBiasMonitoring: checked})}
+                    className="self-start sm:self-auto"
                   />
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Cultural Bias Detection</Label>
-                    <p className="text-sm text-muted-foreground">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 py-2 sm:py-0">
+                  <div className="space-y-0.5 flex-1">
+                    <Label className="text-sm sm:text-base">Cultural Bias Detection</Label>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Detect cultural bias and stereotypes
                     </p>
                   </div>
                   <Switch
                     checked={settings.culturalBiasDetection}
                     onCheckedChange={(checked) => setSettings({...settings, culturalBiasDetection: checked})}
+                    className="self-start sm:self-auto"
                   />
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Age-Appropriate Responses</Label>
-                    <p className="text-sm text-muted-foreground">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 py-2 sm:py-0">
+                  <div className="space-y-0.5 flex-1">
+                    <Label className="text-sm sm:text-base">Age-Appropriate Responses</Label>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Ensure responses are appropriate for user age
                     </p>
                   </div>
                   <Switch
                     checked={settings.ageAppropriateResponses}
                     onCheckedChange={(checked) => setSettings({...settings, ageAppropriateResponses: checked})}
+                    className="self-start sm:self-auto"
                   />
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Inclusive Language</Label>
-                    <p className="text-sm text-muted-foreground">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 py-2 sm:py-0">
+                  <div className="space-y-0.5 flex-1">
+                    <Label className="text-sm sm:text-base">Inclusive Language</Label>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Promote inclusive and respectful language
                     </p>
                   </div>
                   <Switch
                     checked={settings.inclusiveLanguage}
                     onCheckedChange={(checked) => setSettings({...settings, inclusiveLanguage: checked})}
+                    className="self-start sm:self-auto"
                   />
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Emotional Safety Checks</Label>
-                    <p className="text-sm text-muted-foreground">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 py-2 sm:py-0">
+                  <div className="space-y-0.5 flex-1">
+                    <Label className="text-sm sm:text-base">Emotional Safety Checks</Label>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Monitor emotional impact of AI interactions
                     </p>
                   </div>
                   <Switch
                     checked={settings.emotionalSafetyChecks}
                     onCheckedChange={(checked) => setSettings({...settings, emotionalSafetyChecks: checked})}
+                    className="self-start sm:self-auto"
                   />
                 </div>
               </div>

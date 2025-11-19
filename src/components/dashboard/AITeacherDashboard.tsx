@@ -103,35 +103,35 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
       {/* Header Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                <GraduationCap className="w-6 h-6 text-primary" />
+        <div className="relative p-4 sm:p-6 md:p-8 rounded-3xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
                   AI Teacher Dashboard
                 </h1>
-                <p className="text-lg text-muted-foreground font-light">
+                <p className="text-sm sm:text-base md:text-lg text-muted-foreground font-light break-words">
                   Welcome back, {userProfile.first_name}
                 </p>
               </div>
             </div>
             
             {/* Filter Controls */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto flex-shrink-0">
               <Button
                 size="sm"
                 variant="outline"
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="h-8"
+                className="h-8 px-2 sm:px-3 flex-shrink-0"
               >
                 <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
               </Button>
               <Select value={timeRange} onValueChange={handleTimeRangeChange}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-full sm:w-32 h-8 text-xs sm:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

@@ -415,31 +415,60 @@ export const APEXAdmin = () => {
   return (
     <div className="space-y-6 pb-24">
       {/* Header */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-                <Bot className="w-8 h-8 text-primary" />
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
+        <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl">
+          {/* Desktop Layout: Side by side */}
+          <div className="hidden lg:flex lg:items-center lg:justify-between gap-6">
+            <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
+              <div className="w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                <Bot className="w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 text-primary" />
               </div>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight">
                   APEX (AI-Powered Educational eXperience)
                 </h1>
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-xs md:text-sm text-muted-foreground mt-1 md:mt-2 leading-snug">
                   Configure and manage the intelligent AI assistant that helps visitors and users navigate the platform
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-primary/20">
-                <Sparkles className="h-3 w-3 mr-1" />
+            <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+              <Badge variant="secondary" className="px-2 md:px-3 py-1 bg-primary/10 text-primary border-primary/20 text-xs md:text-sm">
+                <Sparkles className="h-3 w-3 mr-1 flex-shrink-0" />
                 AI Powered
               </Badge>
-              <Badge variant="outline" className="px-3 py-1">
-                <Clock className="h-3 w-3 mr-1" />
+              <Badge variant="outline" className="px-2 md:px-3 py-1 text-xs md:text-sm">
+                <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
+                Always Available
+              </Badge>
+            </div>
+          </div>
+
+          {/* Mobile & Tablet Layout: Stacked */}
+          <div className="flex flex-col gap-4 lg:hidden">
+            <div className="flex items-start gap-2 sm:gap-3 min-w-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 shadow-lg">
+                <Bot className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
+                  APEX (AI-Powered Educational eXperience)
+                </h1>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 leading-snug">
+                  Configure and manage the intelligent AI assistant that helps visitors and users navigate the platform
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 w-full">
+              <Badge variant="secondary" className="flex-1 justify-center px-2 py-1 bg-primary/10 text-primary border-primary/20 text-xs">
+                <Sparkles className="h-3 w-3 mr-1 flex-shrink-0" />
+                AI Powered
+              </Badge>
+              <Badge variant="outline" className="flex-1 justify-center px-2 py-1 text-xs">
+                <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
                 Always Available
               </Badge>
             </div>
@@ -448,7 +477,7 @@ export const APEXAdmin = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total FAQs</CardTitle>
@@ -503,29 +532,37 @@ export const APEXAdmin = () => {
       </div>
 
       {/* Main Content */}
-      <Tabs defaultValue="faqs" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="faqs">FAQs</TabsTrigger>
-          <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
-          <TabsTrigger value="contacts">Contact Info</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+      <Tabs defaultValue="faqs" className="space-y-4 sm:space-y-6">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto sm:h-10 gap-1 p-1">
+          <TabsTrigger value="faqs" className="text-xs sm:text-sm py-2 sm:py-0">
+            <span className="truncate">FAQs</span>
+          </TabsTrigger>
+          <TabsTrigger value="knowledge" className="text-xs sm:text-sm py-2 sm:py-0">
+            <span className="truncate">Knowledge Base</span>
+          </TabsTrigger>
+          <TabsTrigger value="contacts" className="text-xs sm:text-sm py-2 sm:py-0">
+            <span className="truncate">Contact Info</span>
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="text-xs sm:text-sm py-2 sm:py-0">
+            <span className="truncate">Analytics</span>
+          </TabsTrigger>
         </TabsList>
 
         {/* FAQs Tab */}
-        <TabsContent value="faqs" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="relative">
+        <TabsContent value="faqs" className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 flex-1 w-full sm:w-auto">
+              <div className="relative flex-1 sm:flex-none sm:w-64">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   placeholder="Search FAQs..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
+                  className="pl-9 sm:pl-10 h-9 sm:h-10 text-sm sm:text-base w-full"
                 />
               </div>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-full sm:w-48 h-9 sm:h-10 text-sm sm:text-base">
                   <SelectValue placeholder="Filter by category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -537,14 +574,17 @@ export const APEXAdmin = () => {
               </Select>
             </div>
 
-            <Button onClick={() => {
-              setDialogState({
-                isOpen: true,
-                type: 'faq',
-                mode: 'create'
-              });
-              resetFAQForm();
-            }}>
+            <Button 
+              onClick={() => {
+                setDialogState({
+                  isOpen: true,
+                  type: 'faq',
+                  mode: 'create'
+                });
+                resetFAQForm();
+              }}
+              className="w-full sm:w-auto h-9 sm:h-10 text-sm sm:text-base"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add FAQ
             </Button>
@@ -653,65 +693,77 @@ export const APEXAdmin = () => {
           </div>
 
           <Card>
-            <CardHeader>
-              <CardTitle>FAQ Management</CardTitle>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">FAQ Management</CardTitle>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Question</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Priority</TableHead>
-                    <TableHead>Tags</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedFAQs.map((faq) => (
-                    <TableRow key={faq.id}>
-                      <TableCell className="font-medium">{faq.question}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{faq.category}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={faq.priority === 'high' ? 'destructive' : faq.priority === 'medium' ? 'default' : 'secondary'}
-                        >
-                          {faq.priority}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {faq.tags.map((tag, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditFAQ(faq)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteFAQ(faq.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+            <CardContent className="p-0 sm:p-6">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[200px] sm:min-w-0">Question</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0">Category</TableHead>
+                      <TableHead className="min-w-[100px] sm:min-w-0">Priority</TableHead>
+                      <TableHead className="min-w-[150px] sm:min-w-0 hidden sm:table-cell">Tags</TableHead>
+                      <TableHead className="min-w-[100px] sm:min-w-0">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedFAQs.map((faq) => (
+                      <TableRow key={faq.id}>
+                        <TableCell className="font-medium text-sm sm:text-base max-w-[200px] sm:max-w-none">
+                          <div className="truncate" title={faq.question}>{faq.question}</div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">{faq.category}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={faq.priority === 'high' ? 'destructive' : faq.priority === 'medium' ? 'default' : 'secondary'}
+                            className="text-xs"
+                          >
+                            {faq.priority}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <div className="flex flex-wrap gap-1">
+                            {faq.tags.slice(0, 2).map((tag, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                            {faq.tags.length > 2 && (
+                              <Badge variant="outline" className="text-xs">+{faq.tags.length - 2}</Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1 sm:gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditFAQ(faq)}
+                              className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
+                            >
+                              <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                              <span className="hidden sm:inline ml-2">Edit</span>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteFAQ(faq.id)}
+                              className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
+                            >
+                              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                              <span className="hidden sm:inline ml-2">Delete</span>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
 
@@ -733,17 +785,20 @@ export const APEXAdmin = () => {
         </TabsContent>
 
         {/* Knowledge Base Tab */}
-        <TabsContent value="knowledge" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Knowledge Base Management</h2>
-            <Button onClick={() => {
-              setDialogState({
-                isOpen: true,
-                type: 'knowledge',
-                mode: 'create'
-              });
-              resetKnowledgeBaseForm();
-            }}>
+        <TabsContent value="knowledge" className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <h2 className="text-base sm:text-lg font-semibold">Knowledge Base Management</h2>
+            <Button 
+              onClick={() => {
+                setDialogState({
+                  isOpen: true,
+                  type: 'knowledge',
+                  mode: 'create'
+                });
+                resetKnowledgeBaseForm();
+              }}
+              className="w-full sm:w-auto h-9 sm:h-10 text-sm sm:text-base"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add Article
             </Button>
@@ -839,49 +894,54 @@ export const APEXAdmin = () => {
           </div>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Knowledge Base Articles</CardTitle>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">Knowledge Base Articles</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6">
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {knowledgeBase.map((item) => (
-                    <Card key={item.id} className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-2 flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold">{item.title}</h3>
+                    <Card key={item.id} className="p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                        <div className="space-y-2 flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="font-semibold text-sm sm:text-base break-words">{item.title}</h3>
                             {!item.is_active && (
                               <Badge variant="secondary" className="text-xs">Inactive</Badge>
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground line-clamp-2">{item.content}</p>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline">{item.category}</Badge>
-                            {item.tags.map((tag, index) => (
+                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{item.content}</p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant="outline" className="text-xs">{item.category}</Badge>
+                            {item.tags.slice(0, 3).map((tag, index) => (
                               <Badge key={index} variant="default" className="text-xs text-white bg-primary hover:bg-primary/90">
                                 {tag}
                               </Badge>
                             ))}
+                            {item.tags.length > 3 && (
+                              <Badge variant="outline" className="text-xs">+{item.tags.length - 3}</Badge>
+                            )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 ml-4">
-                          <Button variant="outline" size="sm" onClick={() => handleEditKnowledgeBase(item)}>
-                            <Edit className="h-4 w-4" />
+                        <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
+                          <Button variant="outline" size="sm" onClick={() => handleEditKnowledgeBase(item)} className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3">
+                            <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            <span className="hidden sm:inline ml-2">Edit</span>
                           </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleDeleteKnowledgeBase(item.id)}>
-                            <Trash2 className="h-4 w-4" />
+                          <Button variant="outline" size="sm" onClick={() => handleDeleteKnowledgeBase(item.id)} className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3">
+                            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            <span className="hidden sm:inline ml-2">Delete</span>
                           </Button>
                         </div>
                       </div>
                     </Card>
                   ))}
                   {knowledgeBase.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-center py-8 text-muted-foreground text-sm">
                       No knowledge base articles found. Add your first article to get started.
                     </div>
                   )}
@@ -892,17 +952,20 @@ export const APEXAdmin = () => {
         </TabsContent>
 
         {/* Contact Info Tab */}
-        <TabsContent value="contacts" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Contact Information Management</h2>
-            <Button onClick={() => {
-              setDialogState({
-                isOpen: true,
-                type: 'contact',
-                mode: 'create'
-              });
-              resetContactForm();
-            }}>
+        <TabsContent value="contacts" className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <h2 className="text-base sm:text-lg font-semibold">Contact Information Management</h2>
+            <Button 
+              onClick={() => {
+                setDialogState({
+                  isOpen: true,
+                  type: 'contact',
+                  mode: 'create'
+                });
+                resetContactForm();
+              }}
+              className="w-full sm:w-auto h-9 sm:h-10 text-sm sm:text-base"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add Contact
             </Button>
@@ -1017,24 +1080,25 @@ export const APEXAdmin = () => {
           </div>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Contact Information</CardTitle>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">Contact Information</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6">
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {contactInfo.map((contact) => (
-                    <Card key={contact.id} className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-2 flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold">{contact.department}</h3>
+                    <Card key={contact.id} className="p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                        <div className="space-y-2 flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="font-semibold text-sm sm:text-base break-words">{contact.department}</h3>
                             <Badge 
                               variant={contact.priority === 'high' ? 'destructive' : contact.priority === 'medium' ? 'default' : 'secondary'}
+                              className="text-xs"
                             >
                               {contact.priority}
                             </Badge>
@@ -1042,34 +1106,36 @@ export const APEXAdmin = () => {
                               <Badge variant="secondary" className="text-xs">Inactive</Badge>
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground">{contact.description}</p>
-                          <div className="flex items-center gap-4 text-sm">
-                            <div className="flex items-center gap-1">
-                              <Mail className="h-4 w-4" />
-                              {contact.email}
+                          <p className="text-xs sm:text-sm text-muted-foreground">{contact.description}</p>
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm">
+                            <div className="flex items-center gap-1 break-all">
+                              <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                              <span className="truncate">{contact.email}</span>
                             </div>
                             {contact.phone && (
                               <div className="flex items-center gap-1">
-                                <Phone className="h-4 w-4" />
-                                {contact.phone}
+                                <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                                <span>{contact.phone}</span>
                               </div>
                             )}
-                            <Badge variant="outline">{contact.availability}</Badge>
+                            <Badge variant="outline" className="text-xs w-fit">{contact.availability}</Badge>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 ml-4">
-                          <Button variant="outline" size="sm" onClick={() => handleEditContact(contact)}>
-                            <Edit className="h-4 w-4" />
+                        <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
+                          <Button variant="outline" size="sm" onClick={() => handleEditContact(contact)} className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3">
+                            <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            <span className="hidden sm:inline ml-2">Edit</span>
                           </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleDeleteContact(contact.id)}>
-                            <Trash2 className="h-4 w-4" />
+                          <Button variant="outline" size="sm" onClick={() => handleDeleteContact(contact.id)} className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3">
+                            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            <span className="hidden sm:inline ml-2">Delete</span>
                           </Button>
                         </div>
                       </div>
                     </Card>
                   ))}
                   {contactInfo.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-center py-8 text-muted-foreground text-sm">
                       No contact information found. Add your first contact to get started.
                     </div>
                   )}
@@ -1080,8 +1146,8 @@ export const APEXAdmin = () => {
         </TabsContent>
 
         {/* Analytics Tab */}
-        <TabsContent value="analytics" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <TabsContent value="analytics" className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <Card>
               <CardHeader>
                 <CardTitle>APEX Content Overview</CardTitle>

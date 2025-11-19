@@ -683,32 +683,63 @@ export default function StudentsPage() {
   const totalPages = Math.ceil(totalStudentsInFilter / rowsPerPage);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8 p-3 sm:p-4 md:p-6 lg:p-8">
       {/* Premium Header Section */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-4 md:p-8 rounded-3xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
+        <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl">
+          {/* Desktop Layout */}
+          <div className="hidden lg:flex lg:items-center lg:justify-between gap-3 lg:gap-4">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0">
                 <Users className="w-5 h-5 md:w-6 md:h-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-2xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight">
                   Students
                 </h1>
-                <p className="text-sm md:text-lg text-muted-foreground md:mt-2 leading-relaxed">
+                <p className="text-xs md:text-sm lg:text-base xl:text-lg text-muted-foreground mt-0.5 md:mt-1">
                   Manage your students and track their progress
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <Button 
                 onClick={() => {
                   setEnrollModalOpen(true);
                   fetchEnrollmentData();
                 }}
-                className="h-9 px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                className="h-7 px-2 md:px-3 rounded-lg bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 text-[10px] md:text-[11px] flex items-center gap-1"
+              >
+                <UserPlus className="h-3 w-3" />
+                <span className="hidden xl:inline">Enroll Student</span>
+                <span className="xl:hidden">Enroll</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Mobile & Tablet Layout */}
+          <div className="flex flex-col gap-3 md:gap-4 lg:hidden">
+            <div className="flex items-start gap-2 md:gap-3 min-w-0">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Users className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg md:text-xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight">
+                  Students
+                </h1>
+                <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
+                  Manage your students and track their progress
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 w-full">
+              <Button 
+                onClick={() => {
+                  setEnrollModalOpen(true);
+                  fetchEnrollmentData();
+                }}
+                className="h-9 px-3 md:px-4 rounded-lg bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg text-xs md:text-sm flex items-center gap-2 flex-1"
               >
                 <UserPlus className="h-4 w-4" />
                 Enroll Student
@@ -861,63 +892,63 @@ export default function StudentsPage() {
         </Dialog>
 
              {/* Students Summary Metrics */}
-       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 sm:grid-cols-2 lg:grid-cols-4">
          <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-lg bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-             <CardTitle className="text-sm font-medium text-muted-foreground">Total Students</CardTitle>
-             <Users className="h-4 w-4 text-[#1582B4]" />
+           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+             <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground truncate">Total Students</CardTitle>
+             <Users className="h-3 w-3 sm:h-4 sm:w-4 text-[#1582B4] flex-shrink-0" />
            </CardHeader>
-           <CardContent>
+           <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
              <div className="space-y-1">
                {loading ? (
                  <Skeleton className="h-8 w-16" />
                ) : (
-                 <div className="text-2xl font-bold">{studentData.totalCount}</div>
+                 <div className="text-xl sm:text-2xl font-bold">{studentData.totalCount}</div>
                )}
              </div>
            </CardContent>
          </Card>
          <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-lg bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-             <CardTitle className="text-sm font-medium text-muted-foreground">Active Students</CardTitle>
-             <Activity className="h-4 w-4 text-green-500" />
+           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+             <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground truncate">Active Students</CardTitle>
+             <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 flex-shrink-0" />
            </CardHeader>
-           <CardContent>
+           <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
              <div className="space-y-1">
                {loading ? (
                  <Skeleton className="h-8 w-16" />
                ) : (
-                 <div className="text-2xl font-bold">{studentData.activeCount}</div>
+                 <div className="text-xl sm:text-2xl font-bold">{studentData.activeCount}</div>
                )}
              </div>
            </CardContent>
          </Card>
          <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-lg bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-             <CardTitle className="text-sm font-medium text-muted-foreground">Avg Progress</CardTitle>
-             <Target className="h-4 w-4 text-purple-500" />
+           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+             <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground truncate">Avg Progress</CardTitle>
+             <Target className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500 flex-shrink-0" />
            </CardHeader>
-           <CardContent>
+           <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
              <div className="space-y-1">
                {loading ? (
                  <Skeleton className="h-8 w-16" />
                ) : (
-                 <div className="text-2xl font-bold">{studentData.averageProgress}%</div>
+                 <div className="text-xl sm:text-2xl font-bold">{studentData.averageProgress}%</div>
                )}
              </div>
            </CardContent>
          </Card>
          <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-lg bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-             <CardTitle className="text-sm font-medium text-muted-foreground">Unverified</CardTitle>
-             <AlertCircle className="h-4 w-4 text-orange-500" />
+           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+             <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground truncate">Unverified</CardTitle>
+             <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-orange-500 flex-shrink-0" />
            </CardHeader>
-           <CardContent>
+           <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
              <div className="space-y-1">
                {loading ? (
                  <Skeleton className="h-8 w-16" />
                ) : (
-                 <div className="text-2xl font-bold">{studentData.unverifiedCount}</div>
+                 <div className="text-xl sm:text-2xl font-bold">{studentData.unverifiedCount}</div>
                )}
              </div>
            </CardContent>
@@ -950,10 +981,10 @@ export default function StudentsPage() {
 
       {/* Search and Filter Controls */}
       <Card className="bg-card border border-border">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold">Student Management</CardTitle>
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-lg sm:text-xl font-semibold">Student Management</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -991,18 +1022,26 @@ export default function StudentsPage() {
           </div>
 
           {/* View Toggle and Students Display */}
-          <div className="space-y-6">
-            {/* View Toggle */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-foreground">Students</h2>
-                <p className="text-sm text-muted-foreground">Switch between different views to manage your students</p>
+          <div className="space-y-4 sm:space-y-6">
+            {/* View Toggle - Improved Responsiveness */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 md:gap-6">
+              <div className="min-w-0 flex-1 space-y-0.5 sm:space-y-1">
+                <h2 className="text-base sm:text-lg md:text-xl font-semibold text-foreground break-words">
+                  Students
+                </h2>
+                <p className="text-xs sm:text-sm text-muted-foreground break-words leading-relaxed">
+                  Switch between different views to manage your students
+                </p>
               </div>
-              <ViewToggle
-                currentView={preferences.teacherStudentView}
-                onViewChange={setTeacherStudentView}
-                availableViews={['card', 'tile', 'list']}
-              />
+              <div className="w-full sm:w-auto flex-shrink-0">
+                <ViewToggle
+                  currentView={preferences.teacherStudentView}
+                  onViewChange={setTeacherStudentView}
+                  availableViews={['card', 'tile', 'list']}
+                  showLabels={true}
+                  className="w-full sm:w-auto"
+                />
+              </div>
             </div>
 
             {/* Students Display based on selected view */}

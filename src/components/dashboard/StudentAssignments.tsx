@@ -360,32 +360,32 @@ const AssignmentSubmissionModal = memo(({
 
   return (
     <>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col p-0 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm">
-        <DialogHeader className="p-6 pb-4 border-b border-gray-200/50 dark:border-gray-700/50">
-          <DialogTitle className="text-gray-900 dark:text-gray-100">Submit Assignment: {assignment.title}</DialogTitle>
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[85vh] sm:max-h-[80vh] flex flex-col p-0 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-xl sm:rounded-2xl">
+        <DialogHeader className="p-4 sm:p-6 pb-3 sm:pb-4 border-b border-gray-200/50 dark:border-gray-700/50">
+          <DialogTitle className="text-base sm:text-lg text-gray-900 dark:text-gray-100 break-words pr-6">Submit Assignment: {assignment.title}</DialogTitle>
           <DialogDescription className="sr-only">
             Submission form for assignment: {assignment.title}
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto">
-          <div className="p-6 space-y-4">
-            <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50 rounded-2xl">
-              <h4 className="font-medium text-gray-900 dark:text-gray-100">Assignment Details</h4>
-              <div className="text-sm text-muted-foreground mt-1 prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: assignment.description }}/>
-              <p className="text-sm mt-2 text-gray-900 dark:text-gray-100">
+          <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
+            <div className="p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50 rounded-xl sm:rounded-2xl">
+              <h4 className="font-medium text-sm sm:text-base text-gray-900 dark:text-gray-100">Assignment Details</h4>
+              <div className="text-xs sm:text-sm text-muted-foreground mt-1 prose prose-sm max-w-none dark:prose-invert break-words" dangerouslySetInnerHTML={{ __html: assignment.description }}/>
+              <p className="text-xs sm:text-sm mt-2 text-gray-900 dark:text-gray-100">
                 <strong>Due:</strong> {formatDate(assignment.dueDate)}
               </p>
               {assignment.attachments && assignment.attachments.length > 0 && (
-                <div className="mt-4">
-                  <Label className="text-sm font-medium text-gray-900 dark:text-gray-100">Attachments</Label>
+                <div className="mt-3 sm:mt-4">
+                  <Label className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">Attachments</Label>
                   <div className="space-y-2 mt-1">
                     {assignment.attachments.map((attachment, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 border border-gray-200/50 dark:border-gray-600/50 rounded-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
-                        <span className="text-sm text-gray-900 dark:text-gray-100">{attachment.name}</span>
-                        <div className="flex items-center gap-1">
+                      <div key={index} className="flex items-center justify-between gap-2 p-2 border border-gray-200/50 dark:border-gray-600/50 rounded-lg sm:rounded-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
+                        <span className="text-xs sm:text-sm text-gray-900 dark:text-gray-100 truncate flex-1 min-w-0">{attachment.name}</span>
+                        <div className="flex items-center gap-1 flex-shrink-0">
                           <a href={attachment.url} target="_blank" rel="noopener noreferrer">
-                            <Button variant="ghost" size="icon" className="hover:bg-primary/10">
-                              <Eye className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" className="hover:bg-primary/10 h-8 w-8 sm:h-9 sm:w-9">
+                              <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             </Button>
                           </a>
                           <Button
@@ -393,9 +393,9 @@ const AssignmentSubmissionModal = memo(({
                             size="icon"
                             onClick={() => handleDownload(attachment.url, attachment.name)}
                             disabled={isDownloading === attachment.name}
-                            className="hover:bg-primary/10"
+                            className="hover:bg-primary/10 h-8 w-8 sm:h-9 sm:w-9"
                           >
-                            {isDownloading === attachment.name ? <Clock className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                            {isDownloading === attachment.name ? <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" /> : <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                           </Button>
                         </div>
                       </div>
@@ -406,51 +406,51 @@ const AssignmentSubmissionModal = memo(({
             </div>
             
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 bg-gradient-to-br from-gray-100 to-gray-200/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50 rounded-2xl">
-                <TabsTrigger value="text" className="hover:bg-primary/10">Text Submission</TabsTrigger>
-                <TabsTrigger value="file" className="hover:bg-primary/10">File Upload</TabsTrigger>
-                <TabsTrigger value="link" className="hover:bg-primary/10">Link Submission</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3 bg-gradient-to-br from-gray-100 to-gray-200/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50 rounded-xl sm:rounded-2xl h-auto sm:h-10">
+                <TabsTrigger value="text" className="hover:bg-primary/10 text-xs sm:text-sm px-2 sm:px-3 py-2">Text Submission</TabsTrigger>
+                <TabsTrigger value="file" className="hover:bg-primary/10 text-xs sm:text-sm px-2 sm:px-3 py-2">File Upload</TabsTrigger>
+                <TabsTrigger value="link" className="hover:bg-primary/10 text-xs sm:text-sm px-2 sm:px-3 py-2">Link Submission</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="text" className="space-y-4">
+              <TabsContent value="text" className="space-y-3 sm:space-y-4">
                 <div>
-                  <Label htmlFor="submission-text" className="text-gray-900 dark:text-gray-100">Your Submission</Label>
+                  <Label htmlFor="submission-text" className="text-xs sm:text-sm text-gray-900 dark:text-gray-100">Your Submission</Label>
                   <Textarea
                     id="submission-text"
                     placeholder="Enter your assignment submission here..."
                     value={submissionText}
                     onChange={(e) => setSubmissionText(e.target.value)}
-                    className="mt-2 min-h-[200px] bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl"
+                    className="mt-2 min-h-[150px] sm:min-h-[200px] text-sm bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-xl sm:rounded-2xl"
                   />
                 </div>
                 <Button 
                   onClick={() => handleSubmission(assignment.lesson_content_id)}
                   disabled={!submissionText.trim()}
-                  className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl"
+                  className="w-full h-10 sm:h-11 text-sm sm:text-base bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl"
                 >
                   Submit Assignment
                 </Button>
               </TabsContent>
               
-              <TabsContent value="file" className="space-y-4">
+              <TabsContent value="file" className="space-y-3 sm:space-y-4">
                 <div>
-                  <Label htmlFor="submission-file" className="text-gray-900 dark:text-gray-100">Upload File</Label>
-                  <div className="mt-2 border-2 border-dashed border-gray-300/50 dark:border-gray-600/50 rounded-2xl p-6 text-center bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50">
-                    <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <Label htmlFor="submission-file" className="text-xs sm:text-sm text-gray-900 dark:text-gray-100">Upload File</Label>
+                  <div className="mt-2 border-2 border-dashed border-gray-300/50 dark:border-gray-600/50 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-center bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50">
+                    <Upload className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-muted-foreground mb-3 sm:mb-4" />
                     <div className="space-y-2">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Click to upload or drag and drop</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">Click to upload or drag and drop</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">
                         PDF, DOC, DOCX, TXT files up to 10MB
                       </p>
                       {existingFileName && !submissionFile && existingFileUrl && (
-                        <div className="mt-4 p-2 border border-gray-200/50 dark:border-gray-600/50 rounded-xl bg-gradient-to-br from-card to-card/50 dark:bg-card text-left">
-                          <p className="text-sm text-muted-foreground mb-1">Current submission:</p>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-green-600 truncate flex-1 pr-2">{existingFileName}</span>
+                        <div className="mt-3 sm:mt-4 p-2 border border-gray-200/50 dark:border-gray-600/50 rounded-lg sm:rounded-xl bg-gradient-to-br from-card to-card/50 dark:bg-card text-left">
+                          <p className="text-xs sm:text-sm text-muted-foreground mb-1">Current submission:</p>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs sm:text-sm font-medium text-green-600 truncate flex-1 min-w-0">{existingFileName}</span>
                             <div className="flex items-center gap-1 flex-shrink-0">
                               <a href={existingFileUrl} target="_blank" rel="noopener noreferrer">
-                                <Button variant="ghost" size="icon" className="hover:bg-primary/10">
-                                  <Eye className="h-4 w-4" />
+                                <Button variant="ghost" size="icon" className="hover:bg-primary/10 h-8 w-8">
+                                  <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                 </Button>
                               </a>
                               <Button
@@ -458,9 +458,9 @@ const AssignmentSubmissionModal = memo(({
                                 size="icon"
                                 onClick={() => handleDownload(existingFileUrl, existingFileName)}
                                 disabled={isDownloading === existingFileName}
-                                className="hover:bg-primary/10"
+                                className="hover:bg-primary/10 h-8 w-8"
                               >
-                                {isDownloading === existingFileName ? <Clock className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                                {isDownloading === existingFileName ? <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" /> : <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                               </Button>
                             </div>
                           </div>
@@ -471,7 +471,7 @@ const AssignmentSubmissionModal = memo(({
                         type="file"
                         accept=".pdf,.doc,.docx,.txt"
                         onChange={(e) => setSubmissionFile(e.target.files?.[0] || null)}
-                        className="mt-4 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl"
+                        className="mt-3 sm:mt-4 text-sm bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-xl sm:rounded-2xl"
                       />
                     </div>
                   </div>
@@ -479,31 +479,31 @@ const AssignmentSubmissionModal = memo(({
                 <Button 
                   onClick={() => handleSubmission(assignment.lesson_content_id)}
                   disabled={!submissionFile && !existingFileName}
-                  className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl"
+                  className="w-full h-10 sm:h-11 text-sm sm:text-base bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl"
                 >
                   Submit Assignment
                 </Button>
               </TabsContent>
               
-              <TabsContent value="link" className="space-y-4">
+              <TabsContent value="link" className="space-y-3 sm:space-y-4">
                 <div>
-                  <Label htmlFor="submission-link" className="text-gray-900 dark:text-gray-100">Submission Link</Label>
+                  <Label htmlFor="submission-link" className="text-xs sm:text-sm text-gray-900 dark:text-gray-100">Submission Link</Label>
                   <Input
                     id="submission-link"
                     type="url"
                     placeholder="https://example.com/your-submission"
                     value={submissionLink}
                     onChange={(e) => setSubmissionLink(e.target.value)}
-                    className="mt-2 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl"
+                    className="mt-2 h-10 sm:h-11 text-sm bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-xl sm:rounded-2xl"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                     Provide a link to your submission (e.g., Google Drive, GitHub, etc.)
                   </p>
                 </div>
                 <Button 
                   onClick={() => handleSubmission(assignment.lesson_content_id)}
                   disabled={!submissionLink.trim()}
-                  className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl"
+                  className="w-full h-10 sm:h-11 text-sm sm:text-base bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl"
                 >
                   Submit Assignment
                 </Button>
@@ -513,16 +513,16 @@ const AssignmentSubmissionModal = memo(({
         </div>
       </DialogContent>
       <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[90vw] sm:max-w-md rounded-xl sm:rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Switch Submission Type?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-base sm:text-lg">Switch Submission Type?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs sm:text-sm">
               You have unsaved changes in the current submission tab. If you switch, your current input will be lost.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelSwitch}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmSwitch}>Switch and Discard</AlertDialogAction>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+            <AlertDialogCancel onClick={handleCancelSwitch} className="w-full sm:w-auto h-9 sm:h-10 text-sm">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSwitch} className="w-full sm:w-auto h-9 sm:h-10 text-sm">Switch and Discard</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -869,54 +869,54 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
   const AssignmentCard = ({ assignment }: { assignment: Assignment }) => {
 
     return (
-      <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-md bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-96 flex flex-col overflow-hidden">
-        <CardHeader className="p-6 pb-4">
-          <div className="flex items-start justify-between mb-4">
+      <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-md bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-[380px] sm:h-96 flex flex-col overflow-hidden rounded-xl sm:rounded-2xl">
+        <CardHeader className="p-4 sm:p-6 pb-3 sm:pb-4">
+          <div className="flex items-start justify-between mb-3 sm:mb-4">
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors mb-3">
+              <h3 className="font-semibold text-base sm:text-lg line-clamp-1 group-hover:text-primary transition-colors mb-2 sm:mb-3">
                 {assignment.title}
               </h3>
-              <div className="flex items-center gap-2 mb-3">
-                <Badge variant="outline" className="text-sm">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3 flex-wrap">
+                <Badge variant="outline" className="text-xs sm:text-sm">
                   {assignment.courseTitle}
                 </Badge>
                 {assignment.status === 'graded' && (
-                  <Badge variant="default" className="bg-gradient-to-r from-green-500 to-green-600 text-white text-sm">
+                  <Badge variant="default" className="bg-gradient-to-r from-green-500 to-green-600 text-white text-xs sm:text-sm">
                     {assignment.score != null ? `${assignment.score}%` : 'N/A'}
                   </Badge>
                 )}
                 {isOverdue(assignment.dueDate, assignment.status) && (
-                  <Badge variant="destructive" className="text-sm">Overdue</Badge>
+                  <Badge variant="destructive" className="text-xs sm:text-sm">Overdue</Badge>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {assignment.submissionType === 'link' ? 'URL Submission' : assignment.submissionType === 'file' ? 'File Upload' : 'Text Submission'}
               </p>
             </div>
           </div>
         </CardHeader>
         
-        <CardContent className="p-6 pt-0 flex flex-col h-full overflow-hidden">
+        <CardContent className="p-4 sm:p-6 pt-0 flex flex-col h-full overflow-hidden">
           {/* Content Area - Fixed height to ensure button alignment */}
           <div className="flex-1 flex flex-col min-h-0">
             {/* Assignment Description */}
-            <div className="h-16 mb-4">
-              <div className="text-sm text-muted-foreground line-clamp-3 h-full">
+            <div className="h-14 sm:h-16 mb-3 sm:mb-4">
+              <div className="text-xs sm:text-sm text-muted-foreground line-clamp-3 h-full">
                 <div dangerouslySetInnerHTML={{ __html: stripHtmlTags(assignment.description) }} />
               </div>
             </div>
 
             {/* Detailed Assignment Stats - Horizontal Layout */}
-            <div className="p-3 bg-muted/30 rounded-lg mb-4">
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <div className="p-2.5 sm:p-3 bg-muted/30 rounded-lg mb-3 sm:mb-4">
+              <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground">
                 <div className="flex items-center gap-1 w-1/2">
-                  <Calendar className="w-4 h-4 flex-shrink-0" />
+                  <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                   <span className="font-medium text-foreground truncate">
                     {formatDate(assignment.dueDate)}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 w-1/2 justify-end">
-                  <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                  <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                   <span className="font-medium text-foreground truncate">
                     {assignment.status === 'graded' ? `${assignment.score || 0}%` : assignment.status.charAt(0).toUpperCase() + assignment.status.slice(1)}
                   </span>
@@ -926,27 +926,27 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
           </div>
 
           {/* Action Buttons - Always at bottom with fixed positioning */}
-          <div className="mt-auto pt-6 pb-1 space-y-2">
+          <div className="mt-auto pt-4 sm:pt-6 pb-1 space-y-2">
             <Button
               size="sm"
-              className="w-full h-10 text-sm"
+              className="w-full h-9 sm:h-10 text-xs sm:text-sm"
               onClick={() => {
                 setSelectedAssignment(assignment);
                 setIsDetailModalOpen(true);
               }}
             >
-              <Eye className="w-4 h-4 mr-2" />
+              <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
               View Details
             </Button>
             <Button
               size="sm"
-              className="w-full h-10 text-sm bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
+              className="w-full h-9 sm:h-10 text-xs sm:text-sm bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
               onClick={() => {
                 setSelectedAssignment(assignment);
                 setIsSubmissionModalOpen(true);
               }}
             >
-              <Upload className="w-4 h-4 mr-2" />
+              <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
               Submit
             </Button>
           </div>
@@ -1035,59 +1035,59 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
           </div>
         </div>
         
-        <div className="text-sm text-muted-foreground">
+        <div className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
           {filteredAssignments.length} of {assignments.length} assignments
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Assignments</CardTitle>
-            <ClipboardList className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Assignments</CardTitle>
+            <ClipboardList className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{assignments.length}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{assignments.length}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">
               {assignments.length === 1 ? 'Assignment available' : 'Assignments available'}
             </p>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Pending</CardTitle>
+            <AlertCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{assignments.filter(a => a.status === 'pending').length}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{assignments.filter(a => a.status === 'pending').length}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">
               Awaiting submission
             </p>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Submitted</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Submitted</CardTitle>
+            <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{assignments.filter(a => a.status === 'submitted').length}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{assignments.filter(a => a.status === 'submitted').length}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">
               Awaiting grading
             </p>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Graded</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Graded</CardTitle>
+            <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{assignments.filter(a => a.status === 'graded').length}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{assignments.filter(a => a.status === 'graded').length}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">
               Completed assignments
             </p>
           </CardContent>
@@ -1105,12 +1105,12 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* View Toggle */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-foreground">Assignments</h2>
-              <p className="text-sm text-muted-foreground">Switch between different views to manage your assignments</p>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg sm:text-xl font-semibold text-foreground">Assignments</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground">Switch between different views to manage your assignments</p>
             </div>
             <ViewToggle
               currentView={preferences.assignmentView}
@@ -1127,7 +1127,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
           ) : (
             <>
               {preferences.assignmentView === 'card' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                   {currentAssignments.map((assignment) => (
                     <AssignmentCard key={assignment.id} assignment={assignment} />
                   ))}
@@ -1217,23 +1217,23 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
       )}
       
       {totalPages > 1 && (
-        <div className="flex justify-center items-center space-x-2 mt-6">
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-0 sm:space-x-2 mt-4 sm:mt-6">
           <Button
             variant="outline"
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100"
+            className="w-full sm:w-auto h-9 sm:h-10 text-sm hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100"
           >
             Previous
           </Button>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
             Page {currentPage} of {totalPages}
           </span>
           <Button
             variant="outline"
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages || totalPages === 0}
-            className="hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100"
+            className="w-full sm:w-auto h-9 sm:h-10 text-sm hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100"
           >
             Next
           </Button>
