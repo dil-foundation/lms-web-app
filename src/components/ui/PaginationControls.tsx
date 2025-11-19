@@ -115,18 +115,18 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
   }
 
   return (
-    <div className={cn("flex flex-col sm:flex-row items-center justify-between gap-4", className)}>
+    <div className={cn("flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4", className)}>
       {/* Items per page selector and info */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 w-full sm:w-auto">
         {showItemsPerPage && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Show</span>
+            <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">Show</span>
             <Select
               value={itemsPerPage.toString()}
               onValueChange={handleItemsPerPageChange}
               disabled={disabled}
             >
-              <SelectTrigger className="w-20 h-8">
+              <SelectTrigger className="w-16 sm:w-20 h-7 sm:h-8 text-xs sm:text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -137,28 +137,28 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
                 ))}
               </SelectContent>
             </Select>
-            <span className="text-sm text-muted-foreground">per page</span>
+            <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">per page</span>
           </div>
         )}
 
         {showPageInfo && (
-          <div className="text-sm text-muted-foreground">
+          <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
             Showing {startItem} to {endItem} of {totalItems} results
           </div>
         )}
       </div>
 
       {/* Pagination controls */}
-      <div className="flex items-center gap-1">
-        {/* First page button */}
+      <div className="flex items-center gap-0.5 sm:gap-1">
+        {/* First page button - Hidden on mobile */}
         <Button
           variant="outline"
           size="sm"
           onClick={goToFirstPage}
           disabled={currentPage === 1 || disabled}
-          className="h-8 w-8 p-0"
+          className="h-7 w-7 sm:h-8 sm:w-8 p-0 hidden sm:flex"
         >
-          <ChevronsLeft className="h-4 w-4" />
+          <ChevronsLeft className="h-3 w-3 sm:h-4 sm:w-4" />
         </Button>
 
         {/* Previous page button */}
@@ -167,16 +167,16 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
           size="sm"
           onClick={goToPreviousPage}
           disabled={currentPage === 1 || disabled}
-          className="h-8 w-8 p-0"
+          className="h-7 w-7 sm:h-8 sm:w-8 p-0"
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
         </Button>
 
         {/* Page numbers */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 sm:gap-1">
           {getPageNumbers().map((page, index) => 
             page === '...' ? (
-              <span key={index} className="px-2 py-1 text-sm text-muted-foreground">...</span>
+              <span key={index} className="px-1 sm:px-2 py-1 text-xs sm:text-sm text-muted-foreground">...</span>
             ) : (
               <Button
                 key={index}
@@ -184,7 +184,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
                 size="sm"
                 onClick={() => goToPage(page as number)}
                 disabled={disabled}
-                className="h-8 w-8 p-0"
+                className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-xs sm:text-sm"
               >
                 {page}
               </Button>
@@ -198,20 +198,20 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
           size="sm"
           onClick={goToNextPage}
           disabled={currentPage === totalPages || disabled}
-          className="h-8 w-8 p-0"
+          className="h-7 w-7 sm:h-8 sm:w-8 p-0"
         >
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
         </Button>
 
-        {/* Last page button */}
+        {/* Last page button - Hidden on mobile */}
         <Button
           variant="outline"
           size="sm"
           onClick={goToLastPage}
           disabled={currentPage === totalPages || disabled}
-          className="h-8 w-8 p-0"
+          className="h-7 w-7 sm:h-8 sm:w-8 p-0 hidden sm:flex"
         >
-          <ChevronsRight className="h-4 w-4" />
+          <ChevronsRight className="h-3 w-3 sm:h-4 sm:w-4" />
         </Button>
       </div>
     </div>

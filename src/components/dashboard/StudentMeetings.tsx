@@ -225,28 +225,55 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
   return (
     <div className="space-y-8">
       {/* Premium Header Section */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-4 md:p-8 rounded-3xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
+        <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl">
+          {/* Desktop Layout */}
+          <div className="hidden lg:flex lg:items-center lg:justify-between gap-3 lg:gap-4 overflow-hidden">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1 overflow-hidden max-w-[60%]">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0">
                 <Video className="w-5 h-5 md:w-6 md:h-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-2xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <h1 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
                   My Meetings
                 </h1>
-                <p className="text-sm md:text-lg text-muted-foreground font-light">
+                <p className="text-xs md:text-sm lg:text-base xl:text-lg text-muted-foreground font-light mt-0.5 md:mt-1 break-words">
                   View and join your scheduled Zoom meetings
                 </p>
               </div>
             </div>
             
-            <Button variant="outline" onClick={loadMeetings} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
+            <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+              <Button variant="outline" onClick={loadMeetings} disabled={loading} className="h-7 px-2 text-[10px] md:text-[11px] whitespace-nowrap">
+                <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} />
+                <span className="hidden xl:inline">Refresh</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Mobile & Tablet Layout */}
+          <div className="flex flex-col gap-3 md:gap-4 lg:hidden">
+            <div className="flex items-start gap-2 md:gap-3 min-w-0">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Video className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg md:text-xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
+                  My Meetings
+                </h1>
+                <p className="text-xs md:text-sm text-muted-foreground font-light mt-0.5 break-words">
+                  View and join your scheduled Zoom meetings
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 w-full">
+              <Button variant="outline" onClick={loadMeetings} disabled={loading} className="h-9 px-3 text-xs md:text-sm flex-1 sm:flex-none">
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
           </div>
         </div>
       </div>

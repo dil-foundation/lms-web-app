@@ -58,39 +58,45 @@ export const CategoryTileView: React.FC<CategoryTileViewProps> = ({
   };
 
   return (
-    <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 ${className}`}>
+    <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-3 md:gap-4 ${className}`}>
       {categories.map((category) => (
         <Card 
           key={category.id} 
-          className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-60 flex flex-col overflow-hidden"
+          className="group cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/40 dark:hover:border-primary/40 flex flex-col h-full overflow-hidden"
+          onClick={() => onView(category)}
         >
-          <CardContent className="p-3 flex flex-col h-full">
-            <div className="flex items-start justify-between mb-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg flex items-center justify-center shadow-lg">
-                <BookCheck className="w-4 h-4 text-primary" />
+          <CardContent className="p-2 sm:p-3 flex flex-col flex-1 h-full">
+            <div className="flex items-start justify-between mb-2 gap-1">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-md sm:rounded-lg flex items-center justify-center shadow-lg flex-shrink-0">
+                <BookCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                    <MoreHorizontal className="h-3 w-3" />
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-5 w-5 sm:h-6 sm:w-6 p-0 hover:bg-muted/80"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <MoreHorizontal className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     <span className="sr-only">Open menu</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleView(category)}>
-                    <Eye className="mr-2 h-3 w-3" />
-                    View Details
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuItem onClick={() => handleView(category)} className="cursor-pointer">
+                    <Eye className="mr-2 h-3.5 w-3.5" />
+                    View
                   </DropdownMenuItem>
                   {!isViewOnly && (
                     <>
-                      <DropdownMenuItem onClick={() => handleEdit(category)}>
-                        <Edit className="mr-2 h-3 w-3" />
-                        Edit Category
+                      <DropdownMenuItem onClick={() => handleEdit(category)} className="cursor-pointer">
+                        <Edit className="mr-2 h-3.5 w-3.5" />
+                        Edit
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleDeleteClick(category)}>
-                        <Trash2 className="mr-2 h-3 w-3" />
-                        Delete Category
+                      <DropdownMenuItem onClick={() => handleDeleteClick(category)} className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer">
+                        <Trash2 className="mr-2 h-3.5 w-3.5" />
+                        Delete
                       </DropdownMenuItem>
                     </>
                   )}
@@ -98,40 +104,41 @@ export const CategoryTileView: React.FC<CategoryTileViewProps> = ({
               </DropdownMenu>
             </div>
 
-            <div className="flex-1 flex flex-col space-y-1">
+            <div className="flex-1 flex flex-col space-y-2">
               <div>
-                <h3 className="font-medium text-xs line-clamp-1 group-hover:text-primary transition-colors duration-300 mb-1">
+                <h3 className="font-semibold text-[10px] sm:text-xs leading-tight line-clamp-2 group-hover:text-primary transition-colors duration-300 mb-1 min-h-[2em]">
                   {category.name}
                 </h3>
-                <p className="text-xs text-muted-foreground line-clamp-1">
+                <p className="text-[9px] sm:text-xs text-muted-foreground line-clamp-1">
                   Course Category
                 </p>
               </div>
               
-              <div className="flex items-center gap-1">
-                <Badge variant="outline" className="text-xs font-medium">
-                  {courseCounts[category.id] || 0} courses
-                </Badge>
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 gap-1 sm:gap-1.5 text-[9px] sm:text-xs text-muted-foreground py-1.5 px-1 bg-muted/30 dark:bg-muted/20 rounded-md">
+                <div className="flex flex-col items-center justify-center text-center">
+                  <Hash className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0 mb-0.5 text-primary/70" />
+                  <span className="font-bold text-foreground">{courseCounts[category.id] || 0}</span>
+                </div>
+                <div className="flex flex-col items-center justify-center text-center border-l border-border/30">
+                  <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0 mb-0.5 text-primary/70" />
+                  <span className="font-bold text-foreground text-[8px] sm:text-[9px]">
+                    {new Date(category.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="mt-auto pt-2">
-              <div className="flex items-center justify-between mb-1">
-                <div className="text-xs text-muted-foreground">
-                  {new Date(category.created_at).toLocaleDateString()}
-                </div>
-                <div className="text-xs font-medium text-primary">
-                  {courseCounts[category.id] || 0}
-                </div>
-              </div>
-              
+            <div className="mt-auto flex-shrink-0 pt-2">
               <Button
                 size="sm"
-                variant="outline"
-                onClick={() => onView(category)}
-                className="w-full h-7 text-xs hover:bg-primary hover:text-primary-foreground transition-all duration-200"
+                className="w-full h-6 sm:h-7 text-[9px] sm:text-xs font-semibold bg-[#8DC63F] hover:bg-[#7AB82F] text-white"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onView(category);
+                }}
               >
-                <Eye className="w-3 h-3 mr-1" />
+                <Eye className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
                 View
               </Button>
             </div>

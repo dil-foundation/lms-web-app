@@ -295,31 +295,62 @@ const OrdersManagement: React.FC = () => {
   return (
     <div className="space-y-4 sm:space-y-6 px-4 sm:px-0">
       {/* Header */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-2xl sm:rounded-3xl"></div>
-        <div className="relative p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
-                <CreditCard className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-primary" />
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
+        <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl">
+          {/* Desktop Layout */}
+          <div className="hidden lg:flex lg:items-center lg:justify-between gap-3 lg:gap-4 overflow-hidden">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1 overflow-hidden max-w-[60%]">
+              <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0">
+                <CreditCard className="w-6 h-6 md:w-7 md:h-7 text-primary" />
               </div>
-              <div className="min-w-0 flex-1">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <h1 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
                   Orders Management
                 </h1>
-                <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-1 sm:mt-2 break-words">
+                <p className="text-xs md:text-sm lg:text-base xl:text-lg text-muted-foreground font-light mt-0.5 md:mt-1 break-words">
                   Manage course payments and process refunds
                 </p>
               </div>
             </div>
             
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto flex-shrink-0">
-              <Badge variant="secondary" className="px-2 sm:px-3 py-1 bg-primary/10 text-primary border-primary/20 text-xs sm:text-sm whitespace-nowrap">
+            <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+              <Badge variant="secondary" className="px-2 py-0.5 bg-primary/10 text-primary border-primary/20 text-[10px] md:text-xs whitespace-nowrap">
+                <DollarSign className="h-3 w-3 mr-1" />
+                <span className="hidden xl:inline">Payment Management</span>
+                <span className="xl:hidden">Payment</span>
+              </Badge>
+              <Badge variant="outline" className="px-2 py-0.5 text-[10px] md:text-xs whitespace-nowrap">
+                <Clock className="h-3 w-3 mr-1" />
+                <span className="hidden xl:inline">Live Data</span>
+                <span className="xl:hidden">Live</span>
+              </Badge>
+            </div>
+          </div>
+
+          {/* Mobile & Tablet Layout */}
+          <div className="flex flex-col gap-3 md:gap-4 lg:hidden">
+            <div className="flex items-start gap-2 md:gap-3 min-w-0">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                <CreditCard className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg md:text-xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
+                  Orders Management
+                </h1>
+                <p className="text-xs md:text-sm text-muted-foreground font-light mt-0.5 break-words">
+                  Manage course payments and process refunds
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-2 w-full">
+              <Badge variant="secondary" className="px-2 py-0.5 bg-primary/10 text-primary border-primary/20 text-xs whitespace-nowrap">
                 <DollarSign className="h-3 w-3 mr-1" />
                 <span className="hidden sm:inline">Payment Management</span>
                 <span className="sm:hidden">Payment</span>
               </Badge>
-              <Badge variant="outline" className="px-2 sm:px-3 py-1 text-xs sm:text-sm whitespace-nowrap">
+              <Badge variant="outline" className="px-2 py-0.5 text-xs whitespace-nowrap">
                 <Clock className="h-3 w-3 mr-1" />
                 <span className="hidden sm:inline">Live Data</span>
                 <span className="sm:hidden">Live</span>

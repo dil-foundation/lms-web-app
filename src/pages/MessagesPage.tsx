@@ -271,6 +271,19 @@ export default function MessagesPage() {
   const { profile } = useUserProfile();
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Check if screen is below 1024px (tablet or mobile)
+  const [isTabletOrMobile, setIsTabletOrMobile] = useState(window.innerWidth < 1024);
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setIsTabletOrMobile(window.innerWidth < 1024);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [newMessage, setNewMessage] = useState('');
@@ -1427,37 +1440,68 @@ export default function MessagesPage() {
     }
   };
 
-  const showList = !isMobile || (isMobile && !selectedChat);
-  const showChat = !isMobile || (isMobile && !!selectedChat);
+  const showList = !isTabletOrMobile || (isTabletOrMobile && !selectedChat);
+  const showChat = !isTabletOrMobile || (isTabletOrMobile && !!selectedChat);
 
   return (
     <div className="flex flex-col h-[80vh] bg-background">
       {/* Premium Header Section */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-4 md:p-8 rounded-3xl">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
+        <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl">
+          {/* Desktop Layout */}
+          <div className="hidden lg:flex lg:items-center lg:justify-between gap-3 lg:gap-4 overflow-hidden">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1 overflow-hidden max-w-[60%]">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0">
                 <MessageSquare className="w-5 h-5 md:w-6 md:h-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-2xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ lineHeight: '3rem' }}>
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <h1 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
                   Messages
                 </h1>
-                <p className="text-sm md:text-lg text-muted-foreground font-light">
+                <p className="text-xs md:text-sm lg:text-base xl:text-lg text-muted-foreground font-light mt-0.5 md:mt-1 break-words">
                   Connect and communicate with your team
                 </p>
               </div>
             </div>
-            <Button
-              size="sm"
-              onClick={() => setShowNewChatDialog(true)}
-              className="h-11 md:h-12 w-full md:w-auto px-6 mt-2 md:mt-0 bg-gradient-to-br from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Chat
-            </Button>
+            
+            <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+              <Button
+                onClick={() => setShowNewChatDialog(true)}
+                className="h-7 px-2 md:px-3 bg-gradient-to-br from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg text-[10px] md:text-[11px] whitespace-nowrap"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                <span className="hidden xl:inline">New Chat</span>
+                <span className="xl:hidden">New</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Mobile & Tablet Layout */}
+          <div className="flex flex-col gap-3 md:gap-4 lg:hidden">
+            <div className="flex items-start gap-2 md:gap-3 min-w-0">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                <MessageSquare className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg md:text-xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
+                  Messages
+                </h1>
+                <p className="text-xs md:text-sm text-muted-foreground font-light mt-0.5 break-words">
+                  Connect and communicate with your team
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 w-full">
+              <Button
+                onClick={() => setShowNewChatDialog(true)}
+                className="h-9 px-3 md:px-4 bg-gradient-to-br from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg text-xs md:text-sm flex-1 sm:flex-none"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Chat
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -1489,12 +1533,12 @@ export default function MessagesPage() {
         </div>
       ) : (
         /* Main Content - Show Chat UI only when conversations exist */
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
           {/* Chat List Sidebar */}
           {showList && (
-          <div className="md:w-80 w-full md:border-r border-border flex flex-col min-h-0">
+          <div className="lg:w-80 w-full border-b lg:border-b-0 lg:border-r border-border flex flex-col min-h-0">
             {/* Enhanced Search */}
-            <div className="relative p-4 md:p-6 border-b border-border/50">
+            <div className="relative p-4 lg:p-6 border-b border-border/50">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -1620,7 +1664,7 @@ export default function MessagesPage() {
 
         {/* Chat View */}
         {showChat && (
-        <div className="flex-1 flex flex-col h-full min-h-0 md:border-r border-border/50">
+        <div className="flex-1 flex flex-col h-full min-h-0 lg:border-r border-border/50">
           {selectedChat ? (
             <>
               {/* Enhanced Chat Header */}
@@ -1629,7 +1673,7 @@ export default function MessagesPage() {
                 <div className="relative p-2 sm:p-3 border-b border-border/50 flex-shrink-0">
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                      {isMobile && (
+                      {isTabletOrMobile && (
                         <Button variant="ghost" size="icon" onClick={() => setSelectedChat(null)} className="-ml-1 h-8 w-8">
                           <ArrowLeft className="h-4 w-4" />
                         </Button>
@@ -1693,7 +1737,7 @@ export default function MessagesPage() {
                 </div>
               ) : (
                 <div 
-                  className={`flex-1 p-4 min-h-0 overflow-y-auto scrollbar-hide ${isMobile ? 'pb-24 sm:pb-28' : 'pb-4'}`} 
+                  className={`flex-1 p-4 min-h-0 overflow-y-auto scrollbar-hide ${isTabletOrMobile ? 'pb-24 sm:pb-28' : 'pb-4'}`} 
                   ref={messagesContainerRef}
                   onScroll={handleScroll}
                 >
@@ -1784,9 +1828,9 @@ export default function MessagesPage() {
               )}
 
               {/* Enhanced Message Input */}
-              <div className={`${isMobile ? 'fixed inset-x-0 bottom-0 z-30' : 'sticky bottom-0 z-10 md:relative'} overflow-hidden shadow-lg ${isMobile ? 'border-t border-border/50' : ''}`}>
+              <div className={`${isTabletOrMobile ? 'fixed inset-x-0 bottom-0 z-30' : 'sticky bottom-0 z-10 lg:relative'} overflow-hidden shadow-lg ${isTabletOrMobile ? 'border-t border-border/50' : ''}`}>
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 dark:from-primary/10 dark:via-transparent dark:to-primary/10"></div>
-                <div className={`relative border-t border-border/50 flex-shrink-0 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/90 ${isMobile ? 'p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]' : 'p-4 md:p-6'}`}>
+                <div className={`relative border-t border-border/50 flex-shrink-0 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/90 ${isTabletOrMobile ? 'p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]' : 'p-4 lg:p-6'}`}>
                   <div className="flex gap-2 sm:gap-3 items-end">
                     <div className="flex-1 relative">
                   <Textarea
@@ -1799,15 +1843,15 @@ export default function MessagesPage() {
                         handleSendMessage();
                       }
                     }}
-                        className={`min-h-[50px] sm:min-h-[60px] max-h-[120px] resize-none bg-background/50 dark:bg-background/30 border-border/50 focus:border-primary/50 transition-all duration-300 rounded-xl ${isMobile ? 'text-sm' : ''}`}
+                        className={`min-h-[50px] sm:min-h-[60px] max-h-[120px] resize-none bg-background/50 dark:bg-background/30 border-border/50 focus:border-primary/50 transition-all duration-300 rounded-xl ${isTabletOrMobile ? 'text-sm' : ''}`}
                       />
                     </div>
                     <Button 
                       onClick={handleSendMessage} 
                       disabled={!newMessage.trim()}
-                      className={`p-0 bg-gradient-to-br from-primary to-primary/90 dark:from-primary/90 dark:to-primary/70 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 rounded-xl flex-shrink-0 ${isMobile ? 'h-[50px] w-[50px]' : 'h-[60px] w-[60px]'}`}
+                      className={`p-0 bg-gradient-to-br from-primary to-primary/90 dark:from-primary/90 dark:to-primary/70 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 rounded-xl flex-shrink-0 ${isTabletOrMobile ? 'h-[50px] w-[50px]' : 'h-[60px] w-[60px]'}`}
                     >
-                      <Send className={`text-primary-foreground ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
+                      <Send className={`text-primary-foreground ${isTabletOrMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
                   </Button>
                   </div>
                 </div>

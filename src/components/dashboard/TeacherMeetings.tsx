@@ -337,36 +337,68 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
     <TooltipProvider>
       <div className="space-y-4 sm:space-y-6 md:space-y-8 px-4 sm:px-0">
       {/* Premium Header Section */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-2xl sm:rounded-3xl"></div>
-        <div className="relative p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-              <div className="w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
-                <Video className="w-5 h-5 sm:w-5 sm:h-5 md:w-6 md:h-6 text-primary" />
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
+        <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl">
+          {/* Desktop Layout */}
+          <div className="hidden lg:flex lg:items-center lg:justify-between gap-3 lg:gap-4 overflow-hidden">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1 overflow-hidden max-w-[60%]">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0">
+                <Video className="w-5 h-5 md:w-6 md:h-6 text-primary" />
               </div>
-              <div className="min-w-0 flex-1">
-                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <h1 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
                   Zoom Meetings
                 </h1>
-                <p className="text-xs sm:text-sm md:text-base lg:text-lg text-muted-foreground font-light mt-0.5 sm:mt-1">
+                <p className="text-xs md:text-sm lg:text-base xl:text-lg text-muted-foreground font-light mt-0.5 md:mt-1 break-words">
                   Schedule and manage virtual meetings with students
                 </p>
               </div>
             </div>
             
-            <div className="flex gap-2 flex-shrink-0">
-              <Button variant="outline" onClick={loadData} disabled={loading} className="h-9 sm:h-10 px-3 sm:px-4 text-xs sm:text-sm">
-                <RefreshCw className={`h-3.5 w-3.5 sm:h-4 sm:w-4 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">Refresh</span>
+            <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+              <Button variant="outline" onClick={loadData} disabled={loading} className="h-7 px-2 text-[10px] md:text-[11px] whitespace-nowrap">
+                <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} />
+                <span className="hidden xl:inline">Refresh</span>
               </Button>
               <Button 
                 onClick={() => setIsCreateModalOpen(true)}
-                className="h-9 sm:h-10 px-3 sm:px-4 md:px-6 rounded-xl bg-gradient-to-r from-brand-green-500 to-brand-green-600 hover:from-brand-green-600 hover:to-brand-green-500 text-white shadow-lg hover:shadow-xl hover:shadow-brand-green-500/25 transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-1 sm:flex-initial"
+                className="h-7 px-2 md:px-3 rounded-lg bg-gradient-to-r from-brand-green-500 to-brand-green-600 hover:from-brand-green-600 hover:to-brand-green-500 text-white shadow-lg hover:shadow-xl transition-all duration-300 text-[10px] md:text-[11px] whitespace-nowrap"
               >
-                <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Schedule Meeting</span>
-                <span className="sm:hidden">Schedule</span>
+                <Plus className="h-3 w-3 mr-1" />
+                <span className="hidden xl:inline">Schedule Meeting</span>
+                <span className="xl:hidden">Schedule</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Mobile & Tablet Layout */}
+          <div className="flex flex-col gap-3 md:gap-4 lg:hidden">
+            <div className="flex items-start gap-2 md:gap-3 min-w-0">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Video className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg md:text-xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
+                  Zoom Meetings
+                </h1>
+                <p className="text-xs md:text-sm text-muted-foreground font-light mt-0.5 break-words">
+                  Schedule and manage virtual meetings with students
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 w-full">
+              <Button variant="outline" onClick={loadData} disabled={loading} className="h-9 px-3 text-xs md:text-sm flex-1 sm:flex-none">
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Button 
+                onClick={() => setIsCreateModalOpen(true)}
+                className="h-9 px-3 md:px-4 rounded-lg bg-gradient-to-r from-brand-green-500 to-brand-green-600 hover:from-brand-green-600 hover:to-brand-green-500 text-white shadow-lg text-xs md:text-sm flex-1"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Schedule Meeting
               </Button>
             </div>
           </div>

@@ -1420,7 +1420,7 @@ export const UsersManagement = () => {
             <div className="flex gap-2 sm:gap-3 w-full sm:w-auto flex-shrink-0">
               <Dialog open={isBulkUploadModalOpen} onOpenChange={setIsBulkUploadModalOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="h-9 sm:h-10 px-2 sm:px-3 md:px-6 rounded-xl border-blue-300/50 text-blue-700 bg-white hover:bg-blue-50 hover:border-blue-400 hover:text-blue-800 focus:bg-blue-100 focus:border-blue-500 focus:text-blue-900 focus-visible:bg-blue-100 focus-visible:border-blue-500 focus-visible:text-blue-900 active:bg-blue-200 active:text-blue-900 [&:focus]:text-blue-900 [&:focus-visible]:text-blue-900 [&:active]:text-blue-900 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-shrink-0">
+                  <Button variant="outline" className="h-9 sm:h-10 px-2 sm:px-3 md:px-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-shrink-0">
                     <Upload className="sm:mr-2 h-4 w-4" />
                     <span className="hidden sm:inline">Bulk Upload</span>
                   </Button>
@@ -1616,7 +1616,7 @@ export const UsersManagement = () => {
 
               <Dialog open={isBulkUploadWithPasswordsModalOpen} onOpenChange={setIsBulkUploadWithPasswordsModalOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="h-9 sm:h-10 px-2 sm:px-3 md:px-6 rounded-xl border-orange-300/50 text-orange-700 bg-white hover:bg-orange-50 hover:border-orange-400 hover:text-orange-800 focus:bg-orange-100 focus:border-orange-500 focus:text-orange-900 focus-visible:bg-orange-100 focus-visible:border-orange-500 focus-visible:text-orange-900 active:bg-orange-200 active:text-orange-900 [&:focus]:text-orange-900 [&:focus-visible]:text-orange-900 [&:active]:text-orange-900 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-1 sm:flex-none flex-shrink-0">
+                  <Button variant="outline" className="h-9 sm:h-10 px-2 sm:px-3 md:px-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-1 sm:flex-none flex-shrink-0">
                     <Upload className="sm:mr-2 h-4 w-4" />
                     <span className="hidden md:inline">Bulk Upload with Passwords</span>
                     <span className="hidden sm:inline md:hidden">Upload Passwords</span>
@@ -1827,7 +1827,7 @@ export const UsersManagement = () => {
                 }
               }}>
                 <DialogTrigger asChild>
-                  <Button className="h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
+                  <Button className="h-10 px-6 rounded-xl bg-gradient-to-r from-[#8DC63F] to-[#7AB82F] hover:from-[#7AB82F] hover:to-[#6AA325] text-white shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 font-semibold">
                     <Plus className="mr-2 h-4 w-4" />
                     Create User
                   </Button>
