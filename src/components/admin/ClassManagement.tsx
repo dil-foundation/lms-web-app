@@ -570,36 +570,77 @@ const ClassManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-                <GraduationCap className="w-8 h-8 text-primary" />
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
+        <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl">
+          {/* Desktop Layout */}
+          <div className="hidden lg:flex lg:items-center lg:justify-between gap-3 lg:gap-4 overflow-hidden">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1 overflow-hidden max-w-[60%]">
+              <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0">
+                <GraduationCap className="w-6 h-6 md:w-7 md:h-7 text-primary" />
               </div>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <h1 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
                   Class Management
                 </h1>
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-xs md:text-sm lg:text-base xl:text-lg text-muted-foreground font-light mt-0.5 md:mt-1 break-words">
                   Manage all classes and academic sections in the system
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-primary/20">
+            <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+              <Badge variant="secondary" className="px-2 py-0.5 bg-primary/10 text-primary border-primary/20 text-[10px] md:text-xs whitespace-nowrap">
                 <BookOpen className="h-3 w-3 mr-1" />
-                Academic Management
+                <span className="hidden xl:inline">Academic Management</span>
+                <span className="xl:hidden">Academic</span>
               </Badge>
-              <Badge variant="outline" className="px-3 py-1">
+              <Badge variant="outline" className="px-2 py-0.5 text-[10px] md:text-xs whitespace-nowrap">
                 <Clock className="h-3 w-3 mr-1" />
-                Live Data
+                <span className="hidden xl:inline">Live Data</span>
+                <span className="xl:hidden">Live</span>
               </Badge>
               <Button
                 onClick={() => setIsCreateDialogOpen(true)}
-                className="bg-[#8DC63F] hover:bg-[#7AB82F] text-white"
+                className="bg-[#8DC63F] hover:bg-[#7AB82F] text-white h-7 px-2 md:px-3 text-[10px] md:text-[11px] flex-shrink-0 whitespace-nowrap"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                <span className="hidden xl:inline">Create Class</span>
+                <span className="xl:hidden">Create</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Mobile & Tablet Layout */}
+          <div className="flex flex-col gap-3 md:gap-4 lg:hidden">
+            <div className="flex items-start gap-2 md:gap-3 min-w-0">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                <GraduationCap className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg md:text-xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
+                  Class Management
+                </h1>
+                <p className="text-xs md:text-sm text-muted-foreground font-light mt-0.5 break-words">
+                  Manage all classes and academic sections in the system
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-2 w-full">
+              <Badge variant="secondary" className="px-2 py-0.5 bg-primary/10 text-primary border-primary/20 text-xs whitespace-nowrap">
+                <BookOpen className="h-3 w-3 mr-1" />
+                <span className="hidden sm:inline">Academic Management</span>
+                <span className="sm:hidden">Academic</span>
+              </Badge>
+              <Badge variant="outline" className="px-2 py-0.5 text-xs whitespace-nowrap">
+                <Clock className="h-3 w-3 mr-1" />
+                <span className="hidden sm:inline">Live Data</span>
+                <span className="sm:hidden">Live</span>
+              </Badge>
+              <Button
+                onClick={() => setIsCreateDialogOpen(true)}
+                className="bg-[#8DC63F] hover:bg-[#7AB82F] text-white h-9 px-3 md:px-4 text-xs md:text-sm flex-1 sm:flex-none"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Create Class
@@ -657,101 +698,119 @@ const ClassManagement: React.FC = () => {
          </Card>
        </div>
 
-      {/* Search and Filters */}
+      {/* Search and Filters - Improved Responsiveness */}
       <Card>
-        <CardHeader>
-          <CardTitle>Class Directory</CardTitle>
-          <CardDescription>Search and filter classes by various criteria</CardDescription>
+        <CardHeader className="pb-3 sm:pb-4">
+          <CardTitle className="text-base sm:text-lg md:text-xl">Class Directory</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">Search and filter classes by various criteria</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col gap-3 sm:gap-4">
+            {/* Search Bar - Full Width on Mobile */}
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Search classes by name or code..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-10 sm:h-11 text-sm sm:text-base"
               />
             </div>
 
-            <Select value={gradeFilter} onValueChange={setGradeFilter}>
-              <SelectTrigger className="w-40 bg-background border-border hover:border-primary/30 focus:border-primary dark:bg-background dark:border-border">
-                <SelectValue placeholder="All Grades" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border dark:bg-popover dark:border-border">
-                <SelectItem value="all" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">All Grades</SelectItem>
-                <SelectItem value="1" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 1</SelectItem>
-                <SelectItem value="2" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 2</SelectItem>
-                <SelectItem value="3" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 3</SelectItem>
-                <SelectItem value="4" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 4</SelectItem>
-                <SelectItem value="5" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 5</SelectItem>
-                <SelectItem value="6" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 6</SelectItem>
-                <SelectItem value="7" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 7</SelectItem>
-                <SelectItem value="8" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 8</SelectItem>
-                <SelectItem value="9" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 9</SelectItem>
-                <SelectItem value="10" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 10</SelectItem>
-                <SelectItem value="11" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 11</SelectItem>
-                <SelectItem value="12" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 12</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Filters Row - Responsive Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+              <Select value={gradeFilter} onValueChange={setGradeFilter}>
+                <SelectTrigger className="h-10 sm:h-11 text-xs sm:text-sm bg-background border-border hover:border-primary/30 focus:border-primary dark:bg-background dark:border-border">
+                  <SelectValue placeholder="All Grades" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border dark:bg-popover dark:border-border">
+                  <SelectItem value="all" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">All Grades</SelectItem>
+                  <SelectItem value="1" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 1</SelectItem>
+                  <SelectItem value="2" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 2</SelectItem>
+                  <SelectItem value="3" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 3</SelectItem>
+                  <SelectItem value="4" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 4</SelectItem>
+                  <SelectItem value="5" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 5</SelectItem>
+                  <SelectItem value="6" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 6</SelectItem>
+                  <SelectItem value="7" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 7</SelectItem>
+                  <SelectItem value="8" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 8</SelectItem>
+                  <SelectItem value="9" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 9</SelectItem>
+                  <SelectItem value="10" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 10</SelectItem>
+                  <SelectItem value="11" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 11</SelectItem>
+                  <SelectItem value="12" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 12</SelectItem>
+                </SelectContent>
+              </Select>
 
-            <Select value={boardFilter} onValueChange={setBoardFilter}>
-              <SelectTrigger className="w-40 bg-background border-border hover:border-primary/30 focus:border-primary dark:bg-background dark:border-border">
-                <SelectValue placeholder="All Boards" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border dark:bg-popover dark:border-border">
-                <SelectItem value="all" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">All Boards</SelectItem>
-                {boards.map((board) => (
-                  <SelectItem key={board.id} value={board.id} className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">
-                    {board.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Select value={boardFilter} onValueChange={setBoardFilter}>
+                <SelectTrigger className="h-10 sm:h-11 text-xs sm:text-sm bg-background border-border hover:border-primary/30 focus:border-primary dark:bg-background dark:border-border">
+                  <SelectValue placeholder="All Boards" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border dark:bg-popover dark:border-border">
+                  <SelectItem value="all" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">All Boards</SelectItem>
+                  {boards.map((board) => (
+                    <SelectItem key={board.id} value={board.id} className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">
+                      {board.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <Select value={schoolFilter} onValueChange={setSchoolFilter}>
-              <SelectTrigger className="w-40 bg-background border-border hover:border-primary/30 focus:border-primary dark:bg-background dark:border-border">
-                <SelectValue placeholder="All Schools" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border dark:bg-popover dark:border-border">
-                <SelectItem value="all" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">All Schools</SelectItem>
-                {schools.map((school) => (
-                  <SelectItem key={school.id} value={school.id} className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">
-                    {school.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Select value={schoolFilter} onValueChange={setSchoolFilter}>
+                <SelectTrigger className="h-10 sm:h-11 text-xs sm:text-sm bg-background border-border hover:border-primary/30 focus:border-primary dark:bg-background dark:border-border">
+                  <SelectValue placeholder="All Schools" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border dark:bg-popover dark:border-border">
+                  <SelectItem value="all" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">All Schools</SelectItem>
+                  {schools.map((school) => (
+                    <SelectItem key={school.id} value={school.id} className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">
+                      {school.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <Button variant="outline" size="icon" onClick={refetchClasses}>
-              <RefreshCw className="h-4 w-4" />
-            </Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={refetchClasses}
+                className="h-10 sm:h-11 w-full sm:w-10 lg:w-11"
+              >
+                <RefreshCw className="h-4 w-4" />
+                <span className="ml-2 sm:hidden">Refresh</span>
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Classes Display */}
-      <Card>
+      <Card className="overflow-hidden">
         <CardContent className="p-0">
           {classes.length > 0 ? (
-            <div className="space-y-6">
-              {/* View Toggle */}
-              <div className="flex items-center justify-between p-6 pb-0">
-                <div>
-                  <h2 className="text-xl font-semibold text-foreground">Classes</h2>
-                  <p className="text-sm text-muted-foreground">Switch between different views to manage your classes</p>
+            <div>
+              {/* View Toggle Section - Improved Responsiveness */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 md:gap-6 p-4 sm:p-5 md:p-6 lg:p-7 border-b border-border/50 bg-gradient-to-r from-muted/30 via-transparent to-muted/30">
+                <div className="min-w-0 flex-1 space-y-1 sm:space-y-1.5">
+                  <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-foreground break-words">
+                    Classes
+                  </h2>
+                  <p className="text-xs sm:text-sm md:text-base text-muted-foreground break-words leading-relaxed">
+                    Switch between different views to manage your classes
+                  </p>
                 </div>
-                <ViewToggle
-                  currentView={preferences.teacherClassView}
-                  onViewChange={setTeacherClassView}
-                  availableViews={['card', 'tile', 'list']}
-                />
+                <div className="w-full sm:w-auto flex-shrink-0">
+                  <ViewToggle
+                    currentView={preferences.teacherClassView}
+                    onViewChange={setTeacherClassView}
+                    availableViews={['card', 'tile', 'list']}
+                    showLabels={true}
+                    className="w-full sm:w-auto"
+                  />
+                </div>
               </div>
 
               {/* Class Display based on selected view */}
               {preferences.teacherClassView === 'card' && (
-                <div className="p-6 pt-0">
+                <div className="p-4 sm:p-5 md:p-6 lg:p-7">
                   <ClassCardView
                     classes={classes}
                     onView={openViewDialog}
@@ -763,7 +822,7 @@ const ClassManagement: React.FC = () => {
 
               {/* Pagination for Card View */}
               {preferences.teacherClassView === 'card' && totalPages > 1 && (
-                <div className="py-4 border-t px-6">
+                <div className="py-4 sm:py-5 border-t border-border/50 px-4 sm:px-5 md:px-6 lg:px-7 bg-muted/20">
                   <PaginationControls
                     currentPage={currentPage}
                     totalPages={totalPages}
@@ -970,7 +1029,7 @@ const ClassManagement: React.FC = () => {
               )}
 
               {preferences.teacherClassView === 'tile' && (
-                <div className="p-6 pt-0">
+                <div className="p-4 sm:p-5 md:p-6 lg:p-7">
                   <ClassTileView
                     classes={classes}
                     onView={openViewDialog}
@@ -981,7 +1040,7 @@ const ClassManagement: React.FC = () => {
               )}
 
               {preferences.teacherClassView === 'list' && (
-                <div className="p-6 pt-0">
+                <div className="p-4 sm:p-5 md:p-6 lg:p-7">
                   <ClassListView
                     classes={classes}
                     onView={openViewDialog}

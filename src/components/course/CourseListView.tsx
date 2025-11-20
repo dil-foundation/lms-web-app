@@ -118,10 +118,124 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
             className="group cursor-pointer hover:bg-muted/50 transition-colors border border-border/50 shadow-md bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-border dark:hover:border-border"
             onClick={() => handleCourseClick(course)}
           >
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
+            <CardContent className="p-3 sm:p-4">
+              {/* Mobile Layout - Stacked */}
+              <div className="flex flex-col gap-3 sm:hidden">
+                <div className="flex items-start gap-3">
+                  {/* Course Image */}
+                  <div className="relative flex-shrink-0">
+                    <img 
+                      src={course.imageUrl} 
+                      alt={course.title} 
+                      className="w-20 h-14 object-cover rounded-lg"
+                    />
+                    <Badge
+                      variant={
+                        course.status === 'Published' ? 'default' :
+                        course.status === 'Rejected' ? 'destructive' :
+                        course.status === 'Under Review' ? 'warning' :
+                        'blue'
+                      }
+                      className="absolute -top-1 -right-1 text-xs px-1.5 py-0.5"
+                    >
+                      {course.status}
+                    </Badge>
+                  </div>
+
+                  {/* Course Info */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm group-hover:text-primary transition-colors line-clamp-2 mb-1">
+                      {course.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground truncate">
+                      By {course.authorName}
+                    </p>
+                  </div>
+
+                  {/* Actions Menu */}
+                  {!isViewOnly && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 flex-shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {(isAdmin || isContentCreator) ? (
+                          <DropdownMenuItem onClick={(e) => handleEdit(e, course)}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem onClick={(e) => handleView(e, course)} disabled className="opacity-50">
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Only
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem onClick={(e) => handleView(e, course)}>
+                          <Eye className="w-4 h-4 mr-2" />
+                          View
+                        </DropdownMenuItem>
+                        {canDelete(course) && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={(e) => handleDelete(e, course)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+
+                {/* Course Stats */}
+                <div className="flex items-center justify-between text-xs text-muted-foreground border-t border-border/50 pt-2">
+                  <div className="flex items-center gap-1">
+                    <Users className="w-3 h-3" />
+                    <span>{course.totalStudents}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <BookOpen className="w-3 h-3" />
+                    <span>{course.totalLessons}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    <span>{course.duration}</span>
+                  </div>
+                </div>
+
+                {/* Action Button */}
+                <Button
+                  size="sm"
+                  className={`w-full h-8 text-xs ${
+                    (isAdmin || isContentCreator) 
+                      ? 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white' 
+                      : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCourseClick(course);
+                  }}
+                >
+                  <Play className="w-3 h-3 mr-1" />
+                  {(isAdmin || isContentCreator) ? 'Manage' : 'View Course'}
+                </Button>
+              </div>
+
+              {/* Desktop Layout - Horizontal */}
+              <div className="hidden sm:flex items-center gap-4">
                 {/* Course Image */}
-                <div className="relative">
+                <div className="relative flex-shrink-0">
                   <img 
                     src={course.imageUrl} 
                     alt={course.title} 
@@ -169,7 +283,7 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <Button
                     size="sm"
                     className={`h-8 text-xs ${

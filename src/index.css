@@ -490,6 +490,27 @@
   .smooth-bounce {
     animation: smoothBounce 2s ease-in-out infinite;
   }
+
+  /* Additional responsive utilities */
+  .container-responsive {
+    @apply px-4 sm:px-6 lg:px-8 mx-auto;
+  }
+
+  .text-responsive {
+    @apply text-sm sm:text-base md:text-lg;
+  }
+
+  .heading-responsive {
+    @apply text-2xl sm:text-3xl md:text-4xl lg:text-5xl;
+  }
+
+  .padding-responsive {
+    @apply p-4 sm:p-6 md:p-8;
+  }
+
+  .gap-responsive {
+    @apply gap-2 sm:gap-3 md:gap-4;
+  }
 }
 
 /* Keyframe animations */

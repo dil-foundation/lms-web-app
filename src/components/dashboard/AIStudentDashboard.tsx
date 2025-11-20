@@ -264,24 +264,25 @@ export const AIStudentDashboard = ({ userProfile }: AIStudentDashboardProps) => 
       {/* Premium Header Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-                <Bot className="w-7 h-7 text-primary" />
+        <div className="relative p-4 sm:p-6 md:p-8 rounded-3xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                <Bot className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
               </div>
-              <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
                   AI Overview
                 </h1>
-                <p className="text-lg text-muted-foreground font-light">
+                <p className="text-sm sm:text-base md:text-lg text-muted-foreground font-light break-words">
                   Welcome back, {userProfile.first_name}! Track your learning progress.
                 </p>
               </div>
             </div>
-            <Badge variant="outline" className="bg-gradient-to-br from-primary/10 to-primary/20 border-primary/30 text-primary font-semibold">
+            <Badge variant="outline" className="bg-gradient-to-br from-primary/10 to-primary/20 border-primary/30 text-primary font-semibold text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
               <Sparkles className="h-3 w-3 mr-1" />
-              AI Learning Active
+              <span className="hidden sm:inline">AI Learning Active</span>
+              <span className="sm:hidden">AI Active</span>
             </Badge>
           </div>
         </div>

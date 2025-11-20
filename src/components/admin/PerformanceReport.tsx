@@ -187,29 +187,56 @@ const ExecutiveSummary = ({ data }: { data: any }) => {
   const improvements = data.improvements || [];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* McKinsey-style Header Section */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-8">
-        <div className="flex items-start justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center">
-              <BarChart3 className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8">
+        {/* Desktop Layout: Side by side */}
+        <div className="hidden lg:flex lg:items-start lg:justify-between mb-6 md:mb-8 gap-6">
+          <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-gray-100 dark:bg-gray-800 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0">
+              <BarChart3 className="w-5 h-5 md:w-6 md:h-6 text-gray-600 dark:text-gray-400" />
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
                 Executive Summary
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-1 leading-snug">
                 Strategic performance assessment and key insights
               </p>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Overall Score</div>
-            <div className="text-4xl font-bold text-gray-900 dark:text-gray-100">
+          <div className="text-right flex-shrink-0">
+            <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">Overall Score</div>
+            <div className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100">
               {overallScore.toFixed(1)}
             </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">out of 5.0</div>
+            <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400">out of 5.0</div>
+          </div>
+        </div>
+
+        {/* Mobile & Tablet Layout: Stacked */}
+        <div className="flex flex-col gap-4 lg:hidden mb-6">
+          <div className="flex items-start gap-2 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight break-words">
+                Executive Summary
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5 sm:mt-1 leading-snug">
+                Strategic performance assessment and key insights
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center justify-between sm:justify-start sm:gap-6 pt-2 border-t border-gray-200 dark:border-gray-700">
+            <div className="text-left sm:text-left">
+              <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium">Overall Score</div>
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
+                {overallScore.toFixed(1)}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">out of 5.0</div>
+            </div>
           </div>
         </div>
         
@@ -230,7 +257,7 @@ const ExecutiveSummary = ({ data }: { data: any }) => {
         </div>
         
         {/* Key Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
             <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">{overallScore.toFixed(1)}</div>
             <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Current Score</div>
@@ -249,16 +276,16 @@ const ExecutiveSummary = ({ data }: { data: any }) => {
       </div>
         
       {/* Strategic Insights Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Strengths Analysis */}
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-xl flex items-center justify-center">
-              <ThumbsUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl p-4 sm:p-6">
+          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-green-100 dark:bg-green-900/20 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+              <ThumbsUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Strategic Strengths</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Key areas of excellence</p>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 leading-tight">Strategic Strengths</h3>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-snug">Key areas of excellence</p>
             </div>
           </div>
           <div className="space-y-3">
@@ -279,14 +306,14 @@ const ExecutiveSummary = ({ data }: { data: any }) => {
         </div>
           
         {/* Growth Areas Analysis */}
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-xl flex items-center justify-center">
-              <Target className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl p-4 sm:p-6">
+          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-orange-100 dark:bg-orange-900/20 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+              <Target className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 dark:text-orange-400" />
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Development Areas</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Opportunities for growth</p>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 leading-tight">Development Areas</h3>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-snug">Opportunities for growth</p>
             </div>
           </div>
           <div className="space-y-3">
@@ -321,23 +348,23 @@ const ObservationDetails = ({ data }: { data: any }) => {
   return (
     <div className="space-y-6">
       {/* McKinsey-style Header Section */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-8">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center">
-            <Calendar className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8">
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gray-100 dark:bg-gray-800 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-gray-600 dark:text-gray-400" />
           </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
               Observation Details
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5 sm:mt-1 leading-snug">
               Comprehensive observation information and context
             </p>
           </div>
         </div>
 
         {/* Details Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
@@ -405,23 +432,23 @@ const PerformanceMetrics = ({ data }: { data: any }) => {
   return (
     <div className="space-y-6">
       {/* McKinsey-style Header Section */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-8">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center">
-            <PieChart className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8">
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gray-100 dark:bg-gray-800 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+            <PieChart className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-gray-600 dark:text-gray-400" />
           </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
               Performance Metrics
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5 sm:mt-1 leading-snug">
               Strategic breakdown of teaching effectiveness across key competency areas
             </p>
           </div>
         </div>
 
         {/* Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
           {Object.entries(categories).map(([key, category]: [string, any]) => (
             <ScoreCard
               key={key}
@@ -451,22 +478,22 @@ const TealAnalysis = ({ data }: { data: any }) => {
   const tealObservations = data.tealObservations || {};
 
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-8">
-      <div className="flex items-center gap-4 mb-6">
-        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-xl flex items-center justify-center">
-          <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8">
+      <div className="flex items-center gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
+        <div className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+          <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400" />
         </div>
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
             TEAL Implementation Analysis
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5 sm:mt-1 leading-snug">
             Technology Enhanced Active Learning assessment
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
         <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
           {tealObservations.videoUsed ? (
             <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -549,16 +576,16 @@ const DetailedFindings = ({ data }: { data: any }) => {
   const improvements = data.improvements || [];
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-xl flex items-center justify-center">
-              <ThumbsUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+    <div className="space-y-4 sm:space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl p-4 sm:p-6">
+          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-green-100 dark:bg-green-900/20 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+              <ThumbsUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Key Strengths</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Areas of excellence</p>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 leading-tight">Key Strengths</h3>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-snug">Areas of excellence</p>
             </div>
           </div>
           <ul className="space-y-3">
@@ -578,14 +605,14 @@ const DetailedFindings = ({ data }: { data: any }) => {
           </ul>
         </div>
         
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-xl flex items-center justify-center">
-              <Lightbulb className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl p-4 sm:p-6">
+          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-orange-100 dark:bg-orange-900/20 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+              <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 dark:text-orange-400" />
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Improvement Opportunities</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Areas for development</p>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 leading-tight">Improvement Opportunities</h3>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-snug">Areas for development</p>
             </div>
           </div>
           <ul className="space-y-3">
@@ -610,16 +637,16 @@ const DetailedFindings = ({ data }: { data: any }) => {
 };
 
 const ActionPlan = () => (
-  <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-8">
-    <div className="flex items-center gap-4 mb-6">
-      <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center">
-        <Target className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+  <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8">
+    <div className="flex items-center gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
+      <div className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gray-100 dark:bg-gray-800 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+        <Target className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-gray-600 dark:text-gray-400" />
       </div>
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+      <div className="flex-1 min-w-0">
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
           Recommended Action Plan
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5 sm:mt-1 leading-snug">
           Strategic recommendations for continued improvement
         </p>
       </div>
@@ -1142,28 +1169,29 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
   return (
     <div className="space-y-8 mx-auto">
       {/* Premium Header Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-2xl p-8">
+      <div className="relative overflow-hidden bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 lg:p-8">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 dark:from-primary/10 dark:via-transparent dark:to-primary/10"></div>
-        <div className="relative flex items-center justify-between">
-          <div className="flex items-center gap-4 flex-1 max-w-2xl">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 rounded-xl flex items-center justify-center shadow-sm">
-              <BarChart3 className="w-6 h-6 text-primary dark:text-primary/90" />
+        {/* Desktop Layout: Side by side */}
+        <div className="relative hidden lg:flex lg:items-center lg:justify-between gap-6">
+          <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
+              <BarChart3 className="w-5 h-5 md:w-6 md:h-6 text-primary dark:text-primary/90" />
             </div>
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-gray-900 to-gray-800 dark:from-gray-100 dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-gray-900 via-gray-900 to-gray-800 dark:from-gray-100 dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent leading-tight">
                 Performance Assessment Report
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 text-sm mt-1 font-medium">
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-1 font-medium leading-snug">
                 Comprehensive analysis and strategic recommendations for educational excellence
               </p>
             </div>
           </div>
           
-          <div className="flex items-center gap-3 flex-shrink-0 ml-8">
+          <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
             <Button 
               variant="outline" 
               onClick={onBack}
-              className="h-10 px-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-700 hover:border-primary/30 dark:hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-md"
+              className="h-9 md:h-10 px-4 md:px-6 rounded-lg md:rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-700 hover:border-primary/30 dark:hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-md text-sm"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Form
@@ -1171,7 +1199,7 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
             <Button 
               onClick={exportToPDF} 
               disabled={isExporting}
-              className="h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white border-0 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
+              className="h-9 md:h-10 px-4 md:px-6 rounded-lg md:rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white border-0 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 text-sm"
             >
               {isExporting ? (
                 <>
@@ -1187,6 +1215,51 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
             </Button>
           </div>
         </div>
+
+        {/* Mobile & Tablet Layout: Stacked */}
+        <div className="relative flex flex-col gap-4 lg:hidden">
+          <div className="flex items-start gap-2 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
+              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-primary dark:text-primary/90" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-900 to-gray-800 dark:from-gray-100 dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent leading-tight break-words">
+                Performance Assessment Report
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5 sm:mt-1 font-medium leading-snug">
+                Comprehensive analysis and strategic recommendations for educational excellence
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2 w-full">
+            <Button 
+              variant="outline" 
+              onClick={onBack}
+              className="flex-1 h-8 sm:h-9 px-3 sm:px-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-700 hover:border-primary/30 dark:hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-md text-xs sm:text-sm"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 flex-shrink-0" />
+              <span className="truncate">Back to Form</span>
+            </Button>
+            <Button 
+              onClick={exportToPDF} 
+              disabled={isExporting}
+              className="flex-1 h-8 sm:h-9 px-3 sm:px-4 rounded-lg bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white border-0 shadow-sm hover:shadow-lg transition-all duration-300 text-xs sm:text-sm"
+            >
+              {isExporting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 animate-spin flex-shrink-0" />
+                  <span className="truncate">Exporting...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 flex-shrink-0" />
+                  <span className="truncate">Export PDF</span>
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Executive Summary - Always Visible */}
@@ -1196,34 +1269,34 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
       <ObservationDetails data={reportData} />
 
       {/* Tabbed Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-2">
-          <TabsList className={`grid w-full h-12 ${reportData.showTealObservations ? 'grid-cols-4' : 'grid-cols-3'} bg-gray-100 dark:bg-gray-800`}>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl p-1.5 sm:p-2">
+          <TabsList className={`grid w-full h-auto sm:h-12 ${reportData.showTealObservations ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3'} bg-gray-100 dark:bg-gray-800 gap-1`}>
             <TabsTrigger 
               value="overview" 
-              className="data-[state=active]:bg-white data-[state=active]:dark:bg-gray-900 data-[state=active]:text-gray-900 data-[state=active]:dark:text-gray-100 data-[state=active]:shadow-sm rounded-xl transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="data-[state=active]:bg-white data-[state=active]:dark:bg-gray-900 data-[state=active]:text-gray-900 data-[state=active]:dark:text-gray-100 data-[state=active]:shadow-sm rounded-lg sm:rounded-xl transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700 text-xs sm:text-sm py-2 sm:py-0"
             >
-              Performance Overview
+              <span className="truncate">Performance Overview</span>
             </TabsTrigger>
             <TabsTrigger 
               value="detailed" 
-              className="data-[state=active]:bg-white data-[state=active]:dark:bg-gray-900 data-[state=active]:text-gray-900 data-[state=active]:dark:text-gray-100 data-[state=active]:shadow-sm rounded-xl transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="data-[state=active]:bg-white data-[state=active]:dark:bg-gray-900 data-[state=active]:text-gray-900 data-[state=active]:dark:text-gray-100 data-[state=active]:shadow-sm rounded-lg sm:rounded-xl transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700 text-xs sm:text-sm py-2 sm:py-0"
             >
-              Detailed Analysis
+              <span className="truncate">Detailed Analysis</span>
             </TabsTrigger>
             {reportData.showTealObservations && (
               <TabsTrigger 
                 value="teal" 
-                className="data-[state=active]:bg-white data-[state=active]:dark:bg-gray-900 data-[state=active]:text-gray-900 data-[state=active]:dark:text-gray-100 data-[state=active]:shadow-sm rounded-xl transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="data-[state=active]:bg-white data-[state=active]:dark:bg-gray-900 data-[state=active]:text-gray-900 data-[state=active]:dark:text-gray-100 data-[state=active]:shadow-sm rounded-lg sm:rounded-xl transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700 text-xs sm:text-sm py-2 sm:py-0"
               >
-                TEAL Assessment
+                <span className="truncate">TEAL Assessment</span>
               </TabsTrigger>
             )}
             <TabsTrigger 
               value="action" 
-              className="data-[state=active]:bg-white data-[state=active]:dark:bg-gray-900 data-[state=active]:text-gray-900 data-[state=active]:dark:text-gray-100 data-[state=active]:shadow-sm rounded-xl transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="data-[state=active]:bg-white data-[state=active]:dark:bg-gray-900 data-[state=active]:text-gray-900 data-[state=active]:dark:text-gray-100 data-[state=active]:shadow-sm rounded-lg sm:rounded-xl transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700 text-xs sm:text-sm py-2 sm:py-0"
             >
-              Action Plan
+              <span className="truncate">Action Plan</span>
             </TabsTrigger>
           </TabsList>
         </div>

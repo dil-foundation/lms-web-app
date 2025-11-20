@@ -240,16 +240,16 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
       {/* Premium Header Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
+        <div className="relative p-4 sm:p-6 md:p-8 rounded-3xl">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-              <Sparkles className="w-6 h-6 text-primary" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight">
                 Welcome back, {userProfile.first_name}!
               </h1>
-              <p className="text-lg text-muted-foreground font-light">
+              <p className="text-sm sm:text-base md:text-lg text-muted-foreground font-light">
                 Continue your learning journey and track your progress.
               </p>
             </div>
@@ -314,16 +314,17 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
 
       {/* My Courses - Overview Style */}
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
               <BookOpen className="w-4 h-4 text-primary" />
             </div>
-            <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">My Courses</h2>
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">My Courses</h2>
           </div>
           <Link to="/dashboard/courses">
-            <Button variant="outline" size="sm" className="hover:bg-primary hover:text-primary-foreground transition-all duration-200">
-              View All
+            <Button variant="outline" size="sm" className="hover:bg-primary hover:text-primary-foreground transition-all duration-200 text-sm">
+              <span className="hidden sm:inline">View All</span>
+              <span className="sm:hidden">All</span>
               <BookOpen className="w-4 h-4 ml-2" />
             </Button>
           </Link>

@@ -979,75 +979,79 @@ export const AssignmentSubmissions = () => {
 
   // Render Logic
   if (loading) return <ContentLoader message="Loading submissions..." />;
-  if (error) return <div className="p-8 text-center text-red-500">Error: {error}</div>;
-  if (!assignmentDetails) return <div className="p-8 text-center">Assignment not found.</div>;
+  if (error) return <div className="p-4 sm:p-8 text-center text-red-500 text-sm sm:text-base">Error: {error}</div>;
+  if (!assignmentDetails) return <div className="p-4 sm:p-8 text-center text-sm sm:text-base">Assignment not found.</div>;
   
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
       <Link
         to="/dashboard/grade-assignments"
-        className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+        className="flex items-center gap-2 text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
       >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Assignments
+        <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+        <span className="hidden sm:inline">Back to Assignments</span>
+        <span className="sm:hidden">Back</span>
       </Link>
 
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-3 sm:space-y-4 md:space-y-0">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight line-clamp-2">
             {assignmentDetails.title}
           </h1>
-          <div className="flex items-center gap-2 mt-1">
-            <p className="text-muted-foreground">
-              Grade submissions and provide feedback • {assignmentDetails.course}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Grade submissions and provide feedback{assignmentDetails.course && <span className="hidden sm:inline"> • {assignmentDetails.course}</span>}
             </p>
-            <Badge>{assignmentDetails.type}</Badge>
+            {assignmentDetails.course && (
+              <span className="sm:hidden text-xs text-muted-foreground">• {assignmentDetails.course}</span>
+            )}
+            <Badge className="text-[10px] sm:text-xs">{assignmentDetails.type}</Badge>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
         {statCards.map((card) => (
           <Card key={card.title} className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-              <card.icon className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium truncate pr-2">{card.title}</CardTitle>
+              <card.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{card.value}</div>
+            <CardContent className="p-3 sm:p-6 pt-0">
+              <div className="text-xl sm:text-2xl font-bold truncate">{card.value}</div>
             </CardContent>
           </Card>
         ))}
       </div>
 
       <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="relative flex-1 md:grow-0">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <CardHeader className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="relative flex-1 sm:flex-initial sm:min-w-0">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search students..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[320px]"
+                className="w-full rounded-lg bg-background pl-8 h-9 sm:h-10 sm:w-full sm:max-w-[200px] md:w-[200px] lg:w-[320px]"
               />
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            <div className="space-y-4">
+        <CardContent className="p-4 sm:p-6 pt-0">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="space-y-3 sm:space-y-4">
               <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-semibold">
+                <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                <h2 className="text-base sm:text-lg font-semibold">
                   Student Submissions ({filteredSubmissions.length})
                 </h2>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Review and grade student submissions for this {assignmentDetails.type}
               </p>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {filteredSubmissions.map((sub) => (
                   <div
                     key={sub.id} 
@@ -1055,72 +1059,76 @@ export const AssignmentSubmissions = () => {
                     className="block"
                   >
                     <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-                      <CardContent className="p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage
-                              src={sub.student.avatar_url || `https://api.dicebear.com/6.x/initials/svg?seed=${sub.student.name}`}
-                            />
-                            <AvatarFallback>{sub.student.name.substring(0, 2)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-semibold">{sub.student.name}</p>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <span>Click to view submission</span>
-                              {assignmentDetails?.type === 'quiz' && sub.attempt_number && (
-                                <>
-                                  <span>•</span>
-                                  <Badge variant="outline" className="text-xs">
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex items-center justify-between gap-2 sm:gap-4">
+                          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+                            <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
+                              <AvatarImage
+                                src={sub.student.avatar_url || `https://api.dicebear.com/6.x/initials/svg?seed=${sub.student.name}`}
+                              />
+                              <AvatarFallback className="text-[10px] sm:text-sm">{sub.student.name.substring(0, 2)}</AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                                <p className="font-semibold text-xs sm:text-base truncate">{sub.student.name}</p>
+                                {assignmentDetails?.type === 'quiz' && sub.attempt_number && (
+                                  <Badge variant="outline" className="text-[9px] sm:text-xs flex-shrink-0">
                                     Attempt {sub.attempt_number}
-                                    {sub.total_attempts && sub.total_attempts > 1 && ` of ${sub.total_attempts}`}
+                                    {sub.total_attempts && sub.total_attempts > 1 && `/${sub.total_attempts}`}
                                   </Badge>
-                                </>
-                              )}
-                              {sub.retry_reason && (
-                                <>
-                                  <span>•</span>
-                                  <span className="text-xs italic">Retry: {sub.retry_reason}</span>
-                                </>
+                                )}
+                                {sub.retry_reason && (
+                                  <span className="text-[9px] sm:text-xs italic line-clamp-1 hidden sm:inline">Retry: {sub.retry_reason}</span>
+                                )}
+                              </div>
+                              <div className="hidden sm:flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground mt-0.5">
+                                <span className="whitespace-nowrap">Click to view submission</span>
+                                {sub.retry_reason && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-xs italic line-clamp-1">Retry: {sub.retry_reason}</span>
+                                  </>
+                                )}
+                              </div>
+                              {assignmentDetails?.type === 'quiz' && sub.total_attempts && sub.total_attempts > 1 && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-[9px] sm:text-xs h-5 sm:h-7 px-1 sm:px-2 mt-1 hidden sm:inline-flex"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    fetchAllAttemptsForStudent(sub.student.id, sub.student.name);
+                                  }}
+                                >
+                                  View All {sub.total_attempts} Attempts
+                                </Button>
                               )}
                             </div>
-                            {assignmentDetails?.type === 'quiz' && sub.total_attempts && sub.total_attempts > 1 && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-xs h-6 px-2"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  fetchAllAttemptsForStudent(sub.student.id, sub.student.name);
-                                }}
+                          </div>
+                          <div className="flex items-center gap-1.5 sm:gap-4 flex-shrink-0">
+                            <div className="text-right sm:text-left">
+                              <Badge 
+                                variant={
+                                  sub.manual_grading_completed ? 'success' :
+                                  sub.status === 'submitted' ? 'default' : 
+                                  sub.status === 'graded' ? 'success' : 
+                                  'destructive'
+                                }
+                                className="capitalize text-[9px] sm:text-xs"
                               >
-                                View All {sub.total_attempts} Attempts
-                              </Button>
-                            )}
+                                {sub.manual_grading_completed ? 'graded' : sub.status}
+                              </Badge>
+                              <p className="text-[10px] sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 whitespace-nowrap">
+                                {sub.manual_grading_completed && sub.manual_grading_score !== null 
+                                  ? `${sub.manual_grading_score.toFixed(1)}%` 
+                                  : sub.score 
+                                    ? `${sub.score.toFixed(1)}%` 
+                                    : 'Not graded'
+                                }
+                              </p>
+                            </div>
+                            <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                           </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <Badge 
-                              variant={
-                                sub.manual_grading_completed ? 'success' :
-                                sub.status === 'submitted' ? 'default' : 
-                                sub.status === 'graded' ? 'success' : 
-                                'destructive'
-                              }
-                              className="capitalize"
-                            >
-                              {sub.manual_grading_completed ? 'graded' : sub.status}
-                            </Badge>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {sub.manual_grading_completed && sub.manual_grading_score !== null 
-                                ? `${sub.manual_grading_score.toFixed(1)}%` 
-                                : sub.score 
-                                  ? `${sub.score.toFixed(1)}%` 
-                                  : 'Not graded'
-                              }
-                            </p>
-                          </div>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
                         </div>
                       </CardContent>
                     </Card>
@@ -1130,38 +1138,40 @@ export const AssignmentSubmissions = () => {
             </div>
 
             {filteredNotSubmitted.length > 0 && (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-orange-500" />
-                  <h2 className="text-lg font-semibold">
+                  <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500 flex-shrink-0" />
+                  <h2 className="text-base sm:text-lg font-semibold">
                     Students Who Haven't Submitted ({filteredNotSubmitted.length})
                   </h2>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   Students who have not yet submitted their work
                 </p>
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {filteredNotSubmitted.map((item) => (
                     <Card key={item.student.id} className="opacity-75">
-                      <CardContent className="p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage
-                              src={item.student.avatar_url || `https://api.dicebear.com/6.x/initials/svg?seed=${item.student.name}`}
-                            />
-                            <AvatarFallback>{item.student.name.substring(0, 2)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-semibold">{item.student.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              No submission yet
-                            </p>
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex items-center justify-between gap-3 sm:gap-4">
+                          <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                            <Avatar className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0">
+                              <AvatarImage
+                                src={item.student.avatar_url || `https://api.dicebear.com/6.x/initials/svg?seed=${item.student.name}`}
+                              />
+                              <AvatarFallback className="text-xs sm:text-sm">{item.student.name.substring(0, 2)}</AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-sm sm:text-base truncate">{item.student.name}</p>
+                              <p className="text-xs sm:text-sm text-muted-foreground">
+                                No submission yet
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <Badge variant="destructive" className="capitalize">
-                            Not Submitted
-                          </Badge>
+                          <div className="text-right sm:text-left flex-shrink-0">
+                            <Badge variant="destructive" className="capitalize text-[10px] sm:text-xs">
+                              Not Submitted
+                            </Badge>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

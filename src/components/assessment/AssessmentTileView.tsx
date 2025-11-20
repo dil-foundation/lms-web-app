@@ -75,39 +75,42 @@ export const AssessmentTileView: React.FC<AssessmentTileViewProps> = ({
 
   return (
     <div className={className}>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 w-full overflow-hidden">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-3 md:gap-4 w-full">
         {assessments.map((assessment) => (
           <Card
             key={assessment.id}
-            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-48 flex flex-col overflow-hidden"
+            className="group cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/40 dark:hover:border-primary/40 flex flex-col h-full overflow-hidden"
             onClick={() => onAssessmentClick(assessment)}
           >
-            <CardHeader className="p-0 relative">
-              <div className="w-full h-16 bg-gradient-to-br from-primary/10 to-primary/20">
+            {/* Card Header with Icon Banner */}
+            <CardHeader className="p-0 relative flex-shrink-0">
+              <div className="w-full h-12 sm:h-14 flex items-center justify-center">
               </div>
-              <div className="absolute top-1 left-1 right-1 flex justify-between items-start">
-                <div className="flex gap-2 items-center">
+              
+              {/* Overlay Badges and Menu */}
+              <div className="absolute top-1 sm:top-1.5 left-1 sm:left-1.5 right-1 sm:right-1.5 flex justify-between items-start">
+                <div className="flex gap-1 sm:gap-1.5 items-center">
                   {getTypeBadge(assessment.type)}
-                  <FileText className="w-4 h-4 text-primary/70" />
+                  <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary/70 flex-shrink-0" />
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-5 w-5 p-0 hover:bg-white/20 text-primary"
+                      className="h-5 w-5 sm:h-6 sm:w-6 p-0 hover:bg-muted/80 dark:hover:bg-black/30 text-primary rounded-md flex-shrink-0"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <MoreHorizontal className="w-3 h-3" />
+                      <MoreHorizontal className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={(e) => handleViewSubmissions(e, assessment)}>
-                      <Users className="w-4 h-4 mr-2" />
-                      View Submissions
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuItem onClick={(e) => handleViewSubmissions(e, assessment)} className="cursor-pointer">
+                      <Users className="w-3.5 h-3.5 mr-2" />
+                      Submissions
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={(e) => handleGrade(e, assessment)}>
-                      <CheckCircle className="w-4 h-4 mr-2" />
+                    <DropdownMenuItem onClick={(e) => handleGrade(e, assessment)} className="cursor-pointer">
+                      <CheckCircle className="w-3.5 h-3.5 mr-2" />
                       Grade
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -115,45 +118,56 @@ export const AssessmentTileView: React.FC<AssessmentTileViewProps> = ({
               </div>
             </CardHeader>
             
-            <CardContent className="p-3 flex flex-col h-full overflow-hidden">
-              {/* Assessment Title with Status Badge */}
-              <div className="mb-2">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <h3 className="font-medium text-xs line-clamp-1 group-hover:text-primary transition-colors flex-1 min-w-0">
+            {/* Card Content */}
+            <CardContent className="p-2 sm:p-3 flex flex-col flex-1 h-full">
+              <div className="flex flex-col flex-1">
+                {/* Assessment Title with Status Badge */}
+                <div className="mb-2 space-y-1">
+                  <h3 className="font-semibold text-[10px] sm:text-xs leading-tight line-clamp-2 group-hover:text-primary transition-colors min-h-[2em]">
                     {assessment.title}
                   </h3>
-                  {getStatusBadge(assessment.status)}
+                  <div className="flex items-center justify-between gap-1">
+                    {getStatusBadge(assessment.status)}
+                  </div>
+                  <p className="text-[9px] sm:text-xs text-muted-foreground font-medium truncate">
+                    {assessment.course_name}
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground truncate">{assessment.course_name}</p>
+
+                {/* Compact Stats Grid */}
+                <div className="grid grid-cols-3 gap-1 sm:gap-1.5 text-[9px] sm:text-xs text-muted-foreground mb-2 py-1.5 px-1 bg-muted/30 dark:bg-muted/20 rounded-md">
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0 mb-0.5 text-primary/70" />
+                    <span className="font-bold text-foreground">{assessment.submissions_count}</span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center text-center border-x border-border/30">
+                    <CheckCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0 mb-0.5 text-primary/70" />
+                    <span className="font-bold text-foreground">{assessment.graded_count}</span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0 mb-0.5 text-primary/70" />
+                    <span className={`font-bold ${getScoreColor(assessment.average_score)}`}>{assessment.average_score}%</span>
+                  </div>
+                </div>
+
+                {/* Due Date */}
+                <div className="flex items-center gap-1 text-[9px] sm:text-[10px] text-muted-foreground mb-2">
+                  <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
+                  <span className="truncate font-medium">{assessment.due_date}</span>
+                </div>
               </div>
 
-              {/* Compact Assessment Stats - Horizontal Layout */}
-              <div className="flex items-center justify-between text-xs text-muted-foreground mb-3 flex-1 min-h-0">
-                <div className="flex items-center gap-1 min-w-0 flex-1">
-                  <Users className="w-2.5 h-2.5 flex-shrink-0" />
-                  <span className="truncate">{assessment.submissions_count}</span>
-                </div>
-                <div className="flex items-center gap-1 min-w-0 flex-1 justify-center">
-                  <CheckCircle className="w-2.5 h-2.5 flex-shrink-0" />
-                  <span className="truncate">{assessment.graded_count}</span>
-                </div>
-                <div className="flex items-center gap-1 min-w-0 flex-1 justify-end">
-                  <TrendingUp className="w-2.5 h-2.5 flex-shrink-0" />
-                  <span className={`truncate ${getScoreColor(assessment.average_score)}`}>{assessment.average_score}%</span>
-                </div>
-              </div>
-
-              {/* Compact Action Button */}
-              <div className="mt-auto pt-2">
+              {/* Compact Action Button - Fixed at Bottom */}
+              <div className="mt-auto flex-shrink-0">
                 <Button
                   size="sm"
-                  className="w-full h-7 text-xs"
+                  className="w-full h-6 sm:h-7 text-[9px] sm:text-xs font-semibold bg-[#8DC63F] hover:bg-[#7AB82F] text-white"
                   onClick={(e) => {
                     e.stopPropagation();
                     onAssessmentClick(assessment);
                   }}
                 >
-                  <FileText className="w-3 h-3 mr-1" />
+                  <FileText className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
                   View
                 </Button>
               </div>

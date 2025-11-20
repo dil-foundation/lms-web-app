@@ -1,5 +1,6 @@
 import React from 'react';
 import { Bot, GraduationCap } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAILMS } from '@/contexts/AILMSContext';
 import { cn } from '@/lib/utils';
 
@@ -14,10 +15,20 @@ export const AILMSToggle: React.FC<AILMSToggleProps> = ({
   size = 'md',
   onToggle,
 }) => {
+  const navigate = useNavigate();
   const { mode, toggleMode, isAIMode } = useAILMS();
 
   const handleToggle = () => {
+    const newMode = mode === 'ai' ? 'lms' : 'ai';
     toggleMode();
+    
+    // Navigate to the appropriate overview page
+    if (newMode === 'ai') {
+      navigate('/dashboard');
+    } else {
+      navigate('/dashboard');
+    }
+    
     if (onToggle) {
       onToggle();
     }

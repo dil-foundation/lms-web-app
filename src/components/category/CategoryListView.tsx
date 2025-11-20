@@ -59,76 +59,136 @@ export const CategoryListView: React.FC<CategoryListViewProps> = ({
   };
 
   return (
-    <Card className={className}>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Category</TableHead>
-              <TableHead>Courses</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {categories.map((category) => (
-              <TableRow key={category.id} className="hover:bg-muted/50">
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
-                      <BookCheck className="w-4 h-4 text-primary" />
-                    </div>
-                    <div>
-                      <div className="font-medium text-sm">{category.name}</div>
-                      <div className="text-xs text-muted-foreground">Course Category</div>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="text-xs">
-                    {courseCounts[category.id] || 0} courses
+    <div className={`space-y-2 sm:space-y-3 ${className}`}>
+      {categories.map((category) => (
+        <Card 
+          key={category.id}
+          className="group cursor-pointer hover:shadow-lg transition-all duration-200 hover:bg-muted/50 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 border-l-4 border-l-transparent hover:border-l-primary"
+          onClick={() => onView(category)}
+        >
+          <CardContent className="p-3 sm:p-4 md:p-5">
+            <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+              {/* Icon */}
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br from-primary/10 via-primary/15 to-primary/20 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
+                  <BookCheck className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-primary" />
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0 w-full sm:w-auto">
+                {/* Title and ID */}
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
+                  <h3 className="font-bold text-sm sm:text-base md:text-lg group-hover:text-primary transition-colors">
+                    {category.name}
+                  </h3>
+                  <Badge variant="secondary" className="text-[10px] sm:text-xs">
+                    #{category.id}
                   </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    <span className="text-sm">{new Date(category.created_at).toLocaleDateString()}</span>
+                </div>
+
+                <p className="text-xs sm:text-sm text-muted-foreground mb-3">
+                  Course Category
+                </p>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 p-2 sm:p-2.5 bg-muted/30 dark:bg-muted/20 rounded-lg">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-primary/10">
+                      <Hash className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-bold text-foreground">
+                        {courseCounts[category.id] || 0}
+                      </span>
+                      <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium">
+                        Courses
+                      </span>
+                    </div>
                   </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleView(category)}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Details
-                      </DropdownMenuItem>
-                      {!isViewOnly && (
-                        <>
-                          <DropdownMenuItem onClick={() => handleEdit(category)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit Category
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleDeleteClick(category)}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete Category
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
+
+                  <div className="flex items-center gap-1.5 sm:gap-2 col-span-2 sm:col-span-1">
+                    <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-primary/10">
+                      <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-bold text-foreground">
+                        {new Date(category.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                      <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium">
+                        Created
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 sm:gap-2 hidden sm:flex">
+                    <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-primary/10">
+                      <BookCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-bold text-foreground">
+                        {courseCounts[category.id] || 0}
+                      </span>
+                      <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium">
+                        Total
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex sm:flex-col items-center gap-2 w-full sm:w-auto sm:ml-auto">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 sm:flex-none h-9 sm:h-10 text-xs sm:text-sm font-semibold hover:bg-primary hover:text-primary-foreground"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onView(category);
+                  }}
+                >
+                  <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1.5" />
+                  View
+                </Button>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-9 w-9 sm:h-10 sm:w-10 p-0 hover:bg-muted/80"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                      <span className="sr-only">Open menu</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={() => handleView(category)} className="cursor-pointer">
+                      <Eye className="mr-2 h-4 w-4" />
+                      View Details
+                    </DropdownMenuItem>
+                    {!isViewOnly && (
+                      <>
+                        <DropdownMenuItem onClick={() => handleEdit(category)} className="cursor-pointer">
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit Category
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleDeleteClick(category)} className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete Category
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
       
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -163,6 +223,6 @@ export const CategoryListView: React.FC<CategoryListViewProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Card>
+    </div>
   );
 };

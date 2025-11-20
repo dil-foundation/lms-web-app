@@ -121,7 +121,7 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
     return (
     <Card className="bg-card border border-border flex flex-col h-full">
       <CardHeader className="p-0 relative">
-        <img src={course.imageUrl} alt={course.title} className="w-full h-40 object-cover rounded-t-lg" />
+        <img src={course.imageUrl} alt={course.title} className="w-full h-32 sm:h-40 object-cover rounded-t-lg" />
         <Badge
           variant={
             course.status === 'Published' ? 'default' :
@@ -129,39 +129,39 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
             course.status === 'Under Review' ? 'warning' :
             'blue'
           }
-          className="absolute top-2 left-2"
+          className="absolute top-2 left-2 text-xs"
         >
           {course.status}
       </Badge>
       </CardHeader>
-      <CardContent className="p-4 space-y-2 flex-grow">
-        <h3 className="font-semibold text-lg">{course.title}</h3>
-        <p className="text-sm text-muted-foreground">by {course.authorName}</p>
-        <div className="flex justify-between text-sm text-muted-foreground">
-          <span>{course.duration}</span>
-          <span>{course.totalLessons} lessons</span>
+      <CardContent className="p-3 sm:p-4 space-y-2 flex-grow">
+        <h3 className="font-semibold text-base sm:text-lg line-clamp-2 min-h-[3rem] sm:min-h-[3.5rem]">{course.title}</h3>
+        <p className="text-xs sm:text-sm text-muted-foreground truncate">by {course.authorName}</p>
+        <div className="flex justify-between text-xs sm:text-sm text-muted-foreground">
+          <span className="truncate">{course.duration}</span>
+          <span className="truncate">{course.totalLessons} lessons</span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Users className="h-4 w-4" />
-          <span>{course.totalStudents} students</span>
+        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+          <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+          <span className="truncate">{course.totalStudents} students</span>
         </div>
       </CardContent>
-      <CardFooter className="p-4 pt-0 mt-auto">
+      <CardFooter className="p-3 sm:p-4 pt-0 mt-auto">
         {(isAdmin || isContentCreator) ? (
           <Button 
             onClick={() => navigate(`/dashboard/courses/builder/${course.id}`)}
-            className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 rounded-xl"
+            className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-2 sm:py-3 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 rounded-lg sm:rounded-xl"
           >
-            <Edit3 className="w-4 h-4 mr-2" />
-            Edit Course
+            <Edit3 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            <span className="truncate">Edit Course</span>
           </Button>
         ) : (
           <Button 
             onClick={() => navigate(`/dashboard/courses/${course.id}`)}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 rounded-xl"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2 sm:py-3 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 rounded-lg sm:rounded-xl"
           >
-            <Eye className="w-4 h-4 mr-2" />
-            View Course
+            <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            <span className="truncate">View Course</span>
           </Button>
         )}
       </CardFooter>
@@ -633,21 +633,22 @@ const CourseManagement = () => {
   };
 
   return (
-    <main className="space-y-8">
+    <main className="space-y-4 sm:space-y-6 md:space-y-8 p-3 sm:p-4 md:p-6 lg:p-8">
       {/* Premium Header Section */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-primary" />
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
+        <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl">
+          {/* Desktop Layout */}
+          <div className="hidden lg:flex lg:items-center lg:justify-between gap-3 lg:gap-4 overflow-hidden">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1 overflow-hidden max-w-[60%]">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0">
+                <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ lineHeight: '3rem' }}>
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <h1 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
                   Course Management
                 </h1>
-                <p className="text-lg text-muted-foreground font-light">
+                <p className="text-xs md:text-sm lg:text-base xl:text-lg text-muted-foreground font-light mt-0.5 md:mt-1 break-words">
                   Manage all courses in the system
                 </p>
               </div>
@@ -655,13 +656,65 @@ const CourseManagement = () => {
             
             {/* Show action buttons for admins and content creators */}
             {canCreateCourses && (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
                 {/* Only admins can do bulk upload */}
                 {isAdmin && (
                   <Button 
                     variant="outline"
                     onClick={() => setIsBulkUploadOpen(true)}
-                    className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
+                    className="h-7 px-2 md:px-3 rounded-lg border border-input shadow-sm hover:shadow-lg transition-all duration-300 text-[10px] md:text-[11px] flex-shrink-0 whitespace-nowrap"
+                  >
+                    <Upload className="h-3 w-3 mr-1" />
+                    <span className="hidden xl:inline">Bulk Upload</span>
+                    <span className="xl:hidden">Upload</span>
+                  </Button>
+                )}
+                <Button 
+                  onClick={handleCreateCourse}
+                  className="h-7 px-2 md:px-3 rounded-lg bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 text-[10px] md:text-[11px] flex-shrink-0 whitespace-nowrap"
+                >
+                  <PlusCircle className="h-3 w-3 mr-1" />
+                  <span className="hidden xl:inline">Create Course</span>
+                  <span className="xl:hidden">Create</span>
+                </Button>
+              </div>
+            )}
+            
+            {/* Show message for teachers (view-only) */}
+            {isTeacher && !isContentCreator && (
+              <div className="flex items-center gap-2 flex-shrink-0 max-w-[40%]">
+                <div className="text-[10px] md:text-xs text-muted-foreground bg-muted/50 px-2 md:px-3 py-1.5 rounded-lg overflow-hidden">
+                  <span className="font-medium">View Mode:</span> <span className="break-words">You can view course content</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile & Tablet Layout */}
+          <div className="flex flex-col gap-3 md:gap-4 lg:hidden">
+            <div className="flex items-start gap-2 md:gap-3 min-w-0">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg md:text-xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
+                  Course Management
+                </h1>
+                <p className="text-xs md:text-sm text-muted-foreground font-light mt-0.5 break-words">
+                  Manage all courses in the system
+                </p>
+              </div>
+            </div>
+            
+            {/* Show action buttons for admins and content creators */}
+            {canCreateCourses && (
+              <div className="flex items-center gap-2 w-full">
+                {/* Only admins can do bulk upload */}
+                {isAdmin && (
+                  <Button 
+                    variant="outline"
+                    onClick={() => setIsBulkUploadOpen(true)}
+                    className="h-9 px-3 md:px-4 rounded-lg border border-input shadow-sm text-xs md:text-sm flex-1 sm:flex-none"
                   >
                     <Upload className="h-4 w-4 mr-2" />
                     Bulk Upload
@@ -669,7 +722,7 @@ const CourseManagement = () => {
                 )}
                 <Button 
                   onClick={handleCreateCourse}
-                  className="h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                  className="h-9 px-3 md:px-4 rounded-lg bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg text-xs md:text-sm flex-1"
                 >
                   <PlusCircle className="h-4 w-4 mr-2" />
                   Create Course
@@ -679,8 +732,8 @@ const CourseManagement = () => {
             
             {/* Show message for teachers (view-only) */}
             {isTeacher && !isContentCreator && (
-              <div className="flex items-center gap-3">
-                <div className="text-sm text-muted-foreground bg-muted/50 px-4 py-2 rounded-lg">
+              <div className="flex items-center gap-2 w-full">
+                <div className="text-xs md:text-sm text-muted-foreground bg-muted/50 px-3 md:px-4 py-2 rounded-lg break-words w-full">
                   <span className="font-medium">View Mode:</span> You can view and access course content. Course creation and editing is restricted to administrators.
                 </div>
               </div>
@@ -689,52 +742,52 @@ const CourseManagement = () => {
         </div>
       </div>
 
-      {/* Stats Cards - Clean Design */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Stats Cards - Clean Design with Responsive Layout */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium truncate">Total Courses</CardTitle>
+            <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{total}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{total}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
               All courses in system
             </p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Published</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium truncate">Published</CardTitle>
+            <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{published}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{published}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
               Live courses
             </p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Draft Courses</CardTitle>
-            <Edit3 className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium truncate">Draft Courses</CardTitle>
+            <Edit3 className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{draft}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{draft}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
               In development
             </p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium truncate">Total Students</CardTitle>
+            <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalStudents}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{totalStudents}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
               Enrolled students
             </p>
           </CardContent>
@@ -744,27 +797,28 @@ const CourseManagement = () => {
       {/* Filters and Course List */}
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-4">
-        <div className="relative flex-1">
+          {/* Mobile Layout - Stacked */}
+          <div className="flex flex-col gap-3 sm:hidden">
+            <div className="relative w-full">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
+              <Input
                 type="search"
-            placeholder="Search courses by title or instructor..."
-                className="w-full rounded-lg bg-background pl-8 h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5"
+                placeholder="Search courses..."
+                className="w-full rounded-lg bg-background pl-8 h-9 border border-input shadow-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-1 h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800">
-                  <ListFilter className="h-3.5 w-3.5" />
-                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2 h-9 w-full rounded-lg bg-background border border-input shadow-sm">
+                  <ListFilter className="h-4 w-4" />
+                  <span className="whitespace-nowrap">
                     {statusFilter === 'All' ? 'All Status' : statusFilter}
                   </span>
                 </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuCheckboxItem
                   checked={statusFilter === 'All'}
                   onCheckedChange={() => setStatusFilter('All')}
@@ -795,9 +849,64 @@ const CourseManagement = () => {
                 >
                   Rejected
                 </DropdownMenuCheckboxItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-            {/* Add Category Filter Here if needed */}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Desktop Layout - Side by Side */}
+          <div className="hidden sm:flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search courses by title or instructor..."
+                className="w-full rounded-lg bg-background pl-8 h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-1 h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800">
+                  <ListFilter className="h-3.5 w-3.5" />
+                  <span className="whitespace-nowrap">
+                    {statusFilter === 'All' ? 'All Status' : statusFilter}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuCheckboxItem
+                  checked={statusFilter === 'All'}
+                  onCheckedChange={() => setStatusFilter('All')}
+                >
+                  All
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={statusFilter === 'Published'}
+                  onCheckedChange={() => setStatusFilter('Published')}
+                >
+                  Published
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={statusFilter === 'Draft'}
+                  onCheckedChange={() => setStatusFilter('Draft')}
+                >
+                  Draft
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={statusFilter === 'Under Review'}
+                  onCheckedChange={() => setStatusFilter('Under Review')}
+                >
+                  Under Review
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={statusFilter === 'Rejected'}
+                  onCheckedChange={() => setStatusFilter('Rejected')}
+                >
+                  Rejected
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </CardHeader>
         <CardContent>
@@ -806,23 +915,31 @@ const CourseManagement = () => {
                 <ContentLoader message="Loading courses..." />
             </div>
           ) : courses.length > 0 ? (
-            <div className="space-y-6">
-              {/* View Toggle */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold text-foreground">Courses</h2>
-                  <p className="text-sm text-muted-foreground">Switch between different views to manage your courses</p>
+            <div className="space-y-4 sm:space-y-6">
+              {/* View Toggle - Improved Responsiveness */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 md:gap-6">
+                <div className="min-w-0 flex-1 space-y-0.5 sm:space-y-1">
+                  <h2 className="text-base sm:text-lg md:text-xl font-semibold text-foreground break-words">
+                    Courses
+                  </h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground break-words leading-relaxed">
+                    Switch between different views to manage your courses
+                  </p>
                 </div>
-                <ViewToggle
-                  currentView={preferences.teacherCourseView}
-                  onViewChange={setTeacherCourseView}
-                  availableViews={['card', 'tile', 'list']}
-                />
+                <div className="w-full sm:w-auto flex-shrink-0">
+                  <ViewToggle
+                    currentView={preferences.teacherCourseView}
+                    onViewChange={setTeacherCourseView}
+                    availableViews={['card', 'tile', 'list']}
+                    showLabels={true}
+                    className="w-full sm:w-auto"
+                  />
+                </div>
               </div>
 
               {/* Course Display based on selected view */}
               {preferences.teacherCourseView === 'card' && (
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                   {courses.map(course => (
                     <CourseCard key={course.id} course={course} onDelete={setCourseToDelete} />
                   ))}

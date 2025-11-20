@@ -3005,31 +3005,60 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-                <Globe className="w-8 h-8 text-primary" />
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
+        <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl">
+          {/* Desktop Layout: Side by side */}
+          <div className="hidden lg:flex lg:items-center lg:justify-between gap-6">
+            <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
+              <div className="w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                <Globe className="w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 text-primary" />
               </div>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight">
                   Multitenancy Management
                 </h1>
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-xs md:text-sm text-muted-foreground mt-1 md:mt-2 leading-snug">
                   Manage organizational hierarchy: countries, regions, boards, and schools
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-primary/20">
-                <Sparkles className="h-3 w-3 mr-1" />
+            <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+              <Badge variant="secondary" className="px-2 md:px-3 py-1 bg-primary/10 text-primary border-primary/20 text-xs md:text-sm">
+                <Sparkles className="h-3 w-3 mr-1 flex-shrink-0" />
                 Global Management
               </Badge>
-              <Badge variant="outline" className="px-3 py-1">
-                <Clock className="h-3 w-3 mr-1" />
+              <Badge variant="outline" className="px-2 md:px-3 py-1 text-xs md:text-sm">
+                <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
+                Live Data
+              </Badge>
+            </div>
+          </div>
+
+          {/* Mobile & Tablet Layout: Stacked */}
+          <div className="flex flex-col gap-4 lg:hidden">
+            <div className="flex items-start gap-2 sm:gap-3 min-w-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 shadow-lg">
+                <Globe className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
+                  Multitenancy Management
+                </h1>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 leading-snug">
+                  Manage organizational hierarchy: countries, regions, boards, and schools
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 w-full">
+              <Badge variant="secondary" className="flex-1 justify-center px-2 py-1 bg-primary/10 text-primary border-primary/20 text-xs">
+                <Sparkles className="h-3 w-3 mr-1 flex-shrink-0" />
+                Global Management
+              </Badge>
+              <Badge variant="outline" className="flex-1 justify-center px-2 py-1 text-xs">
+                <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
                 Live Data
               </Badge>
             </div>
@@ -3038,46 +3067,46 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       </div>
 
       {/* Main Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <div className="overflow-x-auto">
-          <TabsList className="grid w-full grid-cols-6 min-w-fit">
-            <TabsTrigger value="countries" className="text-xs sm:text-sm">
-              <Globe className="w-4 h-4 mr-2" />
-              Countries
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 min-w-fit h-auto sm:h-10 gap-1 p-1">
+            <TabsTrigger value="countries" className="text-xs sm:text-sm py-2 sm:py-0">
+              <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 flex-shrink-0" />
+              <span className="truncate">Countries</span>
             </TabsTrigger>
-            <TabsTrigger value="regions" className="text-xs sm:text-sm">
-              <MapPin className="w-4 h-4 mr-2" />
-              Regions
+            <TabsTrigger value="regions" className="text-xs sm:text-sm py-2 sm:py-0">
+              <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 flex-shrink-0" />
+              <span className="truncate">Regions</span>
             </TabsTrigger>
-            <TabsTrigger value="cities" className="text-xs sm:text-sm">
-              <Building className="w-4 h-4 mr-2" />
-              Cities
+            <TabsTrigger value="cities" className="text-xs sm:text-sm py-2 sm:py-0">
+              <Building className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 flex-shrink-0" />
+              <span className="truncate">Cities</span>
             </TabsTrigger>
-            <TabsTrigger value="projects" className="text-xs sm:text-sm">
-              <FolderOpen className="w-4 h-4 mr-2" />
-              Projects
+            <TabsTrigger value="projects" className="text-xs sm:text-sm py-2 sm:py-0">
+              <FolderOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 flex-shrink-0" />
+              <span className="truncate">Projects</span>
             </TabsTrigger>
-            <TabsTrigger value="boards" className="text-xs sm:text-sm">
-              <Building2 className="w-4 h-4 mr-2" />
-              Boards
+            <TabsTrigger value="boards" className="text-xs sm:text-sm py-2 sm:py-0">
+              <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 flex-shrink-0" />
+              <span className="truncate">Boards</span>
             </TabsTrigger>
-            <TabsTrigger value="schools" className="text-xs sm:text-sm">
-              <GraduationCap className="w-4 h-4 mr-2" />
-              Schools
+            <TabsTrigger value="schools" className="text-xs sm:text-sm py-2 sm:py-0">
+              <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 flex-shrink-0" />
+              <span className="truncate">Schools</span>
             </TabsTrigger>
           </TabsList>
         </div>
 
         {/* Countries Tab */}
-        <TabsContent value="countries" className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-[#8DC63F]">Countries Management</h2>
-              <p className="text-muted-foreground">Manage all countries in the system</p>
+        <TabsContent value="countries" className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#8DC63F] leading-tight">Countries Management</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 leading-snug">Manage all countries in the system</p>
             </div>
             <Button
               onClick={() => setIsCountryCreateDialogOpen(true)}
-              className="bg-[#8DC63F] hover:bg-[#8DC63F]/90"
+              className="bg-[#8DC63F] hover:bg-[#8DC63F]/90 w-full sm:w-auto h-9 sm:h-10 text-sm sm:text-base"
               disabled={countriesLoading}
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -3086,7 +3115,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Countries</CardTitle>
@@ -3129,12 +3158,12 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
 
           {/* Search and Filters */}
           <Card>
-            <CardHeader>
-              <CardTitle>Country Directory</CardTitle>
-              <CardDescription>Search and filter countries by various criteria</CardDescription>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">Country Directory</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Search and filter countries by various criteria</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row gap-4">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
@@ -3145,7 +3174,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                       setSearchTerm(e.target.value);
                       handleSearch(e.target.value);
                     }}
-                    className="pl-10"
+                    className="pl-9 sm:pl-10 h-9 sm:h-10 text-sm sm:text-base"
                     disabled={countriesLoading}
                   />
                 </div>
@@ -3157,6 +3186,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     handleSearch('');
                   }}
                   disabled={countriesLoading}
+                  className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0"
                 >
                   <RefreshCw className={`h-4 w-4 ${countriesLoading ? 'animate-spin' : ''}`} />
                 </Button>
@@ -3197,61 +3227,64 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   </div>
                 </div>
               ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Last Updated</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {countries.map((country) => (
-                    <TableRow key={country.id}>
-                      <TableCell className="font-medium">{country.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{country.code}</Badge>
-                      </TableCell>
-                        <TableCell className="max-w-xs truncate">{country.description || 'No description'}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                            {new Date(country.updated_at).toLocaleDateString()}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Open menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openCountryViewDialog(country)}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openCountryEditDialog(country)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit Country
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem 
-                                    onSelect={(e) => {
-                                      e.preventDefault();
-                                      handleCountryDeleteCheck(country);
-                                    }} 
-                                    className="group focus:bg-red-600 focus:text-white hover:bg-red-600 hover:text-white"
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4 text-red-600 group-hover:text-white group-focus:text-white" />
-                                    <span className="text-red-600 group-hover:text-white group-focus:text-white">Delete Country</span>
-                                </DropdownMenuItem>
-                              </AlertDialogTrigger>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[150px] sm:min-w-0">Name</TableHead>
+                      <TableHead className="min-w-[80px] sm:min-w-0">Code</TableHead>
+                      <TableHead className="min-w-[200px] sm:min-w-0 hidden md:table-cell">Description</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0 hidden sm:table-cell">Last Updated</TableHead>
+                      <TableHead className="text-right min-w-[80px] sm:min-w-0">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {countries.map((country) => (
+                      <TableRow key={country.id}>
+                        <TableCell className="font-medium text-sm sm:text-base">
+                          <div className="truncate max-w-[150px] sm:max-w-none" title={country.name}>{country.name}</div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">{country.code}</Badge>
+                        </TableCell>
+                          <TableCell className="max-w-xs truncate hidden md:table-cell text-sm">{country.description || 'No description'}</TableCell>
+                        <TableCell className="text-muted-foreground hidden sm:table-cell text-xs sm:text-sm">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                              {new Date(country.updated_at).toLocaleDateString()}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Open menu</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openCountryViewDialog(country)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openCountryEditDialog(country)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit Country
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem 
+                                      onSelect={(e) => {
+                                        e.preventDefault();
+                                        handleCountryDeleteCheck(country);
+                                      }} 
+                                      className="group focus:bg-red-600 focus:text-white hover:bg-red-600 hover:text-white"
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4 text-red-600 group-hover:text-white group-focus:text-white" />
+                                      <span className="text-red-600 group-hover:text-white group-focus:text-white">Delete Country</span>
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
                               <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col border-red-200 dark:border-red-800">
                                 <AlertDialogHeader className="flex-shrink-0">
                                     <AlertDialogTitle className="text-red-600 dark:text-red-400">Delete Country</AlertDialogTitle>
@@ -3509,6 +3542,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </TableBody>
               </Table>
+              </div>
               )}
             </CardContent>
           </Card>
@@ -3568,15 +3602,15 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
         </TabsContent>
 
         {/* Regions Tab */}
-        <TabsContent value="regions" className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-[#8DC63F]">Regions Management</h2>
-              <p className="text-muted-foreground">Manage all regions and territories in the system</p>
+        <TabsContent value="regions" className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#8DC63F] leading-tight">Regions Management</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 leading-snug">Manage all regions and territories in the system</p>
             </div>
             <Button
               onClick={() => setIsRegionCreateDialogOpen(true)}
-              className="bg-[#8DC63F] hover:bg-[#8DC63F]/90"
+              className="bg-[#8DC63F] hover:bg-[#8DC63F]/90 w-full sm:w-auto h-9 sm:h-10 text-sm sm:text-base"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create Region
@@ -3584,7 +3618,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Regions</CardTitle>
@@ -3627,12 +3661,12 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
 
           {/* Search and Filters */}
           <Card>
-            <CardHeader>
-              <CardTitle>Region Directory</CardTitle>
-              <CardDescription>Search and filter regions by various criteria</CardDescription>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">Region Directory</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Search and filter regions by various criteria</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row gap-4">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
@@ -3640,10 +3674,10 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     placeholder="Search regions by name or code..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-9 sm:pl-10 h-9 sm:h-10 text-sm sm:text-base"
                   />
                 </div>
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0">
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
@@ -3683,33 +3717,36 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   </div>
                 </div>
               ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Country</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Last Updated</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRegions.map((region) => (
-                    <TableRow key={region.id}>
-                      <TableCell className="font-medium">{region.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{region.code}</Badge>
-                      </TableCell>
-                        <TableCell>{region.country?.name || 'N/A'}</TableCell>
-                      <TableCell className="max-w-xs truncate">{region.description}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                            {new Date(region.updated_at).toLocaleDateString()}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[150px] sm:min-w-0">Name</TableHead>
+                      <TableHead className="min-w-[80px] sm:min-w-0">Code</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0 hidden md:table-cell">Country</TableHead>
+                      <TableHead className="min-w-[200px] sm:min-w-0 hidden lg:table-cell">Description</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0 hidden sm:table-cell">Last Updated</TableHead>
+                      <TableHead className="text-right min-w-[80px] sm:min-w-0">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredRegions.map((region) => (
+                      <TableRow key={region.id}>
+                        <TableCell className="font-medium text-sm sm:text-base">
+                          <div className="truncate max-w-[150px] sm:max-w-none" title={region.name}>{region.name}</div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">{region.code}</Badge>
+                        </TableCell>
+                          <TableCell className="hidden md:table-cell text-sm">{region.country?.name || 'N/A'}</TableCell>
+                        <TableCell className="max-w-xs truncate hidden lg:table-cell text-sm">{region.description}</TableCell>
+                        <TableCell className="text-muted-foreground hidden sm:table-cell text-xs sm:text-sm">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                              {new Date(region.updated_at).toLocaleDateString()}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -3972,6 +4009,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </TableBody>
               </Table>
+              </div>
               )}
             </CardContent>
           </Card>
@@ -4031,15 +4069,15 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
         </TabsContent>
 
         {/* Cities Tab */}
-        <TabsContent value="cities" className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-[#8DC63F]">Cities Management</h2>
-              <p className="text-muted-foreground">Manage all cities and urban areas in the system</p>
+        <TabsContent value="cities" className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#8DC63F] leading-tight">Cities Management</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 leading-snug">Manage all cities and urban areas in the system</p>
             </div>
             <Button
               onClick={() => setIsCityCreateDialogOpen(true)}
-              className="bg-[#8DC63F] hover:bg-[#8DC63F]/90"
+              className="bg-[#8DC63F] hover:bg-[#8DC63F]/90 w-full sm:w-auto h-9 sm:h-10 text-sm sm:text-base"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create City
@@ -4047,7 +4085,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Cities</CardTitle>
@@ -4090,12 +4128,12 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
 
           {/* Search and Filters */}
           <Card>
-            <CardHeader>
-              <CardTitle>City Directory</CardTitle>
-              <CardDescription>Search and filter cities by various criteria</CardDescription>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">City Directory</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Search and filter cities by various criteria</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row gap-4">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
@@ -4103,10 +4141,10 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     placeholder="Search cities by name or code..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-9 sm:pl-10 h-9 sm:h-10 text-sm sm:text-base"
                   />
                 </div>
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0">
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
@@ -4146,35 +4184,38 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   </div>
                 </div>
               ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Country</TableHead>
-                    <TableHead>Region</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Last Updated</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCities.map((city) => (
-                    <TableRow key={city.id}>
-                      <TableCell className="font-medium">{city.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{city.code}</Badge>
-                      </TableCell>
-                        <TableCell>{city.country?.name || 'N/A'}</TableCell>
-                        <TableCell>{city.region?.name || 'N/A'}</TableCell>
-                      <TableCell className="max-w-xs truncate">{city.description}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                            {new Date(city.updated_at).toLocaleDateString()}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[150px] sm:min-w-0">Name</TableHead>
+                      <TableHead className="min-w-[80px] sm:min-w-0">Code</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0 hidden md:table-cell">Country</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0 hidden lg:table-cell">Region</TableHead>
+                      <TableHead className="min-w-[200px] sm:min-w-0 hidden xl:table-cell">Description</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0 hidden sm:table-cell">Last Updated</TableHead>
+                      <TableHead className="text-right min-w-[80px] sm:min-w-0">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCities.map((city) => (
+                      <TableRow key={city.id}>
+                        <TableCell className="font-medium text-sm sm:text-base">
+                          <div className="truncate max-w-[150px] sm:max-w-none" title={city.name}>{city.name}</div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">{city.code}</Badge>
+                        </TableCell>
+                          <TableCell className="hidden md:table-cell text-sm">{city.country?.name || 'N/A'}</TableCell>
+                          <TableCell className="hidden lg:table-cell text-sm">{city.region?.name || 'N/A'}</TableCell>
+                        <TableCell className="max-w-xs truncate hidden xl:table-cell text-sm">{city.description}</TableCell>
+                        <TableCell className="text-muted-foreground hidden sm:table-cell text-xs sm:text-sm">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                              {new Date(city.updated_at).toLocaleDateString()}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -4414,6 +4455,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </TableBody>
               </Table>
+              </div>
               )}
             </CardContent>
           </Card>
@@ -4473,15 +4515,15 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
         </TabsContent>
 
         {/* Projects Tab */}
-        <TabsContent value="projects" className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-[#8DC63F]">Projects Management</h2>
-              <p className="text-muted-foreground">Manage all educational projects and initiatives in the system</p>
+        <TabsContent value="projects" className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#8DC63F] leading-tight">Projects Management</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 leading-snug">Manage all educational projects and initiatives in the system</p>
             </div>
             <Button
               onClick={() => setIsProjectCreateDialogOpen(true)}
-              className="bg-[#8DC63F] hover:bg-[#8DC63F]/90"
+              className="bg-[#8DC63F] hover:bg-[#8DC63F]/90 w-full sm:w-auto h-9 sm:h-10 text-sm sm:text-base"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create Project
@@ -4489,7 +4531,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
@@ -4532,12 +4574,12 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
 
           {/* Search and Filters */}
           <Card>
-            <CardHeader>
-              <CardTitle>Project Directory</CardTitle>
-              <CardDescription>Search and filter projects by various criteria</CardDescription>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">Project Directory</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Search and filter projects by various criteria</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row gap-4">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
@@ -4545,10 +4587,10 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     placeholder="Search projects by name or code..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-9 sm:pl-10 h-9 sm:h-10 text-sm sm:text-base"
                   />
                 </div>
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0">
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
@@ -4588,37 +4630,40 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   </div>
                 </div>
               ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Country</TableHead>
-                    <TableHead>Region</TableHead>
-                    <TableHead>City</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Last Updated</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredProjects.map((project) => (
-                    <TableRow key={project.id}>
-                      <TableCell className="font-medium">{project.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{project.code}</Badge>
-                      </TableCell>
-                        <TableCell>{project.country?.name || 'N/A'}</TableCell>
-                        <TableCell>{project.region?.name || 'N/A'}</TableCell>
-                        <TableCell>{project.city?.name || 'N/A'}</TableCell>
-                      <TableCell className="max-w-xs truncate">{project.description}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                            {new Date(project.updated_at).toLocaleDateString()}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[150px] sm:min-w-0">Name</TableHead>
+                      <TableHead className="min-w-[80px] sm:min-w-0">Code</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0 hidden md:table-cell">Country</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0 hidden lg:table-cell">Region</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0 hidden xl:table-cell">City</TableHead>
+                      <TableHead className="min-w-[200px] sm:min-w-0 hidden xl:table-cell">Description</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0 hidden sm:table-cell">Last Updated</TableHead>
+                      <TableHead className="text-right min-w-[80px] sm:min-w-0">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredProjects.map((project) => (
+                      <TableRow key={project.id}>
+                        <TableCell className="font-medium text-sm sm:text-base">
+                          <div className="truncate max-w-[150px] sm:max-w-none" title={project.name}>{project.name}</div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">{project.code}</Badge>
+                        </TableCell>
+                          <TableCell className="hidden md:table-cell text-sm">{project.country?.name || 'N/A'}</TableCell>
+                          <TableCell className="hidden lg:table-cell text-sm">{project.region?.name || 'N/A'}</TableCell>
+                          <TableCell className="hidden xl:table-cell text-sm">{project.city?.name || 'N/A'}</TableCell>
+                        <TableCell className="max-w-xs truncate hidden xl:table-cell text-sm">{project.description}</TableCell>
+                        <TableCell className="text-muted-foreground hidden sm:table-cell text-xs sm:text-sm">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                              {new Date(project.updated_at).toLocaleDateString()}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -4835,6 +4880,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </TableBody>
               </Table>
+              </div>
               )}
             </CardContent>
           </Card>
@@ -4894,15 +4940,15 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
         </TabsContent>
 
         {/* Boards Tab */}
-        <TabsContent value="boards" className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-[#8DC63F]">Board Management</h2>
-              <p className="text-muted-foreground">Manage all educational boards and examination bodies in the system</p>
+        <TabsContent value="boards" className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#8DC63F] leading-tight">Board Management</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 leading-snug">Manage all educational boards and examination bodies in the system</p>
             </div>
             <Button
               onClick={() => setIsBoardCreateDialogOpen(true)}
-              className="bg-[#8DC63F] hover:bg-[#8DC63F]/90"
+              className="bg-[#8DC63F] hover:bg-[#8DC63F]/90 w-full sm:w-auto h-9 sm:h-10 text-sm sm:text-base"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create Board
@@ -4910,7 +4956,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Boards</CardTitle>
@@ -4953,12 +4999,12 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
 
           {/* Search and Filters */}
           <Card>
-            <CardHeader>
-              <CardTitle>Board Directory</CardTitle>
-              <CardDescription>Search and filter boards by various criteria</CardDescription>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">Board Directory</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Search and filter boards by various criteria</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row gap-4">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
@@ -4966,10 +5012,10 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     placeholder="Search boards by name or code..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-9 sm:pl-10 h-9 sm:h-10 text-sm sm:text-base"
                   />
                 </div>
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0">
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
@@ -5009,39 +5055,42 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   </div>
                 </div>
               ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Country</TableHead>
-                    <TableHead>Region</TableHead>
-                    <TableHead>City</TableHead>
-                    <TableHead>Project</TableHead>
-                    <TableHead>Last Updated</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredBoards.map((board) => (
-                    <TableRow key={board.id}>
-                      <TableCell className="font-medium">{board.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{board.code}</Badge>
-                      </TableCell>
-                        <TableCell>{board.country?.name || 'N/A'}</TableCell>
-                        <TableCell>{board.region?.name || 'N/A'}</TableCell>
-                        <TableCell>{board.city?.name || 'N/A'}</TableCell>
-                      <TableCell>
-                          <Badge variant="outline">{board.project?.name || 'N/A'}</Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                            {new Date(board.updated_at).toLocaleDateString()}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[150px] sm:min-w-0">Name</TableHead>
+                      <TableHead className="min-w-[80px] sm:min-w-0">Code</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0 hidden md:table-cell">Country</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0 hidden lg:table-cell">Region</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0 hidden xl:table-cell">City</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0 hidden xl:table-cell">Project</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0 hidden sm:table-cell">Last Updated</TableHead>
+                      <TableHead className="text-right min-w-[80px] sm:min-w-0">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredBoards.map((board) => (
+                      <TableRow key={board.id}>
+                        <TableCell className="font-medium text-sm sm:text-base">
+                          <div className="truncate max-w-[150px] sm:max-w-none" title={board.name}>{board.name}</div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">{board.code}</Badge>
+                        </TableCell>
+                          <TableCell className="hidden md:table-cell text-sm">{board.country?.name || 'N/A'}</TableCell>
+                          <TableCell className="hidden lg:table-cell text-sm">{board.region?.name || 'N/A'}</TableCell>
+                          <TableCell className="hidden xl:table-cell text-sm">{board.city?.name || 'N/A'}</TableCell>
+                        <TableCell className="hidden xl:table-cell">
+                            <Badge variant="outline" className="text-xs">{board.project?.name || 'N/A'}</Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground hidden sm:table-cell text-xs sm:text-sm">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                              {new Date(board.updated_at).toLocaleDateString()}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -5235,6 +5284,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </TableBody>
               </Table>
+              </div>
               )}
             </CardContent>
           </Card>
@@ -5294,15 +5344,15 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
         </TabsContent>
 
         {/* Schools Tab */}
-        <TabsContent value="schools" className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-[#8DC63F]">School Management</h2>
-              <p className="text-muted-foreground">Manage all schools and educational institutions in the system</p>
+        <TabsContent value="schools" className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#8DC63F] leading-tight">School Management</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 leading-snug">Manage all schools and educational institutions in the system</p>
             </div>
             <Button
               onClick={() => setIsSchoolCreateDialogOpen(true)}
-              className="bg-[#8DC63F] hover:bg-[#8DC63F]/90"
+              className="bg-[#8DC63F] hover:bg-[#8DC63F]/90 w-full sm:w-auto h-9 sm:h-10 text-sm sm:text-base"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create School
@@ -5310,7 +5360,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Schools</CardTitle>
@@ -5347,12 +5397,12 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
 
           {/* Search and Filters */}
           <Card>
-            <CardHeader>
-              <CardTitle>School Directory</CardTitle>
-              <CardDescription>Search and filter schools by various criteria</CardDescription>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">School Directory</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Search and filter schools by various criteria</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row gap-4">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
@@ -5360,11 +5410,11 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     placeholder="Search schools by name, code, or region..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-9 sm:pl-10 h-9 sm:h-10 text-sm sm:text-base"
                   />
                 </div>
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="w-40" id="school-type-filter">
+                  <SelectTrigger className="w-full sm:w-40 h-9 sm:h-10 text-sm" id="school-type-filter">
                     <SelectValue placeholder="All Types" />
                   </SelectTrigger>
                   <SelectContent>
@@ -5374,7 +5424,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     <SelectItem value="International">International</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0">
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
@@ -5414,38 +5464,41 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   </div>
                 </div>
               ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Country</TableHead>
-                    <TableHead>Region</TableHead>
-                    <TableHead>City</TableHead>
-                    <TableHead>Project</TableHead>
-                    <TableHead>Board</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredSchools.map((school) => (
-                    <TableRow key={school.id}>
-                      <TableCell className="font-medium">{school.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{school.code}</Badge>
-                      </TableCell>
-                        <TableCell>{getTypeBadge(school.school_type)}</TableCell>
-                        <TableCell>{school.country?.name || 'N/A'}</TableCell>
-                        <TableCell>{school.region?.name || 'N/A'}</TableCell>
-                        <TableCell>{school.city?.name || 'N/A'}</TableCell>
-                      <TableCell>
-                          <Badge variant="outline">{school.project?.name || 'N/A'}</Badge>
-                      </TableCell>
-                      <TableCell>
-                          <Badge variant="outline">{school.board?.name || 'N/A'}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[150px] sm:min-w-0">Name</TableHead>
+                      <TableHead className="min-w-[80px] sm:min-w-0">Code</TableHead>
+                      <TableHead className="min-w-[100px] sm:min-w-0">Type</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0 hidden md:table-cell">Country</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0 hidden lg:table-cell">Region</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0 hidden xl:table-cell">City</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0 hidden xl:table-cell">Project</TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-0 hidden xl:table-cell">Board</TableHead>
+                      <TableHead className="text-right min-w-[80px] sm:min-w-0">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredSchools.map((school) => (
+                      <TableRow key={school.id}>
+                        <TableCell className="font-medium text-sm sm:text-base">
+                          <div className="truncate max-w-[150px] sm:max-w-none" title={school.name}>{school.name}</div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">{school.code}</Badge>
+                        </TableCell>
+                          <TableCell className="text-xs sm:text-sm">{getTypeBadge(school.school_type)}</TableCell>
+                          <TableCell className="hidden md:table-cell text-sm">{school.country?.name || 'N/A'}</TableCell>
+                          <TableCell className="hidden lg:table-cell text-sm">{school.region?.name || 'N/A'}</TableCell>
+                          <TableCell className="hidden xl:table-cell text-sm">{school.city?.name || 'N/A'}</TableCell>
+                        <TableCell className="hidden xl:table-cell">
+                            <Badge variant="outline" className="text-xs">{school.project?.name || 'N/A'}</Badge>
+                        </TableCell>
+                        <TableCell className="hidden xl:table-cell">
+                            <Badge variant="outline" className="text-xs">{school.board?.name || 'N/A'}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -5589,6 +5642,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </TableBody>
               </Table>
+              </div>
               )}
             </CardContent>
           </Card>
