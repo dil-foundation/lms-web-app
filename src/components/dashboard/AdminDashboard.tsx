@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,6 +33,11 @@ import {
   Settings,
   Filter,
   X,
+  Building2,
+  UserCheck,
+  Briefcase,
+  ClipboardCheck,
+  ExternalLink,
 } from 'lucide-react';
 import { ContentLoader } from '@/components/ContentLoader';
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
@@ -187,6 +193,7 @@ interface FilterState {
 }
 
 export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [userGrowthData, setUserGrowthData] = useState<UserGrowthData[]>([]);
   const [platformStatsData, setPlatformStatsData] = useState<PlatformStatsData[]>([]);
@@ -1253,11 +1260,12 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
 
       {/* Charts and Analytics */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 grid-rows-2 sm:grid-cols-4 sm:grid-rows-1 gap-1 h-auto p-1">
+        <TabsList className="grid w-full grid-cols-2 grid-rows-3 sm:grid-cols-5 sm:grid-rows-1 gap-1 h-auto p-1">
           <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
           <TabsTrigger value="users" className="text-xs sm:text-sm">Users</TabsTrigger>
           <TabsTrigger value="courses" className="text-xs sm:text-sm">Courses</TabsTrigger>
           <TabsTrigger value="engagement" className="text-xs sm:text-sm">Engagement</TabsTrigger>
+          <TabsTrigger value="previews" className="text-xs sm:text-sm">Dashboard Previews</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -1517,6 +1525,152 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                   )}
                 </div>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="previews" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                Role Dashboard Previews
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-2">
+                Preview dashboards for different user roles. These are design previews with mock data.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Principal Dashboard Preview */}
+                <Card className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20 cursor-pointer group">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+                        <Building2 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">Principal Dashboard</CardTitle>
+                        <p className="text-xs text-muted-foreground mt-1">School management view</p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      View school information, teachers, classes, performance metrics, and observation reports.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="text-xs">School Info</Badge>
+                      <Badge variant="outline" className="text-xs">Teachers</Badge>
+                      <Badge variant="outline" className="text-xs">Classes</Badge>
+                      <Badge variant="outline" className="text-xs">Observations</Badge>
+                    </div>
+                    <Button 
+                      className="w-full mt-4" 
+                      onClick={() => navigate('/dashboard/preview/principal')}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Preview Dashboard
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* School Officer Dashboard Preview */}
+                <Card className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20 cursor-pointer group">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50 transition-colors">
+                        <UserCheck className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">School Officer Dashboard</CardTitle>
+                        <p className="text-xs text-muted-foreground mt-1">Multi-school oversight</p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Manage multiple schools, track principal performance, and monitor school-wide metrics.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="text-xs">Multi-School</Badge>
+                      <Badge variant="outline" className="text-xs">Principals</Badge>
+                      <Badge variant="outline" className="text-xs">Performance</Badge>
+                    </div>
+                    <Button 
+                      className="w-full mt-4" 
+                      onClick={() => navigate('/dashboard/preview/school-officer')}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Preview Dashboard
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Program Manager Dashboard Preview */}
+                <Card className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20 cursor-pointer group">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center group-hover:bg-green-200 dark:group-hover:bg-green-900/50 transition-colors">
+                        <Briefcase className="h-6 w-6 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">Program Manager Dashboard</CardTitle>
+                        <p className="text-xs text-muted-foreground mt-1">Project oversight</p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Monitor multiple projects, track school performance across projects, and analyze program metrics.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="text-xs">Projects</Badge>
+                      <Badge variant="outline" className="text-xs">Schools</Badge>
+                      <Badge variant="outline" className="text-xs">Analytics</Badge>
+                    </div>
+                    <Button 
+                      className="w-full mt-4" 
+                      onClick={() => navigate('/dashboard/preview/program-manager')}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Preview Dashboard
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* ECE Observer Dashboard Preview */}
+                <Card className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20 cursor-pointer group">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center group-hover:bg-orange-200 dark:group-hover:bg-orange-900/50 transition-colors">
+                        <ClipboardCheck className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">ECE Observer Dashboard</CardTitle>
+                        <p className="text-xs text-muted-foreground mt-1">Observation reports</p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      View and manage Early Childhood Education observation reports and assessments.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="text-xs">Observations</Badge>
+                      <Badge variant="outline" className="text-xs">Reports</Badge>
+                      <Badge variant="outline" className="text-xs">Assessments</Badge>
+                    </div>
+                    <Button 
+                      className="w-full mt-4" 
+                      onClick={() => navigate('/dashboard/preview/ece-observer')}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Preview Dashboard
+                    </Button>
+                  </CardContent>
+                </Card>
               </div>
             </CardContent>
           </Card>

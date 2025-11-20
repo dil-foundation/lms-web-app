@@ -1,7 +1,7 @@
 
 import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye, MessageCircle, Bot, Brain, Zap, Target, Sparkles, BookCheck, FileText, Cog, Settings2, ShieldCheck, Plug, Building2, Download, MapPin, Users2, MessageCircle as AIAssistant, Video, CreditCard, LayoutDashboard, Sparkles as SparklesIcon, Calendar, CalendarDays, Package, TrendingDown, Wrench, FileText as FileTextIcon, AlertCircle } from 'lucide-react';
 
-export type UserRole = 'student' | 'teacher' | 'admin' | 'content_creator' | 'super_user' | 'view_only';
+export type UserRole = 'student' | 'teacher' | 'admin' | 'content_creator' | 'super_user' | 'view_only' | 'principal' | 'school_officer' | 'program_manager' | 'ece_observer';
 
 export interface NavigationItem {
   title: string;
@@ -38,6 +38,15 @@ export const getRoleNavigation = (role?: UserRole): NavigationItem[] => {
         { title: 'Students', path: '/dashboard/students', icon: Users },
         { title: 'Performance Analytics', path: '/dashboard/reports', icon: FileQuestion },
         { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
+      ];
+    
+    case 'principal':
+      return [
+        { title: 'Overview', path: '/dashboard', icon: Home },
+        { title: 'Teachers', path: '/dashboard/teachers', icon: Users },
+        { title: 'Classes', path: '/dashboard/classes', icon: BookOpen },
+        { title: 'Performance Analytics', path: '/dashboard/reports', icon: FileQuestion },
+        { title: 'Observation Reports', path: '/dashboard/observation-reports', icon: Eye },
       ];
     
     case 'admin':

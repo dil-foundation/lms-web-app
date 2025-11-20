@@ -24,6 +24,10 @@ const StudentCourses = lazy(() => import('@/components/dashboard/StudentCourses'
 const StudentProgress = lazy(() => import('@/components/dashboard/StudentProgress').then(module => ({ default: module.StudentProgress })));
 const StudentAssignments = lazy(() => import('@/components/dashboard/StudentAssignments').then(module => ({ default: module.StudentAssignments })));
 const TeacherDashboard = lazy(() => import('@/components/dashboard/TeacherDashboard').then(module => ({ default: module.TeacherDashboard })));
+const PrincipalDashboard = lazy(() => import('@/components/dashboard/PrincipalDashboard').then(module => ({ default: module.PrincipalDashboard })));
+const SchoolOfficerDashboard = lazy(() => import('@/components/dashboard/SchoolOfficerDashboard').then(module => ({ default: module.SchoolOfficerDashboard })));
+const ProgramManagerDashboard = lazy(() => import('@/components/dashboard/ProgramManagerDashboard').then(module => ({ default: module.ProgramManagerDashboard })));
+const ECEObserverDashboard = lazy(() => import('@/components/dashboard/ECEObserverDashboard').then(module => ({ default: module.ECEObserverDashboard })));
 const AdminDashboard = lazy(() => import('@/components/dashboard/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 // Import AIStudentDashboard eagerly since it's needed for offline overview access
 import { AIStudentDashboard } from '@/components/dashboard/AIStudentDashboard';
@@ -278,6 +282,7 @@ const Dashboard = () => {
         switch (finalRole) {
           case 'student': return <AIStudentDashboard userProfile={finalProfile} />;
           case 'teacher': return <AITeacherDashboard userProfile={finalProfile} />;
+          case 'principal': return <PrincipalDashboard userProfile={finalProfile} />;
           case 'admin': return <AIAdminDashboard userProfile={finalProfile} />;
           case 'content_creator': return <AIAdminDashboard userProfile={finalProfile} />;
           case 'super_user': return <AIAdminDashboard userProfile={finalProfile} />;
@@ -288,6 +293,7 @@ const Dashboard = () => {
       switch (finalRole) {
         case 'student': return <StudentDashboard userProfile={finalProfile} />;
         case 'teacher': return <TeacherDashboard userProfile={finalProfile} />;
+        case 'principal': return <PrincipalDashboard userProfile={finalProfile} />;
         case 'admin': return <AdminDashboard userProfile={finalProfile} />;
         case 'content_creator': return <AdminDashboard userProfile={finalProfile} />;
         case 'super_user': return <AdminDashboard userProfile={finalProfile} />;
@@ -451,6 +457,12 @@ const Dashboard = () => {
                       )}
                     </>
                   )}
+          {/* Dashboard Preview Routes - For Design Review */}
+          <Route path="/preview/principal" element={<PrincipalDashboard userProfile={finalProfile} />} />
+          <Route path="/preview/school-officer" element={<SchoolOfficerDashboard userProfile={finalProfile} />} />
+          <Route path="/preview/program-manager" element={<ProgramManagerDashboard userProfile={finalProfile} />} />
+          <Route path="/preview/ece-observer" element={<ECEObserverDashboard userProfile={finalProfile} />} />
+          
           {(finalRole === 'admin' || finalRole === 'super_user' || finalRole === 'content_creator' || finalRole === 'view_only') && (
                     <>
                       {isAIMode ? (
