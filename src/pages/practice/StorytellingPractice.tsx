@@ -320,13 +320,45 @@ export default function StorytellingPractice() {
       try {
         setIsLoading(true);
         setError(null);
+        
         // Fetch storytelling prompts
         const fetchedPrompts = await fetchStorytellingPrompts();
-        if (fetchedPrompts && fetchedPrompts.length > 0) {
+        
+        // Fetch user's current topic progress if user is logged in
+        let resumeFromPromptIndex = 0;
+        if (user?.id) {
+          try {
+            const { getCurrentTopicProgress } = await import('@/utils/progressTracker');
+            const progressResponse = await getCurrentTopicProgress(
+              user.id,
+              3, // Stage 3
+              1  // Exercise 1 (StorytellingPractice)
+            );
+            
+            if (progressResponse.success && progressResponse.data?.current_topic_id) {
+              const currentTopicId = progressResponse.data.current_topic_id;
+              console.log('📍 Resuming from topic ID:', currentTopicId);
+              
+              // Find the index of the prompt that matches current_topic_id
+              // Assuming current_topic_id is 1-based (prompt 1 = index 0)
+              resumeFromPromptIndex = Math.max(0, currentTopicId - 1);
+            }
+          } catch (progressError) {
+            console.warn('Could not fetch current topic progress:', progressError);
+            // Continue with default starting point (0)
+          }
+        }
+        
+          if (fetchedPrompts && fetchedPrompts.length > 0) {
           setStoryPrompts(fetchedPrompts);
+          // Set current prompt to resume from saved progress
+          if (resumeFromPromptIndex > 0 && resumeFromPromptIndex < fetchedPrompts.length) {
+            setCurrentPrompt(resumeFromPromptIndex);
+            console.log(`✅ Resuming from prompt ${resumeFromPromptIndex + 1} of ${fetchedPrompts.length}`);
+          }
         } else {
           // Fallback to hardcoded prompts if API returns empty
-          setStoryPrompts([
+          const fallbackPrompts = [
             {
               id: 'fallback-1',
               title: 'Share a Special Day',
@@ -371,13 +403,41 @@ export default function StorytellingPractice() {
               stage: 3,
               created_at: new Date().toISOString()
             }
-          ]);
+          ];
+          setStoryPrompts(fallbackPrompts);
+          // Set current prompt to resume from saved progress
+          if (resumeFromPromptIndex > 0 && resumeFromPromptIndex < fallbackPrompts.length) {
+            setCurrentPrompt(resumeFromPromptIndex);
+            console.log(`✅ Resuming from prompt ${resumeFromPromptIndex + 1} of ${fallbackPrompts.length}`);
+          }
         }
       } catch (err: any) {
         console.error('Error fetching storytelling prompts:', err);
         setError(err.message);
+        
+        // Fetch user's current topic progress even if prompts failed
+        let resumeFromPromptIndex = 0;
+        if (user?.id) {
+          try {
+            const { getCurrentTopicProgress } = await import('@/utils/progressTracker');
+            const progressResponse = await getCurrentTopicProgress(
+              user.id,
+              3, // Stage 3
+              1  // Exercise 1 (StorytellingPractice)
+            );
+            
+            if (progressResponse.success && progressResponse.data?.current_topic_id) {
+              const currentTopicId = progressResponse.data.current_topic_id;
+              console.log('📍 Resuming from topic ID:', currentTopicId);
+              resumeFromPromptIndex = Math.max(0, currentTopicId - 1);
+            }
+          } catch (progressError) {
+            console.warn('Could not fetch current topic progress:', progressError);
+          }
+        }
+        
         // Use fallback prompts on error
-        setStoryPrompts([
+        const errorFallbackPrompts = [
           {
             id: 'fallback-1',
             title: 'Share a Special Day',
@@ -422,14 +482,20 @@ export default function StorytellingPractice() {
             stage: 3,
             created_at: new Date().toISOString()
           }
-        ]);
+        ];
+        setStoryPrompts(errorFallbackPrompts);
+        // Set current prompt to resume from saved progress
+        if (resumeFromPromptIndex > 0 && resumeFromPromptIndex < errorFallbackPrompts.length) {
+          setCurrentPrompt(resumeFromPromptIndex);
+          console.log(`✅ Resuming from prompt ${resumeFromPromptIndex + 1} of ${errorFallbackPrompts.length}`);
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchPrompts();
-  }, []);
+  }, [user?.id]);
 
   // Cleanup current audio properly
   const cleanupCurrentAudio = () => {
@@ -761,7 +827,7 @@ export default function StorytellingPractice() {
     await processRecordedAudio();
   };
 
-  const handleNextPrompt = () => {
+  const handleNextPrompt = async () => {
     const newIndex = Math.min(storyPrompts.length - 1, currentPrompt + 1);
     setCurrentPrompt(newIndex);
     setFeedback(null);
@@ -770,6 +836,23 @@ export default function StorytellingPractice() {
     setIsEvaluating(false);
     setRecordingStartTime(null);
     setShowExample(false);
+    
+    // Save progress to backend
+    if (user?.id) {
+      try {
+        const { updateCurrentTopic } = await import('@/utils/progressTracker');
+        await updateCurrentTopic(
+          user.id,
+          3, // Stage 3
+          1, // Exercise 1 (StorytellingPractice)
+          newIndex + 1 // Topic ID (1-based)
+        );
+        console.log(`Progress saved: Prompt ${newIndex + 1} of ${storyPrompts.length}`);
+      } catch (error) {
+        console.warn('Failed to save progress:', error);
+      }
+    }
+    
     // Clear any active recording
     if (recordingTimeoutRef.current) {
       clearTimeout(recordingTimeoutRef.current);
@@ -783,15 +866,32 @@ export default function StorytellingPractice() {
     }
   };
 
-  const handlePreviousPrompt = () => {
+  const handlePreviousPrompt = async () => {
     if (currentPrompt > 0) {
-      setCurrentPrompt(currentPrompt - 1);
+      const newIndex = currentPrompt - 1;
+      setCurrentPrompt(newIndex);
       setFeedback(null);
       setRecordingTime(0);
       setIsRecording(false);
       setIsEvaluating(false);
       setRecordingStartTime(null);
       setShowExample(false);
+      
+      // Save progress to backend
+      if (user?.id) {
+        try {
+          const { updateCurrentTopic } = await import('@/utils/progressTracker');
+          await updateCurrentTopic(
+            user.id,
+            3, // Stage 3
+            1, // Exercise 1 (StorytellingPractice)
+            newIndex + 1 // Topic ID (1-based)
+          );
+          console.log(`Progress saved: Prompt ${newIndex + 1} of ${storyPrompts.length}`);
+        } catch (error) {
+          console.warn('Failed to save progress:', error);
+        }
+      };
       // Clear any active recording
       if (recordingTimeoutRef.current) {
         clearTimeout(recordingTimeoutRef.current);

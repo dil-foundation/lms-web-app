@@ -12,6 +12,7 @@ import {
   SpontaneousSpeechEvaluation
 } from '@/services/spontaneousSpeechService';
 import { useAuth } from '@/contexts/AuthContext';
+import { getCurrentTopicProgress, updateCurrentTopic } from '@/utils/progressTracker';
 
 interface ExerciseCompletion {
   exercise_completed: boolean;
@@ -55,6 +56,7 @@ export default function AIGuidedSpontaneousSpeech() {
   const [recordingStartTime, setRecordingStartTime] = useState<number>(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [lastCompletedTopicId, setLastCompletedTopicId] = useState<number | null>(null);
 
   // Load topics on component mount
   useEffect(() => {
@@ -78,6 +80,25 @@ export default function AIGuidedSpontaneousSpeech() {
 
     loadTopics();
   }, []);
+
+  // Fetch current progress on mount
+  useEffect(() => {
+    const fetchProgress = async () => {
+      if (!user?.id) return;
+
+      try {
+        const progressData = await getCurrentTopicProgress(user.id, 6, 1); // Stage 6, Exercise 1
+        
+        if (progressData.success && progressData.current_topic_id) {
+          setLastCompletedTopicId(progressData.current_topic_id);
+        }
+      } catch (error) {
+        console.error('Error fetching progress:', error);
+      }
+    };
+
+    fetchProgress();
+  }, [user]);
 
   const [conversation, setConversation] = useState<ConversationMessage[]>([]);
 
@@ -158,7 +179,7 @@ export default function AIGuidedSpontaneousSpeech() {
     }
   };
 
-  const handleTopicClick = (topic: SpontaneousSpeechTopic) => {
+  const handleTopicClick = async (topic: SpontaneousSpeechTopic) => {
     setCurrentTopic(topic);
     setSessionStarted(true);
     setShowFeedback(true);
@@ -172,6 +193,15 @@ export default function AIGuidedSpontaneousSpeech() {
     };
     
     setConversation([initialMessage]);
+
+    // Update progress when topic is selected
+    if (user?.id && topic.id) {
+      try {
+        await updateCurrentTopic(user.id, 6, 1, topic.id); // Stage 6, Exercise 1
+      } catch (error) {
+        console.error('Error updating progress:', error);
+      }
+    }
   };
 
   const resetSession = () => {
@@ -400,43 +430,54 @@ export default function AIGuidedSpontaneousSpeech() {
           <div className="px-4 sm:px-6 pb-8 space-y-6">
             {/* Topic Selection */}
             <div className="text-center">
-              <p className="text-muted-foreground text-sm sm:text-lg">Click on a topic to start your conversation immediately</p>
+              <p className="text-muted-foreground text-sm sm:text-base">Click on a topic to start your conversation immediately</p>
             </div>
 
             {topics.length > 0 ? (
               <div className="space-y-4">
-                {topics.map((topic) => (
-                  <Card 
-                    key={topic.id}
-                    className="cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden"
-                    onClick={() => handleTopicClick(topic)}
-                  >
-                    <CardContent className="p-5 sm:p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-3 sm:space-x-4">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center border border-primary/30">
-                            <Rocket className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                {topics.map((topic) => {
+                  const isCompleted = lastCompletedTopicId !== null && topic.id < lastCompletedTopicId;
+                  return (
+                    <Card 
+                      key={topic.id}
+                      className={`cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden ${
+                        isCompleted ? 'border-2 border-primary/50' : ''
+                      }`}
+                      onClick={() => handleTopicClick(topic)}
+                    >
+                      <CardContent className="p-5 sm:p-6">
+                        <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
+                          <div className="flex items-start space-x-3 sm:space-x-4 flex-1">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center border border-primary/30 flex-shrink-0">
+                              <Rocket className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-base sm:text-lg font-semibold mb-2 text-primary">{topic.title}</h3>
+                              <p className="text-muted-foreground text-xs sm:text-sm mb-2">{topic.description}</p>
+                            </div>
                           </div>
-                          <div className="flex-1">
-                            <h3 className="text-base sm:text-lg font-semibold mb-2 text-primary">{topic.title}</h3>
-                            <p className="text-muted-foreground text-xs sm:text-sm mb-2">{topic.description}</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {isCompleted && (
+                              <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-primary text-white text-xs flex-shrink-0">
+                                <CheckCircle className="h-3 w-3" />
+                                <span>Completed</span>
+                              </div>
+                            )}
+                            {(topic.complexity || topic.difficulty_level) && (
+                              <span className={`px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 flex-shrink-0 ${
+                                (topic.complexity === 'Expert' || topic.difficulty_level === 'Expert')
+                                  ? 'text-red-700 dark:text-red-300' 
+                                  : 'text-orange-700 dark:text-orange-300'
+                              }`}>
+                                {topic.complexity || topic.difficulty_level}
+                              </span>
+                            )}
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          {(topic.complexity || topic.difficulty_level) && (
-                            <span className={`px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 ${
-                              (topic.complexity === 'Expert' || topic.difficulty_level === 'Expert')
-                                ? 'text-red-700 dark:text-red-300' 
-                                : 'text-orange-700 dark:text-orange-300'
-                            }`}>
-                              {topic.complexity || topic.difficulty_level}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             ) : (
               <Card className="border-0 bg-gradient-to-br from-muted/30 to-muted/50 rounded-2xl shadow-lg">
@@ -527,17 +568,17 @@ export default function AIGuidedSpontaneousSpeech() {
           {currentTopic && (
             <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
               <CardContent className="p-5 sm:p-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start gap-4">
                   <div className="flex-1">
                     <h3 className="font-semibold text-primary text-base sm:text-lg mb-2">{currentTopic.title}</h3>
                     <p className="text-xs sm:text-sm text-muted-foreground">{currentTopic.description}</p>
                   </div>
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center gap-3 flex-shrink-0 flex-wrap">
                     {/* Audio Button */}
                     <Button
                       onClick={handlePlayAudio}
                       disabled={isLoadingAudio}
-                      className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-lg transition-all duration-200 ${
+                      className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-lg transition-all duration-200 ${
                         isLoadingAudio
                           ? 'bg-gray-600 cursor-not-allowed text-white border-2 border-gray-500'
                           : isPlayingAudio
@@ -547,17 +588,17 @@ export default function AIGuidedSpontaneousSpeech() {
                       size="icon"
                     >
                       {isLoadingAudio ? (
-                        <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                        <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
                       ) : isPlayingAudio ? (
-                        <Pause className="w-5 h-5 sm:w-6 sm:h-6" />
+                        <Pause className="w-4 h-4 sm:w-5 sm:h-5" />
                       ) : (
-                        <Play className="w-5 h-5 sm:w-6 sm:h-6" />
+                        <Play className="w-4 h-4 sm:w-5 sm:h-5" />
                       )}
                     </Button>
                     
                     {/* Difficulty Badge */}
                     {(currentTopic.complexity || currentTopic.difficulty_level) && (
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 ${
+                      <span className={`px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 ${
                         (currentTopic.complexity === 'Expert' || currentTopic.difficulty_level === 'Expert')
                           ? 'text-red-700 dark:text-red-300' 
                           : 'text-orange-700 dark:text-orange-300'
@@ -582,22 +623,22 @@ export default function AIGuidedSpontaneousSpeech() {
                     : 'border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden'
                 }`}
               >
-                <CardContent className="p-6">
-                  <div className="flex items-start space-x-4">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-start space-x-3 sm:space-x-4">
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
                       message.sender === 'user' 
                         ? 'bg-gradient-to-br from-primary/20 to-primary/30 border border-primary/30' 
                         : 'bg-gradient-to-br from-primary/20 to-primary/30 border border-primary/30'
                     }`}>
                       {message.sender === 'user' ? (
-                        <User className="h-6 w-6 text-primary" />
+                        <User className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                       ) : (
-                        <Bot className="h-6 w-6 text-[#1582B4]" />
+                        <Bot className="h-5 w-5 sm:h-6 sm:w-6 text-[#1582B4]" />
                       )}
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className={`text-sm font-medium ${
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center flex-wrap gap-2 mb-1">
+                        <span className={`text-xs sm:text-sm font-medium ${
                           message.sender === 'user' 
                             ? 'text-primary' 
                             : 'text-[#1582B4]'
@@ -611,7 +652,7 @@ export default function AIGuidedSpontaneousSpeech() {
                           </div>
                         )}
                       </div>
-                      <p className="text-foreground">
+                      <p className="text-foreground text-sm sm:text-base break-words">
                         {message.message}
                       </p>
                     </div>
@@ -621,22 +662,22 @@ export default function AIGuidedSpontaneousSpeech() {
             ))}
           </div>
 
-          {/* Expected Keywords Section */}
+              {/* Expected Keywords Section */}
           {currentTopic && currentTopic.expected_keywords && currentTopic.expected_keywords.length > 0 && (
             <div>
               <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
-                <CardContent className="p-6">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/30 rounded-xl flex items-center justify-center border border-primary/30">
-                      <Zap className="h-4 w-4 text-[#1582B4]" />
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-start space-x-3 sm:space-x-4">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-primary/20 to-primary/30 rounded-xl flex items-center justify-center border border-primary/30 flex-shrink-0">
+                      <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-[#1582B4]" />
                     </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-[#1582B4] mb-3">Expected Keywords</h4>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-[#1582B4] mb-3 text-sm sm:text-base">Expected Keywords</h4>
                       <div className="flex flex-wrap gap-2">
                         {currentTopic.expected_keywords.map((keyword, index) => (
                           <span 
                             key={index}
-                            className="px-3 py-1 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm text-foreground text-sm rounded-full border border-gray-200/60 dark:border-gray-700/60"
+                            className="px-2.5 py-1 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm text-foreground text-xs sm:text-sm rounded-full border border-gray-200/60 dark:border-gray-700/60"
                           >
                             {keyword}
                           </span>
@@ -672,51 +713,51 @@ export default function AIGuidedSpontaneousSpeech() {
           {/* Evaluation Results */}
           {evaluationResult && !isEvaluating && (
             <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-indigo-50 dark:from-[#1582B4]/20 dark:to-indigo-900/20 rounded-3xl shadow-lg overflow-hidden">
-              <CardContent className="p-5 sm:p-6">
-                <h4 className="font-medium text-[#1582B4] mb-4 text-lg">Evaluation Results</h4>
+              <CardContent className="p-4 sm:p-5 md:p-6">
+                <h4 className="font-medium text-[#1582B4] mb-4 text-base sm:text-lg">Evaluation Results</h4>
                 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-4">
-                  <div className="text-center">
-                    <div className="text-xl sm:text-2xl font-bold text-[#1582B4]">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
+                  <div className="text-center p-3 sm:p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl">
+                    <div className="text-lg sm:text-xl md:text-2xl font-bold text-[#1582B4]">
                       {evaluationResult.overall_score || 0}
                     </div>
-                    <div className="text-xs text-muted-foreground">Overall</div>
+                    <div className="text-[10px] sm:text-xs text-muted-foreground">Overall</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-xl sm:text-2xl font-bold text-[#1582B4]">
+                  <div className="text-center p-3 sm:p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl">
+                    <div className="text-lg sm:text-xl md:text-2xl font-bold text-[#1582B4]">
                       {evaluationResult.fluency_score || 0}
                     </div>
-                    <div className="text-xs text-muted-foreground">Fluency</div>
+                    <div className="text-[10px] sm:text-xs text-muted-foreground">Fluency</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-xl sm:text-2xl font-bold text-[#1582B4]">
+                  <div className="text-center p-3 sm:p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl">
+                    <div className="text-lg sm:text-xl md:text-2xl font-bold text-[#1582B4]">
                       {evaluationResult.vocabulary_score || 0}
                     </div>
-                    <div className="text-xs text-muted-foreground">Vocabulary</div>
+                    <div className="text-[10px] sm:text-xs text-muted-foreground">Vocabulary</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-xl sm:text-2xl font-bold text-[#1582B4]">
+                  <div className="text-center p-3 sm:p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl">
+                    <div className="text-lg sm:text-xl md:text-2xl font-bold text-[#1582B4]">
                       {evaluationResult.content_relevance_score || 0}
                     </div>
-                    <div className="text-xs text-muted-foreground">Relevance</div>
+                    <div className="text-[10px] sm:text-xs text-muted-foreground">Relevance</div>
                   </div>
                 </div>
 
                 {evaluationResult.feedback && (
                   <div className="mb-4">
-                    <h5 className="font-medium text-[#1582B4] mb-2">Feedback</h5>
-                    <p className="text-xs sm:text-sm text-muted-foreground">{evaluationResult.feedback}</p>
+                    <h5 className="font-medium text-[#1582B4] mb-2 text-sm sm:text-base">Feedback</h5>
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{evaluationResult.feedback}</p>
                   </div>
                 )}
 
                 {evaluationResult.strengths && evaluationResult.strengths.length > 0 && (
                   <div className="mb-4">
-                    <h5 className="font-medium text-[#1582B4] mb-2">Strengths</h5>
-                    <ul className="text-sm text-muted-foreground space-y-1">
+                    <h5 className="font-medium text-[#1582B4] mb-2 text-sm sm:text-base">Strengths</h5>
+                    <ul className="text-xs sm:text-sm text-muted-foreground space-y-1.5 sm:space-y-2">
                       {evaluationResult.strengths.map((strength: string, index: number) => (
                         <li key={index} className="flex items-start space-x-2">
-                          <span className="text-[#1582B4] mt-0.5">•</span>
-                          <span>{strength}</span>
+                          <span className="text-[#1582B4] mt-0.5 flex-shrink-0">•</span>
+                          <span className="break-words">{strength}</span>
                         </li>
                       ))}
                     </ul>
@@ -725,12 +766,12 @@ export default function AIGuidedSpontaneousSpeech() {
 
                 {evaluationResult.areas_for_improvement && evaluationResult.areas_for_improvement.length > 0 && (
                   <div className="mb-4">
-                    <h5 className="font-medium text-[#1582B4] mb-2">Areas for Improvement</h5>
-                    <ul className="text-sm text-muted-foreground space-y-1">
+                    <h5 className="font-medium text-[#1582B4] mb-2 text-sm sm:text-base">Areas for Improvement</h5>
+                    <ul className="text-xs sm:text-sm text-muted-foreground space-y-1.5 sm:space-y-2">
                       {evaluationResult.areas_for_improvement.map((area: string, index: number) => (
                         <li key={index} className="flex items-start space-x-2">
-                          <span className="text-orange-500 mt-0.5">•</span>
-                          <span>{area}</span>
+                          <span className="text-orange-500 mt-0.5 flex-shrink-0">•</span>
+                          <span className="break-words">{area}</span>
                         </li>
                       ))}
                     </ul>

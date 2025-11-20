@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Mic, Building2, User, Loader2, Play, Pause, VolumeX, Square, RotateCcw, Target, TrendingUp, Trophy } from 'lucide-react';
+import { ArrowLeft, Mic, Building2, User, Loader2, Play, Pause, VolumeX, Square, RotateCcw, Target, TrendingUp, Trophy, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MockInterviewService, { MockInterviewScenario, MockInterviewQuestion, MockInterviewEvaluationResponse } from '@/services/mockInterviewService';
 
@@ -36,6 +36,8 @@ export default function MockInterviewPractice() {
   const [scenarios, setScenarios] = useState<MockInterviewScenario[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [completedScenarios, setCompletedScenarios] = useState<Set<number>>(new Set());
+  const [currentTopicId, setCurrentTopicId] = useState<number>(1);
   
   // Current question details from API
   const [currentQuestionDetail, setCurrentQuestionDetail] = useState<MockInterviewQuestion | null>(null);
@@ -81,6 +83,35 @@ export default function MockInterviewPractice() {
         const groupedScenarios = MockInterviewService.groupByScenario(questions);
         
         console.log('📊 Grouped scenarios:', groupedScenarios);
+        
+        // Fetch user's current topic progress if user is logged in
+        if (user?.id) {
+          try {
+            const { getCurrentTopicProgress } = await import('@/utils/progressTracker');
+            const progressResponse = await getCurrentTopicProgress(
+              user.id,
+              4, // Stage 4
+              2  // Exercise 2 (MockInterviewPractice)
+            );
+            
+            if (progressResponse.success && progressResponse.data?.current_topic_id) {
+              const topicId = progressResponse.data.current_topic_id;
+              setCurrentTopicId(topicId);
+              console.log('📍 Current topic ID:', topicId);
+              
+              // Mark all scenarios before current topic as completed
+              const completed = new Set<number>();
+              for (let i = 1; i < topicId; i++) {
+                completed.add(i);
+              }
+              setCompletedScenarios(completed);
+              console.log(`✅ Marked ${completed.size} scenarios as completed`);
+            }
+          } catch (progressError) {
+            console.warn('Could not fetch current topic progress:', progressError);
+          }
+        }
+        
         setScenarios(groupedScenarios);
         
         // If no scenarios from API, use fallback scenarios
@@ -377,11 +408,31 @@ export default function MockInterviewPractice() {
       ? scenarios.find(s => s.id === scenarioId) 
       : currentScenario;
     
+    // Save progress when selecting a scenario
+    if (user?.id && scenarioId) {
+      try {
+        const scenarioIndex = scenarios.findIndex(s => s.id === scenarioId);
+        if (scenarioIndex !== -1) {
+          const topicId = scenarioIndex + 1; // 1-based
+          const { updateCurrentTopic } = await import('@/utils/progressTracker');
+          await updateCurrentTopic(
+            user.id,
+            4, // Stage 4
+            2, // Exercise 2 (MockInterviewPractice)
+            topicId
+          );
+          console.log(`Progress saved: Scenario ${topicId} of ${scenarios.length}`);
+        }
+      } catch (error) {
+        console.warn('Failed to save progress:', error);
+      }
+    }
+    
     // Fetch details for the first question
     if (scenarioToUse?.questions?.[0]?.id) {
       await fetchQuestionDetail(scenarioToUse.questions[0].id);
     }
-  }, [scenarios, currentScenario, fetchQuestionDetail]);
+  }, [scenarios, currentScenario, fetchQuestionDetail, user?.id]);
 
   const handleNextQuestion = useCallback(async () => {
     if (currentScenario && currentQuestionIndex < currentScenario.questions.length - 1) {
@@ -827,12 +878,25 @@ export default function MockInterviewPractice() {
               </Card>
             ) : null}
             
-            {scenarios.map((scenario) => (
+            {scenarios.map((scenario, index) => {
+              const scenarioNumber = index + 1;
+              const isCompleted = completedScenarios.has(scenarioNumber);
+              
+              return (
               <Card 
                 key={scenario.id}
-                className="cursor-pointer transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl overflow-hidden"
+                className={`cursor-pointer transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border rounded-3xl shadow-lg hover:shadow-xl overflow-hidden relative ${
+                  isCompleted 
+                    ? 'border-primary/50 dark:border-primary/50' 
+                    : 'border-gray-200/60 dark:border-gray-700/60'
+                }`}
                 onClick={() => handleStartInterview(scenario.id)}
               >
+                {isCompleted && (
+                  <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1 shadow-md z-10">
+                    <CheckCircle2 className="h-4 w-4" />
+                  </div>
+                )}
                 <CardContent className="p-0">
                   <div className="bg-gradient-to-br from-primary to-primary/90 p-6 text-white relative overflow-hidden">
                     <div className="flex items-start space-x-4">
@@ -860,7 +924,8 @@ export default function MockInterviewPractice() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
 
             <div className="text-center pt-6">
               <p className="text-muted-foreground text-sm">

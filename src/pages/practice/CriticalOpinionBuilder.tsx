@@ -13,6 +13,7 @@ import {
   CriticalOpinionTopic,
   CriticalOpinionEvaluation
 } from '@/services/criticalOpinionService';
+import { getCurrentTopicProgress, updateCurrentTopic } from '@/utils/progressTracker';
 
 interface ExerciseCompletion {
   exercise_completed: boolean;
@@ -52,6 +53,7 @@ export default function CriticalOpinionBuilder() {
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
   const [isCompleted, setIsCompleted] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [lastCompletedTopicId, setLastCompletedTopicId] = useState<number | null>(null);
 
 
   // Load topics on component mount
@@ -77,12 +79,40 @@ export default function CriticalOpinionBuilder() {
     loadTopics();
   }, []);
 
+  // Fetch current progress on mount
+  useEffect(() => {
+    const fetchProgress = async () => {
+      if (!user?.id) return;
+
+      try {
+        const progressData = await getCurrentTopicProgress(user.id, 6, 3); // Stage 6, Exercise 3
+        
+        if (progressData.success && progressData.current_topic_id) {
+          setLastCompletedTopicId(progressData.current_topic_id);
+        }
+      } catch (error) {
+        console.error('Error fetching progress:', error);
+      }
+    };
+
+    fetchProgress();
+  }, [user]);
 
 
-  const handleTopicClick = (topic: CriticalOpinionTopic) => {
+
+  const handleTopicClick = async (topic: CriticalOpinionTopic) => {
     setSelectedTopic(topic);
     setHasStarted(true);
     setShowFeedback(false);
+
+    // Update progress when topic is selected
+    if (user?.id && topic.id) {
+      try {
+        await updateCurrentTopic(user.id, 6, 3, topic.id); // Stage 6, Exercise 3
+      } catch (error) {
+        console.error('Error updating progress:', error);
+      }
+    }
   };
 
   // Audio playback functions
@@ -346,52 +376,65 @@ export default function CriticalOpinionBuilder() {
           {/* Topic Selection */}
           <div className="space-y-6 sm:space-y-8">
             <div className="text-center">
-              <p className="text-muted-foreground text-sm sm:text-lg max-w-2xl mx-auto">
+              <p className="text-muted-foreground text-sm sm:text-base max-w-2xl mx-auto">
                 Click on a topic to start building your opinion immediately with our AI-powered guidance system
               </p>
             </div>
 
             {topics.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {topics.map((topic) => (
-                  <Card 
-                    key={topic.id}
-                    className="group cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:scale-105 border-2 border-transparent hover:border-primary/20 bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-2xl overflow-hidden"
-                    onClick={() => handleTopicClick(topic)}
-                  >
-                    <CardContent className="p-5 sm:p-6">
-                      <div className="space-y-4">
-                        <div className="flex items-start justify-between">
-                          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                            <Lightbulb className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                {topics.map((topic) => {
+                  const isCompleted = lastCompletedTopicId !== null && topic.id < lastCompletedTopicId;
+                  return (
+                    <Card 
+                      key={topic.id}
+                      className={`group cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:scale-105 border-2 ${
+                        isCompleted ? 'border-primary/50' : 'border-transparent hover:border-primary/20'
+                      } bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-2xl overflow-hidden`}
+                      onClick={() => handleTopicClick(topic)}
+                    >
+                      <CardContent className="p-5 sm:p-6">
+                        <div className="space-y-4">
+                          <div className="flex items-start justify-between">
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                              <Lightbulb className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              {isCompleted && (
+                                <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-primary text-white text-xs">
+                                  <CheckCircle className="h-3 w-3" />
+                                  <span>Completed</span>
+                                </div>
+                              )}
+                              {(topic.complexity || topic.difficulty_level) && (
+                                <span className={`px-2.5 py-1 rounded-xl text-[11px] sm:text-xs font-semibold shadow-md ${
+                                  (topic.complexity === 'Advanced' || topic.difficulty_level === 'Advanced')
+                                    ? 'bg-gradient-to-r from-red-500 to-red-600 text-white' 
+                                    : (topic.complexity === 'Intermediate' || topic.difficulty_level === 'Intermediate')
+                                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                                    : 'bg-gradient-to-r from-primary to-primary/80 text-white'
+                                }`}>
+                                  {topic.complexity || topic.difficulty_level}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          {(topic.complexity || topic.difficulty_level) && (
-                            <span className={`px-2.5 py-1 rounded-xl text-[11px] sm:text-xs font-semibold shadow-md ${
-                              (topic.complexity === 'Advanced' || topic.difficulty_level === 'Advanced')
-                                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white' 
-                                : (topic.complexity === 'Intermediate' || topic.difficulty_level === 'Intermediate')
-                                ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
-                                : 'bg-gradient-to-r from-primary to-primary/80 text-white'
-                            }`}>
-                              {topic.complexity || topic.difficulty_level}
+                          <div>
+                            <h3 className="font-bold text-base sm:text-lg mb-2 text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors duration-300">
+                              {topic.title}
+                            </h3>
+                            <p className="text-xs sm:text-sm text-muted-foreground mb-3 leading-relaxed">
+                              {topic.description}
+                            </p>
+                            <span className="inline-block px-2.5 py-1 rounded-xl text-[11px] sm:text-xs font-semibold bg-gradient-to-r from-primary/10 to-primary/20 text-primary border border-primary/20">
+                              {topic.category}
                             </span>
-                          )}
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-bold text-base sm:text-lg mb-2 text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors duration-300">
-                            {topic.title}
-                          </h3>
-                          <p className="text-xs sm:text-sm text-muted-foreground mb-3 leading-relaxed">
-                            {topic.description}
-                          </p>
-                          <span className="inline-block px-2.5 py-1 rounded-xl text-[11px] sm:text-xs font-semibold bg-gradient-to-r from-primary/10 to-primary/20 text-primary border border-primary/20">
-                            {topic.category}
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             ) : (
               <Card className="bg-gradient-to-br from-muted/30 to-muted/50 border-2 border-dashed border-muted-foreground/20 rounded-2xl">
@@ -409,37 +452,35 @@ export default function CriticalOpinionBuilder() {
 
             {/* Building Guidelines */}
             <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 border-2 border-primary/20 rounded-2xl shadow-xl">
-              <CardContent className="p-6 sm:p-8">
-                <div className="flex items-center mb-6">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center mr-3 sm:mr-4 shadow-lg">
+              <CardContent className="p-5 sm:p-6 md:p-8">
+                <div className="flex items-center mb-4 sm:mb-6">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center mr-3 sm:mr-4 shadow-lg flex-shrink-0">
                     <Brain className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                   </div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">Opinion Building Guidelines</h3>
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">Opinion Building Guidelines</h3>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="space-y-4">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-3 h-3 bg-gradient-to-r from-primary to-primary/80 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="grid grid-cols-1 gap-4 sm:gap-6">
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="flex items-start space-x-3 sm:space-x-4">
+                      <div className="w-2 h-2 sm:w-3 sm:h-3 bg-gradient-to-r from-primary to-primary/80 rounded-full mt-2 flex-shrink-0"></div>
                       <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
                       Develop a clear, well-reasoned position on the topic
                     </p>
                   </div>
-                    <div className="flex items-start space-x-4">
-                      <div className="w-3 h-3 bg-gradient-to-r from-primary to-primary/80 rounded-full mt-2 flex-shrink-0"></div>
+                    <div className="flex items-start space-x-3 sm:space-x-4">
+                      <div className="w-2 h-2 sm:w-3 sm:h-3 bg-gradient-to-r from-primary to-primary/80 rounded-full mt-2 flex-shrink-0"></div>
                       <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
                       Support your arguments with evidence, examples, and logical reasoning
                     </p>
                   </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-3 h-3 bg-gradient-to-r from-primary to-primary/80 rounded-full mt-2 flex-shrink-0"></div>
+                    <div className="flex items-start space-x-3 sm:space-x-4">
+                      <div className="w-2 h-2 sm:w-3 sm:h-3 bg-gradient-to-r from-primary to-primary/80 rounded-full mt-2 flex-shrink-0"></div>
                       <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
                       Consider and address potential counterarguments
                     </p>
                   </div>
-                    <div className="flex items-start space-x-4">
-                      <div className="w-3 h-3 bg-gradient-to-r from-primary to-primary/80 rounded-full mt-2 flex-shrink-0"></div>
+                    <div className="flex items-start space-x-3 sm:space-x-4">
+                      <div className="w-2 h-2 sm:w-3 sm:h-3 bg-gradient-to-r from-primary to-primary/80 rounded-full mt-2 flex-shrink-0"></div>
                       <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
                       Use sophisticated vocabulary and complex sentence structures
                     </p>
@@ -485,26 +526,26 @@ export default function CriticalOpinionBuilder() {
 
         {/* Current Topic */}
         {selectedTopic && (
-          <Card className="mb-8 bg-gradient-to-br from-primary/5 to-secondary/5 border-2 border-primary/20 rounded-2xl shadow-xl overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100 mb-2">
+          <Card className="mb-6 sm:mb-8 bg-gradient-to-br from-primary/5 to-secondary/5 border-2 border-primary/20 rounded-2xl shadow-xl overflow-hidden">
+            <CardContent className="p-5 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-lg sm:text-xl text-gray-900 dark:text-gray-100 mb-2">
                     {selectedTopic.title}
                   </h3>
-                  <p className="text-base text-muted-foreground mb-3 leading-relaxed">
+                  <p className="text-sm sm:text-base text-muted-foreground mb-3 leading-relaxed break-words">
                     {selectedTopic.description}
                   </p>
-                  <span className="inline-block px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-primary/10 to-primary/20 text-primary border border-primary/20">
+                  <span className="inline-block px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl text-[10px] sm:text-xs font-semibold bg-gradient-to-r from-primary/10 to-primary/20 text-primary border border-primary/20">
                     {selectedTopic.category}
                   </span>
                 </div>
-                <div className="flex items-center space-x-3 sm:space-x-4">
+                <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 flex-wrap">
                   {/* Audio Play Button */}
                   <Button
                     onClick={handlePlayAudio}
                     disabled={isLoadingAudio}
-                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl shadow-xl transition-all duration-300 ${
+                    className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-2xl shadow-xl transition-all duration-300 ${
                       isLoadingAudio
                         ? 'bg-gradient-to-r from-slate-400 to-slate-500 cursor-not-allowed text-white border-2 border-slate-500'
                         : isPlayingAudio
@@ -514,17 +555,17 @@ export default function CriticalOpinionBuilder() {
                     size="icon"
                   >
                     {isLoadingAudio ? (
-                      <div className="w-6 h-6 sm:w-7 sm:h-7 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
                     ) : isPlayingAudio ? (
-                      <Pause className="w-5 h-5 sm:w-6 sm:h-6" />
+                      <Pause className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
                     ) : (
-                      <Play className="w-5 h-5 sm:w-6 sm:h-6" />
+                      <Play className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
                     )}
                   </Button>
                   
                   {/* Difficulty Badge */}
                   {(selectedTopic.complexity || selectedTopic.difficulty_level) && (
-                    <span className={`px-3 py-1.5 rounded-xl text-xs font-semibold shadow-md ${
+                    <span className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl text-[10px] sm:text-xs font-semibold shadow-md ${
                       (selectedTopic.complexity === 'Advanced' || selectedTopic.difficulty_level === 'Advanced')
                         ? 'bg-gradient-to-r from-red-500 to-red-600 text-white' 
                         : (selectedTopic.complexity === 'Intermediate' || selectedTopic.difficulty_level === 'Intermediate')
@@ -542,13 +583,13 @@ export default function CriticalOpinionBuilder() {
 
         {/* Evaluation Loading State */}
         {isEvaluating && (
-          <Card className="mb-8 bg-gradient-to-br from-secondary/5 to-secondary/10 border-2 border-secondary/20 rounded-2xl shadow-xl">
-            <CardContent className="p-8">
-              <div className="flex items-center justify-center space-x-4">
-                <div className="w-8 h-8 bg-gradient-to-br from-secondary to-secondary/80 rounded-2xl flex items-center justify-center">
-                  <Loader2 className="h-5 w-5 animate-spin text-white" />
+          <Card className="mb-6 sm:mb-8 bg-gradient-to-br from-secondary/5 to-secondary/10 border-2 border-secondary/20 rounded-2xl shadow-xl">
+            <CardContent className="p-5 sm:p-6 md:p-8">
+              <div className="flex items-center justify-center gap-3 sm:gap-4">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-secondary to-secondary/80 rounded-2xl flex items-center justify-center flex-shrink-0">
+                  <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin text-white" />
                 </div>
-                <span className="text-secondary-700 dark:text-secondary-300 font-semibold text-lg">
+                <span className="text-secondary-700 dark:text-secondary-300 font-semibold text-base sm:text-lg">
                   Evaluating your critical opinion...
                 </span>
               </div>
@@ -558,20 +599,20 @@ export default function CriticalOpinionBuilder() {
 
         {/* Evaluation Results */}
         {evaluationResult && (
-          <div className="mb-8">
-            <h3 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          <div className="mb-6 sm:mb-8">
+            <h3 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-center bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               Opinion Analysis Results
             </h3>
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Overall Score */}
               <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-2xl shadow-xl overflow-hidden">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-semibold text-lg text-primary flex items-center">
-                      <Target className="h-5 w-5 mr-2" />
+                <CardContent className="p-4 sm:p-5 md:p-6">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
+                    <h4 className="font-semibold text-base sm:text-lg text-primary flex items-center">
+                      <Target className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
                       Overall Score
                     </h4>
-                    <span className={`text-3xl font-bold ${
+                    <span className={`text-2xl sm:text-3xl font-bold ${
                       (evaluationResult.evaluation.score || 0) === 0 
                         ? 'text-red-600 dark:text-red-400' 
                         : 'text-primary'
@@ -580,7 +621,7 @@ export default function CriticalOpinionBuilder() {
                     </span>
                   </div>
                   {evaluationResult.evaluation.suggested_improvement && (
-                    <p className="text-primary-700 dark:text-primary-300 text-base leading-relaxed">
+                    <p className="text-primary-700 dark:text-primary-300 text-sm sm:text-base leading-relaxed break-words">
                       {evaluationResult.evaluation.suggested_improvement}
                     </p>
                   )}
@@ -590,18 +631,18 @@ export default function CriticalOpinionBuilder() {
               {/* Strengths */}
               {evaluationResult.evaluation.strengths && evaluationResult.evaluation.strengths.length > 0 && (
                 <Card className="bg-gradient-to-br from-green/5 to-green/10 border-2 border-green/20 rounded-2xl shadow-xl overflow-hidden">
-                  <CardContent className="p-6">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mt-1 shadow-lg">
-                        <Target className="h-5 w-5 text-white" />
+                  <CardContent className="p-4 sm:p-5 md:p-6">
+                    <div className="flex items-start space-x-3 sm:space-x-4">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mt-1 shadow-lg flex-shrink-0">
+                        <Target className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-lg text-green-700 dark:text-green-300 mb-3">Key Strengths</h4>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-base sm:text-lg text-green-700 dark:text-green-300 mb-2 sm:mb-3">Key Strengths</h4>
                         <div className="space-y-2">
                           {evaluationResult.evaluation.strengths.map((strength, index) => (
-                            <p key={index} className="text-green-700 dark:text-green-300 text-base leading-relaxed flex items-start">
-                              <span className="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                              {strength}
+                            <p key={index} className="text-green-700 dark:text-green-300 text-sm sm:text-base leading-relaxed flex items-start">
+                              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full mt-2 mr-2 sm:mr-3 flex-shrink-0"></span>
+                              <span className="break-words">{strength}</span>
                             </p>
                           ))}
                         </div>
@@ -614,18 +655,18 @@ export default function CriticalOpinionBuilder() {
               {/* Areas for Improvement */}
               {evaluationResult.evaluation.areas_for_improvement && evaluationResult.evaluation.areas_for_improvement.length > 0 && (
                 <Card className="bg-gradient-to-br from-orange/5 to-orange/10 border-2 border-orange/20 rounded-2xl shadow-xl overflow-hidden">
-                  <CardContent className="p-6">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center mt-1 shadow-lg">
-                        <Brain className="h-5 w-5 text-white" />
+                  <CardContent className="p-4 sm:p-5 md:p-6">
+                    <div className="flex items-start space-x-3 sm:space-x-4">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center mt-1 shadow-lg flex-shrink-0">
+                        <Brain className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-lg text-orange-600 mb-3">Areas for Improvement</h4>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-base sm:text-lg text-orange-600 mb-2 sm:mb-3">Areas for Improvement</h4>
                         <div className="space-y-2">
                           {evaluationResult.evaluation.areas_for_improvement.map((area, index) => (
-                            <p key={index} className="text-orange-700 dark:text-orange-300 text-base leading-relaxed flex items-start">
-                              <span className="w-2 h-2 bg-orange-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                              {area}
+                            <p key={index} className="text-orange-700 dark:text-orange-300 text-sm sm:text-base leading-relaxed flex items-start">
+                              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-orange-500 rounded-full mt-2 mr-2 sm:mr-3 flex-shrink-0"></span>
+                              <span className="break-words">{area}</span>
                             </p>
                           ))}
                         </div>

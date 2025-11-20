@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Mic, GraduationCap, Loader2, Play, Pause, Target, TrendingUp, CheckCircle, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Mic, GraduationCap, Loader2, Play, Pause, Target, TrendingUp, CheckCircle, RotateCcw, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
@@ -39,6 +39,8 @@ export default function AcademicPresentations() {
   const [topics, setTopics] = useState<AcademicPresentationTopic[]>([]);
   const [selectedTopic, setSelectedTopic] = useState<AcademicPresentationTopic | null>(null);
   const [loading, setLoading] = useState(true);
+  const [completedTopics, setCompletedTopics] = useState<Set<number>>(new Set());
+  const [currentTopicId, setCurrentTopicId] = useState<number>(1);
   
 
   const [hasStarted, setHasStarted] = useState(false);
@@ -74,6 +76,35 @@ export default function AcademicPresentations() {
       try {
         setLoading(true);
         const fetchedTopics = await academicPresentationService.getAllTopics();
+        
+        // Fetch user's current topic progress if user is logged in
+        if (user?.id) {
+          try {
+            const { getCurrentTopicProgress } = await import('@/utils/progressTracker');
+            const progressResponse = await getCurrentTopicProgress(
+              user.id,
+              5, // Stage 5
+              2  // Exercise 2 (AcademicPresentations)
+            );
+            
+            if (progressResponse.success && progressResponse.data?.current_topic_id) {
+              const topicId = progressResponse.data.current_topic_id;
+              setCurrentTopicId(topicId);
+              console.log('📍 Current topic ID:', topicId);
+              
+              // Mark all topics before current topic as completed
+              const completed = new Set<number>();
+              for (let i = 1; i < topicId; i++) {
+                completed.add(i);
+              }
+              setCompletedTopics(completed);
+              console.log(`✅ Marked ${completed.size} topics as completed`);
+            }
+          } catch (progressError) {
+            console.warn('Could not fetch current topic progress:', progressError);
+          }
+        }
+        
         setTopics(fetchedTopics);
         
         // Don't auto-select a topic, let user choose from the list
@@ -152,20 +183,33 @@ export default function AcademicPresentations() {
 
       const result = await academicPresentationService.evaluatePresentation(evaluationData) as any;
       
-      // Handle API error responses (like no_speech_detected)
-      if (result.success === false || result.error) {
-        const errorMessage = result.message || result.error || 'Speech evaluation failed';
+      // Handle API error responses (like no_speech_detected or evaluation_failed)
+      if (result.success === false || result.error || result.evaluation?.success === false) {
+        const errorMessage = result.message || result.error || result.evaluation?.error || 'Speech evaluation failed';
         
-        // Create modified feedback object for error cases
+        // Create modified feedback object for error cases with proper nested structure
         const errorFeedback = {
           ...result,
+          success: false,
           evaluation: {
-            ...result.evaluation,
+            success: false,
             evaluation: {
-              ...result.evaluation?.evaluation,
               overall_score: 0,
-              feedback: errorMessage,
-              suggested_improvements: ['Please speak more clearly and try again']
+              argument_structure_score: 0,
+              evidence_usage_score: 0,
+              academic_tone_score: 0,
+              fluency_pacing_score: 0,
+              vocabulary_range_score: 0,
+              detailed_feedback: {
+                argument_structure_feedback: errorMessage,
+                evidence_usage_feedback: '',
+                academic_tone_feedback: '',
+                fluency_feedback: '',
+                vocabulary_feedback: ''
+              },
+              suggested_improvements: ['Please try again', 'Speak more clearly', 'Ensure you cover the main points'],
+              encouragement: 'Don\'t worry! Practice makes perfect. Try again and you\'ll do better!',
+              next_steps: 'Review the topic and try speaking again with confidence.'
             }
           }
         };
@@ -343,12 +387,41 @@ export default function AcademicPresentations() {
 
               {topics.length > 0 ? (
                 <div className="grid grid-cols-1 gap-4">
-                  {topics.map((topic) => (
+                  {topics.map((topic, index) => {
+                    const topicNumber = index + 1;
+                    const isCompleted = completedTopics.has(topicNumber);
+                    
+                    return (
                     <Card 
                       key={topic.id} 
-                      className="cursor-pointer border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
-                      onClick={() => setSelectedTopic(topic)}
+                      className={`cursor-pointer border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative ${
+                        isCompleted ? 'ring-2 ring-primary/50' : ''
+                      }`}
+                      onClick={async () => {
+                        setSelectedTopic(topic);
+                        
+                        // Save progress when selecting a topic
+                        if (user?.id) {
+                          try {
+                            const { updateCurrentTopic } = await import('@/utils/progressTracker');
+                            await updateCurrentTopic(
+                              user.id,
+                              5, // Stage 5
+                              2, // Exercise 2 (AcademicPresentations)
+                              topicNumber
+                            );
+                            console.log(`Progress saved: Topic ${topicNumber} of ${topics.length}`);
+                          } catch (error) {
+                            console.warn('Failed to save progress:', error);
+                          }
+                        }
+                      }}
                     >
+                      {isCompleted && (
+                        <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1 shadow-md z-10">
+                          <CheckCircle2 className="h-4 w-4" />
+                        </div>
+                      )}
                       <CardContent className="p-5 sm:p-6">
                         <div className="flex items-start space-x-4">
                           <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center shrink-0 border border-primary/30">
@@ -369,7 +442,8 @@ export default function AcademicPresentations() {
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <Card className="border-0 bg-gradient-to-br from-muted/30 to-muted/50 rounded-2xl shadow-lg">
@@ -500,7 +574,7 @@ export default function AcademicPresentations() {
           )}
 
           {/* Evaluation Results */}
-          {evaluation && evaluation.evaluation && (
+          {evaluation && evaluation.evaluation && evaluation.evaluation.evaluation && (
             <div>
               <h3 className="text-lg sm:text-xl font-semibold mb-6 bg-gradient-to-r from-primary to-primary/90 bg-clip-text text-transparent">
                 Presentation Evaluation
@@ -523,6 +597,73 @@ export default function AcademicPresentations() {
                 </CardContent>
               </Card>
 
+              {/* Detailed Scores */}
+              {evaluation.evaluation.evaluation.detailed_feedback && (
+                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg mb-4">
+                  <CardContent className="p-4">
+                    <h4 className="font-medium text-primary mb-3">Detailed Feedback</h4>
+                    <div className="space-y-3">
+                      {evaluation.evaluation.evaluation.detailed_feedback.argument_structure_feedback && (
+                        <div>
+                          <p className="text-xs font-medium text-primary/90 mb-1">Argument Structure:</p>
+                          <p className="text-primary/80 text-xs sm:text-sm">
+                            {evaluation.evaluation.evaluation.detailed_feedback.argument_structure_feedback}
+                          </p>
+                        </div>
+                      )}
+                      {evaluation.evaluation.evaluation.detailed_feedback.evidence_usage_feedback && (
+                        <div>
+                          <p className="text-xs font-medium text-primary/90 mb-1">Evidence Usage:</p>
+                          <p className="text-primary/80 text-xs sm:text-sm">
+                            {evaluation.evaluation.evaluation.detailed_feedback.evidence_usage_feedback}
+                          </p>
+                        </div>
+                      )}
+                      {evaluation.evaluation.evaluation.detailed_feedback.academic_tone_feedback && (
+                        <div>
+                          <p className="text-xs font-medium text-primary/90 mb-1">Academic Tone:</p>
+                          <p className="text-primary/80 text-xs sm:text-sm">
+                            {evaluation.evaluation.evaluation.detailed_feedback.academic_tone_feedback}
+                          </p>
+                        </div>
+                      )}
+                      {evaluation.evaluation.evaluation.detailed_feedback.fluency_feedback && (
+                        <div>
+                          <p className="text-xs font-medium text-primary/90 mb-1">Fluency:</p>
+                          <p className="text-primary/80 text-xs sm:text-sm">
+                            {evaluation.evaluation.evaluation.detailed_feedback.fluency_feedback}
+                          </p>
+                        </div>
+                      )}
+                      {evaluation.evaluation.evaluation.detailed_feedback.vocabulary_feedback && (
+                        <div>
+                          <p className="text-xs font-medium text-primary/90 mb-1">Vocabulary:</p>
+                          <p className="text-primary/80 text-xs sm:text-sm">
+                            {evaluation.evaluation.evaluation.detailed_feedback.vocabulary_feedback}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Suggested Improvements */}
+              {evaluation.evaluation.evaluation.suggested_improvements && evaluation.evaluation.evaluation.suggested_improvements.length > 0 && (
+                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg mb-4">
+                  <CardContent className="p-4">
+                    <h4 className="font-medium text-primary mb-2">Suggested Improvements</h4>
+                    <ul className="list-disc list-inside space-y-1">
+                      {evaluation.evaluation.evaluation.suggested_improvements.map((improvement: string, index: number) => (
+                        <li key={index} className="text-primary/80 text-xs sm:text-sm">
+                          {improvement}
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Next Steps */}
               {evaluation.evaluation.evaluation.next_steps && (
                 <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg mb-4">
@@ -537,7 +678,7 @@ export default function AcademicPresentations() {
 
               {/* Encouragement */}
               {evaluation.evaluation.evaluation.encouragement && (
-                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
+                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg mb-4">
                   <CardContent className="p-4">
                     <h4 className="font-medium text-primary mb-2">Encouragement</h4>
                     <p className="text-primary/80 text-xs sm:text-sm">
