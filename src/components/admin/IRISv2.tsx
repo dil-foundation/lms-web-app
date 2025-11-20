@@ -318,9 +318,18 @@ Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
       // Track if we've started adding the assistant message
       let assistantMessageStarted = false;
 
+      // Truncate conversation history to prevent context overflow
+      // Keep only the last 6 messages (3 exchanges) plus the welcome message
+      const allMessages = [...messages, userMessage];
+      const truncatedMessages = allMessages.length > 7
+        ? [allMessages[0], ...allMessages.slice(-6)] // Keep welcome + last 6 messages
+        : allMessages;
+
+      console.log(`📊 Message history: ${allMessages.length} total, sending ${truncatedMessages.length} to IRIS`);
+
       // Use streaming API
       await IRISService.sendMessageStream(
-        [...messages, userMessage],
+        truncatedMessages,
         userContext,
         // onChunk - update the message content as chunks arrive
         (chunk: string) => {
@@ -373,13 +382,47 @@ Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
             timestamp: new Date().toISOString()
           });
 
-          // Check if it's a rate limit error
+          // Check if it's a quota exceeded error (different from rate limit)
+          const isQuotaError = error.includes('exceeded your current quota') ||
+                              error.includes('insufficient_quota') ||
+                              error.includes('check your plan and billing');
+
+          if (isQuotaError) {
+            console.log('🔍 [IRIS ERROR DEBUG] Quota exceeded error detected');
+            const quotaMessage = `💳 **OpenAI API Quota Exceeded**\n\nThe AI service has exceeded its API quota. This means:\n\n• Your OpenAI account has run out of credits\n• Monthly spending limit has been reached\n• Payment method needs to be updated\n\n**To resolve this:**\n1. Check your OpenAI account billing at https://platform.openai.com/account/billing\n2. Add credits or update your payment method\n3. Increase your usage limits if needed\n\nThis is not a temporary issue - the service will not work until the quota is increased.`;
+
+            setMessages(prev => {
+              const updated = [...prev];
+              const lastIndex = updated.length - 1;
+
+              if (lastIndex >= 0 && updated[lastIndex].role === 'assistant') {
+                updated[lastIndex] = {
+                  ...updated[lastIndex],
+                  content: quotaMessage,
+                  timestamp: new Date()
+                };
+              } else {
+                updated.push({
+                  role: 'assistant',
+                  content: quotaMessage,
+                  timestamp: new Date()
+                });
+              }
+
+              return updated;
+            });
+
+            setIsLoading(false);
+            return;
+          }
+
+          // Check if it's a rate limit error (temporary - can retry)
           const rateLimitMatch = error.match(/try again in (\d+)(\w+)/i);
           const retryAfterMatch = error.match(/retry-after[:\s]+(\d+)/i);
           const resetTokensMatch = error.match(/reset-tokens[:\s]+"?(\d+\.?\d*)s/i);
 
-          if (rateLimitMatch || retryAfterMatch || resetTokensMatch || error.includes('429') || error.toLowerCase().includes('rate limit')) {
-            console.log('🔍 [IRIS ERROR DEBUG] Rate limit error detected');
+          if (rateLimitMatch || retryAfterMatch || resetTokensMatch || error.toLowerCase().includes('rate limit')) {
+            console.log('🔍 [IRIS ERROR DEBUG] Rate limit error detected (temporary)');
             // Extract wait time in seconds
             let waitSeconds = 60; // Default to 60 seconds
 

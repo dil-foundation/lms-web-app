@@ -79,7 +79,6 @@ lms_data AS (
     (SELECT COUNT(*) FROM quiz_attempts qa WHERE qa.user_id = cm.user_id AND qa.submitted_at >= CURRENT_DATE - INTERVAL '3 months') as lms_quizzes,
     (SELECT COUNT(*) FROM assignment_submissions asub WHERE asub.user_id = cm.user_id AND asub.submitted_at >= CURRENT_DATE - INTERVAL '3 months') as lms_assignments
   FROM course_members cm
-  WHERE cm.joined_at < CURRENT_DATE
   GROUP BY cm.user_id
 )
 SELECT

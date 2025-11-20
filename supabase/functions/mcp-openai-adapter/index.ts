@@ -216,11 +216,9 @@ serve(async (req) => {
         logLevel: LOG_LEVEL,
         mcpServerUrl: MCP_SERVER_URL,
         availableModels: [
-          "gpt-4o-mini",
-          "gpt-4o",
-          "gpt-4-turbo",
-          "gpt-3.5-turbo"
+          "gpt-4o-mini"
         ],
+        note: "Model is locked to gpt-4o-mini for cost optimization. Model parameter in requests is ignored.",
         endpoints: {
           "/tools": "GET - List available MCP tools in OpenAI format",
           "/invoke": "POST - Enhanced endpoint with iterative tool calling",
@@ -251,7 +249,10 @@ serve(async (req) => {
     // Enhanced invoke endpoint
     if (path.endsWith('/invoke') && req.method === 'POST') {
       const body = await req.json();
-      const { prompt, model = "gpt-4o-mini", temperature = 0.2 } = body;
+      const { prompt, temperature = 0.2 } = body;
+
+      // Always use gpt-4o-mini - ignore any model parameter
+      const model = "gpt-4o-mini";
       
       if (!prompt) {
         return new Response(JSON.stringify({ 
@@ -374,7 +375,6 @@ lms_data AS (
     (SELECT COUNT(*) FROM quiz_attempts qa WHERE qa.user_id = cm.user_id AND qa.submitted_at >= '2025-09-01' AND qa.submitted_at < '2025-10-01') as lms_quizzes,
     (SELECT COUNT(*) FROM assignment_submissions asub WHERE asub.user_id = cm.user_id AND asub.submitted_at >= '2025-09-01' AND asub.submitted_at < '2025-10-01') as lms_assignments
   FROM course_members cm
-  WHERE cm.joined_at < '2025-10-01'
   GROUP BY cm.user_id
 )
 SELECT
@@ -465,7 +465,6 @@ lms_data AS (
     (SELECT COUNT(*) FROM quiz_attempts qa WHERE qa.user_id = cm.user_id AND qa.submitted_at >= CURRENT_DATE - INTERVAL '15 days') as lms_quizzes,
     (SELECT COUNT(*) FROM assignment_submissions asub WHERE asub.user_id = cm.user_id AND asub.submitted_at >= CURRENT_DATE - INTERVAL '15 days') as lms_assignments
   FROM course_members cm
-  WHERE cm.joined_at < CURRENT_DATE
   GROUP BY cm.user_id
 )
 SELECT
@@ -505,7 +504,6 @@ lms_data AS (
     (SELECT COUNT(*) FROM quiz_attempts qa WHERE qa.user_id = cm.user_id AND qa.submitted_at >= '2024-01-01' AND qa.submitted_at < '2025-01-01') as lms_quizzes,
     (SELECT COUNT(*) FROM assignment_submissions asub WHERE asub.user_id = cm.user_id AND asub.submitted_at >= '2024-01-01' AND asub.submitted_at < '2025-01-01') as lms_assignments
   FROM course_members cm
-  WHERE cm.joined_at < '2025-01-01'
   GROUP BY cm.user_id
 )
 SELECT
@@ -576,7 +574,7 @@ lms_data AS (
   FROM course_members cm
   LEFT JOIN quiz_attempts qa ON cm.user_id = qa.user_id
   LEFT JOIN assignment_submissions asub ON cm.user_id = asub.user_id
-  WHERE cm.joined_at >= [date] OR qa.submitted_at >= [date] OR asub.submitted_at >= [date]
+  WHERE cm.created_at >= [date] OR qa.submitted_at >= [date] OR asub.submitted_at >= [date]
   GROUP BY cm.user_id
 )
 SELECT p.full_name, p.email, p.role,
@@ -1228,7 +1226,10 @@ Always start by calling the appropriate tool(s) to gather information, then prov
     // Streaming invoke endpoint - Server-Sent Events (SSE)
     if (path.endsWith('/invoke-stream') && req.method === 'POST') {
       const body = await req.json();
-      const { prompt, model = "gpt-4o-mini", temperature = 0.2 } = body;
+      const { prompt, temperature = 0.2 } = body;
+
+      // Always use gpt-4o-mini - ignore any model parameter
+      const model = "gpt-4o-mini";
 
       if (!prompt) {
         return new Response(JSON.stringify({
@@ -1523,7 +1524,8 @@ Always start by calling the appropriate tool(s) to gather information, then prov
               errorStack: error?.stack || 'N/A',
               timestamp: new Date().toISOString()
             });
-            sendEvent('error', { message: String(error) });
+            // Send the actual error message, not just String(error)
+            sendEvent('error', { message: error?.message || String(error) });
             controller.close();
           }
         }
