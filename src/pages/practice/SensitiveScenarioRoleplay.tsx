@@ -12,6 +12,7 @@ import {
   SensitiveScenarioEvaluation
 } from '@/services/sensitiveScenarioService';
 import { useAuth } from '@/contexts/AuthContext';
+import { getCurrentTopicProgress, updateCurrentTopic } from '@/utils/progressTracker';
 
 interface ExerciseCompletion {
   exercise_completed: boolean;
@@ -56,6 +57,7 @@ export default function SensitiveScenarioRoleplay() {
   const [recordingStartTime, setRecordingStartTime] = useState<number>(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [lastCompletedScenarioId, setLastCompletedScenarioId] = useState<number | null>(null);
 
   // Load scenarios on component mount
   useEffect(() => {
@@ -87,12 +89,40 @@ export default function SensitiveScenarioRoleplay() {
     loadScenarios();
   }, []);
 
+  // Fetch current progress on mount
+  useEffect(() => {
+    const fetchProgress = async () => {
+      if (!user?.id) return;
+
+      try {
+        const progressData = await getCurrentTopicProgress(user.id, 6, 2); // Stage 6, Exercise 2
+        
+        if (progressData.success && progressData.current_topic_id) {
+          setLastCompletedScenarioId(progressData.current_topic_id);
+        }
+      } catch (error) {
+        console.error('Error fetching progress:', error);
+      }
+    };
+
+    fetchProgress();
+  }, [user]);
+
   const [conversation, setConversation] = useState<RoleplayMessage[]>([]);
 
-  const handleScenarioClick = (scenario: SensitiveScenario) => {
+  const handleScenarioClick = async (scenario: SensitiveScenario) => {
     setSelectedScenario(scenario);
     setHasStarted(true);
     setShowFeedback(true);
+
+    // Update progress when scenario is selected
+    if (user?.id && scenario.id) {
+      try {
+        await updateCurrentTopic(user.id, 6, 2, scenario.id); // Stage 6, Exercise 2
+      } catch (error) {
+        console.error('Error updating progress:', error);
+      }
+    }
   };
 
   const handleStartRoleplay = () => {
@@ -396,44 +426,57 @@ export default function SensitiveScenarioRoleplay() {
           <div className="px-4 sm:px-6 pb-8 space-y-6">
             {/* Scenario Selection */}
             <div className="text-center">
-              <p className="text-muted-foreground text-sm sm:text-lg">Click on a scenario to start the roleplay immediately</p>
+              <p className="text-muted-foreground text-sm sm:text-base">Click on a scenario to start the roleplay immediately</p>
             </div>
 
             {scenarios.length > 0 ? (
               <div className="space-y-4">
-                {scenarios.map((scenario, index) => (
+                {scenarios.map((scenario, index) => {
+                  const isCompleted = lastCompletedScenarioId !== null && scenario.id < lastCompletedScenarioId;
+                  return (
                     <Card 
                       key={scenario.id}
-                      className="cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden"
+                      className={`cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden ${
+                        isCompleted ? 'border-2 border-primary/50' : ''
+                      }`}
                       onClick={() => handleScenarioClick(scenario)}
                     >
                       <CardContent className="p-5 sm:p-6">
-                        <div className="flex items-center space-x-3 sm:space-x-4">
+                        <div className="flex flex-col sm:flex-row items-start gap-4">
                           <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center flex-shrink-0 border border-primary/30">
                             <Users className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                               <div className="flex-1">
                                 <span className="font-semibold text-primary text-sm sm:text-base">Scenario:</span> {scenario.scenario || scenario.context || scenario.description || 'No content available'}
                               </div>
-                              {(scenario.difficulty || scenario.difficulty_level) && (
-                                <span className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium ml-3 sm:ml-4 flex-shrink-0 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm ${
-                                  (scenario.difficulty === 'Advanced' || scenario.difficulty_level === 'Advanced')
-                                    ? 'text-red-600 dark:text-red-400' 
-                                    : (scenario.difficulty === 'Intermediate' || scenario.difficulty_level === 'Intermediate')
-                                    ? 'text-orange-600 dark:text-orange-400'
-                                    : 'text-green-600 dark:text-green-400'
-                                }`}>
-                                  {scenario.difficulty || scenario.difficulty_level}
-                                </span>
-                              )}
+                              <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
+                                {isCompleted && (
+                                  <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-primary text-white text-xs">
+                                    <CheckCircle className="h-3 w-3" />
+                                    <span>Completed</span>
+                                  </div>
+                                )}
+                                {(scenario.difficulty || scenario.difficulty_level) && (
+                                  <span className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium flex-shrink-0 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm ${
+                                    (scenario.difficulty === 'Advanced' || scenario.difficulty_level === 'Advanced')
+                                      ? 'text-red-600 dark:text-red-400' 
+                                      : (scenario.difficulty === 'Intermediate' || scenario.difficulty_level === 'Intermediate')
+                                      ? 'text-orange-600 dark:text-orange-400'
+                                      : 'text-green-600 dark:text-green-400'
+                                  }`}>
+                                    {scenario.difficulty || scenario.difficulty_level}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
@@ -449,30 +492,30 @@ export default function SensitiveScenarioRoleplay() {
 
             {/* Roleplay Guidelines */}
             <Card className="border-0 bg-gradient-to-br from-muted/30 to-muted/50 rounded-2xl shadow-lg">
-              <CardContent className="p-6">
-                <h3 className="text-xl font-semibold mb-4 text-primary">Roleplay Guidelines</h3>
+              <CardContent className="p-5 sm:p-6">
+                <h3 className="text-lg sm:text-xl font-semibold mb-4 text-primary">Roleplay Guidelines</h3>
                 <div className="space-y-3">
                   <div className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
-                    <p className="text-muted-foreground text-base">
+                    <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
+                    <p className="text-muted-foreground text-sm sm:text-base">
                       Focus on emotional intelligence and empathy in your responses
                     </p>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
-                    <p className="text-muted-foreground text-base">
+                    <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
+                    <p className="text-muted-foreground text-sm sm:text-base">
                       Use diplomatic language and consider cultural sensitivities
                     </p>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
-                    <p className="text-muted-foreground text-base">
+                    <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
+                    <p className="text-muted-foreground text-sm sm:text-base">
                       Practice active listening and validate others' perspectives
                     </p>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
-                    <p className="text-muted-foreground text-base">
+                    <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
+                    <p className="text-muted-foreground text-sm sm:text-base">
                       Aim for win-win solutions and constructive outcomes
                     </p>
                   </div>
@@ -482,16 +525,16 @@ export default function SensitiveScenarioRoleplay() {
 
             {/* Warning Notice */}
             <Card className="border-0 bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-2xl shadow-lg">
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center mt-1">
+              <CardContent className="p-5 sm:p-6">
+                <div className="flex items-start space-x-3 sm:space-x-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center mt-1 flex-shrink-0">
                     <AlertTriangle className="h-5 w-5 text-white" />
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2 text-lg">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2 text-base sm:text-lg">
                       Sensitive Content Notice
                     </h4>
-                    <p className="text-yellow-700 dark:text-yellow-300 text-base">
+                    <p className="text-yellow-700 dark:text-yellow-300 text-sm sm:text-base">
                       These scenarios involve complex emotional and professional situations. Practice with respect and cultural awareness.
                     </p>
                   </div>
@@ -538,7 +581,7 @@ export default function SensitiveScenarioRoleplay() {
         </div>
 
         {/* Main Content Area */}
-        <div className="px-6 pb-8 space-y-6">
+        <div className="px-4 sm:px-6 pb-8 space-y-6">
 
                       {/* Current Scenario */}
             {selectedScenario && (
@@ -547,28 +590,28 @@ export default function SensitiveScenarioRoleplay() {
                 <Card className="border-0 bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-3xl shadow-xl overflow-hidden backdrop-blur-sm">
                   <CardContent className="p-0">
                     {/* Header Section */}
-                    <div className="bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20 p-6 border-b border-primary/10">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg">
-                            <Users className="h-6 w-6 text-white" />
+                    <div className="bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20 p-4 sm:p-6 border-b border-primary/10">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center space-x-3 sm:space-x-4 flex-1">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                            <Users className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                           </div>
-                          <div>
-                            <h2 className="text-xl sm:text-2xl font-bold text-primary">
+                          <div className="flex-1 min-w-0">
+                            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-primary">
                               Sensitive Scenario Practice
                             </h2>
-                            <p className="text-primary/70 text-sm">
+                            <p className="text-primary/70 text-xs sm:text-sm">
                               Handle this situation with empathy and professionalism
                             </p>
                           </div>
                         </div>
                         
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center gap-3 flex-shrink-0 flex-wrap">
                           {/* Audio Button */}
                           <Button
                             onClick={handlePlayAudio}
                             disabled={isLoadingAudio}
-                            className={`w-12 h-12 rounded-full shadow-lg transition-all duration-300 ${
+                            className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-lg transition-all duration-300 ${
                               isLoadingAudio
                                 ? 'bg-gray-500 cursor-not-allowed text-white'
                                 : isPlayingAudio
@@ -578,17 +621,17 @@ export default function SensitiveScenarioRoleplay() {
                             size="icon"
                           >
                             {isLoadingAudio ? (
-                              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                             ) : isPlayingAudio ? (
-                              <Pause className="w-5 h-5" />
+                              <Pause className="w-4 h-4 sm:w-5 sm:h-5" />
                             ) : (
-                              <Play className="w-5 h-5" />
+                              <Play className="w-4 h-4 sm:w-5 sm:h-5" />
                             )}
                           </Button>
                           
                           {/* Difficulty Badge */}
                           {(selectedScenario.difficulty || selectedScenario.difficulty_level) && (
-                            <span className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide ${
+                            <span className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-wide ${
                               (selectedScenario.difficulty === 'Advanced' || selectedScenario.difficulty_level === 'Advanced')
                                 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' 
                                 : (selectedScenario.difficulty === 'Intermediate' || selectedScenario.difficulty_level === 'Intermediate')
@@ -603,17 +646,17 @@ export default function SensitiveScenarioRoleplay() {
                     </div>
 
                     {/* Scenario Content */}
-                    <div className="p-6">
-                      <div className="bg-gradient-to-br from-white/80 to-white/60 dark:from-gray-800/80 dark:to-gray-800/60 backdrop-blur-sm p-6 rounded-2xl border border-primary/20 shadow-inner">
-                        <div className="flex items-start space-x-4">
-                          <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-primary/30 rounded-xl flex items-center justify-center flex-shrink-0">
-                            <AlertTriangle className="h-5 w-5 text-primary" />
+                    <div className="p-4 sm:p-6">
+                      <div className="bg-gradient-to-br from-white/80 to-white/60 dark:from-gray-800/80 dark:to-gray-800/60 backdrop-blur-sm p-4 sm:p-6 rounded-2xl border border-primary/20 shadow-inner">
+                        <div className="flex items-start space-x-3 sm:space-x-4">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-primary/20 to-primary/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                           </div>
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-primary mb-3 text-lg">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-primary mb-3 text-base sm:text-lg">
                               Scenario
                             </h3>
-                            <p className="text-foreground leading-relaxed text-base">
+                            <p className="text-foreground leading-relaxed text-sm sm:text-base break-words">
                               {(selectedScenario as any).scenario || selectedScenario.context || 'No scenario description available'}
                             </p>
                           </div>
@@ -626,26 +669,26 @@ export default function SensitiveScenarioRoleplay() {
               {/* Expected Keywords Section */}
               {selectedScenario.expected_keywords && selectedScenario.expected_keywords.length > 0 && (
                 <Card className="border-0 bg-gradient-to-br from-[#1582B4]/5 via-[#1582B4]/10 to-[#1582B4]/5 rounded-3xl shadow-xl overflow-hidden backdrop-blur-sm">
-                  <CardContent className="p-6">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-[#1582B4]/20 to-[#1582B4]/30 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <Zap className="h-5 w-5 text-[#1582B4]" />
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-start space-x-3 sm:space-x-4">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-[#1582B4]/20 to-[#1582B4]/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-[#1582B4]" />
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-[#1582B4] mb-3 text-lg">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-[#1582B4] mb-3 text-base sm:text-lg">
                           Key Concepts to Include
                         </h3>
                         <div className="flex flex-wrap gap-2 mb-4">
                           {selectedScenario.expected_keywords.map((keyword, index) => (
                             <span 
                               key={index}
-                              className="px-3 py-2 bg-gradient-to-r from-[#1582B4]/10 to-[#1582B4]/20 text-[#1582B4] text-sm rounded-full border border-[#1582B4]/20 font-medium hover:bg-[#1582B4]/20 transition-colors duration-200"
+                              className="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-gradient-to-r from-[#1582B4]/10 to-[#1582B4]/20 text-[#1582B4] text-xs sm:text-sm rounded-full border border-[#1582B4]/20 font-medium hover:bg-[#1582B4]/20 transition-colors duration-200"
                             >
                               {keyword}
                             </span>
                           ))}
                         </div>
-                        <p className="text-muted-foreground text-sm leading-relaxed">
+                        <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed">
                           Incorporate these concepts naturally to demonstrate professional communication skills.
                         </p>
                       </div>
@@ -663,12 +706,12 @@ export default function SensitiveScenarioRoleplay() {
           {/* Evaluation Loading State */}
           {isEvaluating && (
             <Card className="mb-6 border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
-              <CardContent className="p-6 text-center">
+              <CardContent className="p-5 sm:p-6 text-center">
                 <div className="flex flex-col items-center justify-center space-y-4">
-                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                  <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 animate-spin text-primary" />
                   <div>
-                    <h4 className="font-medium text-primary text-lg">Evaluating Your Response</h4>
-                    <p className="text-muted-foreground text-base">
+                    <h4 className="font-medium text-primary text-base sm:text-lg">Evaluating Your Response</h4>
+                    <p className="text-muted-foreground text-sm sm:text-base">
                       Please wait while we analyze your communication skills...
                     </p>
                   </div>
@@ -706,71 +749,71 @@ export default function SensitiveScenarioRoleplay() {
                 {/* Content */}
                 <div className="p-6 space-y-6">
                   {/* Scores Grid */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-4 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-primary/20">
-                      <div className={`text-2xl font-bold ${
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div className="text-center p-3 sm:p-4 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-primary/20">
+                      <div className={`text-lg sm:text-xl md:text-2xl font-bold ${
                         (evaluationResult.overall_score || 0) === 0 
                           ? 'text-red-600 dark:text-red-400' 
                           : 'text-primary'
                       }`}>
                         {evaluationResult.overall_score || 0}
                       </div>
-                      <div className="text-xs text-muted-foreground font-medium">Overall</div>
+                      <div className="text-[10px] sm:text-xs text-muted-foreground font-medium">Overall</div>
                     </div>
-                    <div className="text-center p-4 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-primary/20">
-                      <div className={`text-2xl font-bold ${
+                    <div className="text-center p-3 sm:p-4 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-primary/20">
+                      <div className={`text-lg sm:text-xl md:text-2xl font-bold ${
                         (evaluationResult.fluency_score || 0) === 0 
                           ? 'text-red-600 dark:text-red-400' 
                           : 'text-primary'
                       }`}>
                         {evaluationResult.fluency_score || 0}
                       </div>
-                      <div className="text-xs text-muted-foreground font-medium">Fluency</div>
+                      <div className="text-[10px] sm:text-xs text-muted-foreground font-medium">Fluency</div>
                     </div>
-                    <div className="text-center p-4 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-primary/20">
-                      <div className={`text-2xl font-bold ${
+                    <div className="text-center p-3 sm:p-4 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-primary/20">
+                      <div className={`text-lg sm:text-xl md:text-2xl font-bold ${
                         (evaluationResult.vocabulary_score || 0) === 0 
                           ? 'text-red-600 dark:text-red-400' 
                           : 'text-primary'
                       }`}>
                         {evaluationResult.vocabulary_score || 0}
                       </div>
-                      <div className="text-xs text-muted-foreground font-medium">Vocabulary</div>
+                      <div className="text-[10px] sm:text-xs text-muted-foreground font-medium">Vocabulary</div>
                     </div>
-                    <div className="text-center p-4 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-primary/20">
-                      <div className={`text-2xl font-bold ${
+                    <div className="text-center p-3 sm:p-4 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-primary/20">
+                      <div className={`text-lg sm:text-xl md:text-2xl font-bold ${
                         (evaluationResult.content_relevance_score || 0) === 0 
                           ? 'text-red-600 dark:text-red-400' 
                           : 'text-primary'
                       }`}>
                         {evaluationResult.content_relevance_score || 0}
                       </div>
-                      <div className="text-xs text-muted-foreground font-medium">Relevance</div>
+                      <div className="text-[10px] sm:text-xs text-muted-foreground font-medium">Relevance</div>
                     </div>
                   </div>
 
                   {/* Feedback */}
                   {evaluationResult.feedback && (
-                    <div className="bg-gradient-to-br from-primary/10 to-primary/20 p-4 rounded-xl border border-primary/20">
-                      <p className="text-sm text-primary leading-relaxed">
+                    <div className="bg-gradient-to-br from-primary/10 to-primary/20 p-3 sm:p-4 rounded-xl border border-primary/20">
+                      <p className="text-xs sm:text-sm text-primary leading-relaxed break-words">
                         {evaluationResult.feedback}
                       </p>
                     </div>
                   )}
 
                   {/* Strengths and Improvements */}
-                  <div className="grid md:grid-cols-2 gap-6">
+                  <div className="grid gap-4 sm:gap-6">
                     {evaluationResult.strengths && evaluationResult.strengths.length > 0 && (
-                      <div className="bg-white/60 dark:bg-gray-800/60 p-4 rounded-xl border border-primary/20">
-                        <h5 className="font-semibold text-primary mb-3 text-sm flex items-center">
-                          <CheckCircle className="h-4 w-4 mr-2" />
+                      <div className="bg-white/60 dark:bg-gray-800/60 p-3 sm:p-4 rounded-xl border border-primary/20">
+                        <h5 className="font-semibold text-primary mb-3 text-xs sm:text-sm flex items-center">
+                          <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
                           Strengths
                         </h5>
-                        <ul className="text-sm text-muted-foreground space-y-2">
+                        <ul className="text-xs sm:text-sm text-muted-foreground space-y-2">
                           {evaluationResult.strengths.slice(0, 3).map((strength: string, index: number) => (
                             <li key={index} className="flex items-start space-x-2">
-                              <span className="text-primary mt-0.5 font-bold">•</span>
-                              <span className="leading-relaxed">{strength}</span>
+                              <span className="text-primary mt-0.5 font-bold flex-shrink-0">•</span>
+                              <span className="leading-relaxed break-words">{strength}</span>
                             </li>
                           ))}
                         </ul>
@@ -778,16 +821,16 @@ export default function SensitiveScenarioRoleplay() {
                     )}
 
                     {evaluationResult.areas_for_improvement && evaluationResult.areas_for_improvement.length > 0 && (
-                      <div className="bg-white/60 dark:bg-gray-800/60 p-4 rounded-xl border border-orange-200/50 dark:border-orange-700/50">
-                        <h5 className="font-semibold text-orange-600 dark:text-orange-400 mb-3 text-sm flex items-center">
-                          <Target className="h-4 w-4 mr-2" />
+                      <div className="bg-white/60 dark:bg-gray-800/60 p-3 sm:p-4 rounded-xl border border-orange-200/50 dark:border-orange-700/50">
+                        <h5 className="font-semibold text-orange-600 dark:text-orange-400 mb-3 text-xs sm:text-sm flex items-center">
+                          <Target className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
                           Areas for Improvement
                         </h5>
-                        <ul className="text-sm text-muted-foreground space-y-2">
+                        <ul className="text-xs sm:text-sm text-muted-foreground space-y-2">
                           {evaluationResult.areas_for_improvement.slice(0, 3).map((area: string, index: number) => (
                             <li key={index} className="flex items-start space-x-2">
-                              <span className="text-orange-500 mt-0.5 font-bold">•</span>
-                              <span className="leading-relaxed">{area}</span>
+                              <span className="text-orange-500 mt-0.5 font-bold flex-shrink-0">•</span>
+                              <span className="leading-relaxed break-words">{area}</span>
                             </li>
                           ))}
                         </ul>

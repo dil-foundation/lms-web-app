@@ -37,6 +37,8 @@ export default function NewsSummaryChallenge() {
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [completedArticles, setCompletedArticles] = useState<Set<number>>(new Set());
+  const [currentTopicId, setCurrentTopicId] = useState<number>(1);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [evaluationResult, setEvaluationResult] = useState<NewsSummaryEvaluationResponse | null>(null);
@@ -52,11 +54,51 @@ export default function NewsSummaryChallenge() {
       try {
         setIsLoading(true);
         setError(null);
+        
         const items = await NewsSummaryService.getAll();
         if (items.length === 0) {
           throw new Error('No news items available');
         }
+        
+        // Fetch user's current topic progress if user is logged in
+        let resumeFromArticleIndex = 0;
+        if (user?.id) {
+          try {
+            const { getCurrentTopicProgress } = await import('@/utils/progressTracker');
+            const progressResponse = await getCurrentTopicProgress(
+              user.id,
+              4, // Stage 4
+              3  // Exercise 3 (NewsSummaryChallenge)
+            );
+            
+            if (progressResponse.success && progressResponse.data?.current_topic_id) {
+              const topicId = progressResponse.data.current_topic_id;
+              setCurrentTopicId(topicId);
+              console.log('📍 Current topic ID:', topicId);
+              
+              // Mark all articles before current topic as completed
+              const completed = new Set<number>();
+              for (let i = 1; i < topicId; i++) {
+                completed.add(i);
+              }
+              setCompletedArticles(completed);
+              console.log(`✅ Marked ${completed.size} articles as completed`);
+              
+              // Set resume index (topic ID is 1-based, index is 0-based)
+              resumeFromArticleIndex = Math.max(0, topicId - 1);
+            }
+          } catch (progressError) {
+            console.warn('Could not fetch current topic progress:', progressError);
+          }
+        }
+        
         setNewsItems(items);
+        
+        // Set current article index from resume
+        if (resumeFromArticleIndex > 0 && resumeFromArticleIndex < items.length) {
+          setCurrentItemIndex(resumeFromArticleIndex);
+          console.log(`✅ Resuming from article ${resumeFromArticleIndex + 1} of ${items.length}`);
+        }
       } catch (error) {
         console.error('Failed to load news items:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to load news items';
@@ -68,7 +110,7 @@ export default function NewsSummaryChallenge() {
     };
 
     loadNewsItems();
-  }, [retryCount]); // Add retryCount as dependency to re-trigger fetch
+  }, [retryCount, user?.id]); // Add retryCount as dependency to re-trigger fetch
 
   // Track time spent
   useEffect(() => {
@@ -324,21 +366,45 @@ export default function NewsSummaryChallenge() {
     console.log('✅ News summary challenge retry initiated');
   };
 
-  const handleNextArticle = () => {
+  const handleNextArticle = async () => {
     if (currentItemIndex < newsItems.length - 1) {
       stopAudio(); // Stop current audio
       resetRecording();
-      setCurrentItemIndex(currentItemIndex + 1);
+      const newIndex = currentItemIndex + 1;
+      setCurrentItemIndex(newIndex);
       setEvaluationResult(null);
+      
+      // Save progress
+      if (user?.id) {
+        try {
+          const { updateCurrentTopic } = await import('@/utils/progressTracker');
+          await updateCurrentTopic(user.id, 4, 3, newIndex + 1);
+          console.log(`Progress saved: Article ${newIndex + 1} of ${newsItems.length}`);
+        } catch (error) {
+          console.warn('Failed to save progress:', error);
+        }
+      }
     }
   };
 
-  const handlePreviousArticle = () => {
+  const handlePreviousArticle = async () => {
     if (currentItemIndex > 0) {
       stopAudio(); // Stop current audio
       resetRecording();
-      setCurrentItemIndex(currentItemIndex - 1);
+      const newIndex = currentItemIndex - 1;
+      setCurrentItemIndex(newIndex);
       setEvaluationResult(null);
+      
+      // Save progress
+      if (user?.id) {
+        try {
+          const { updateCurrentTopic } = await import('@/utils/progressTracker');
+          await updateCurrentTopic(user.id, 4, 3, newIndex + 1);
+          console.log(`Progress saved: Article ${newIndex + 1} of ${newsItems.length}`);
+        } catch (error) {
+          console.warn('Failed to save progress:', error);
+        }
+      }
     }
   };
 

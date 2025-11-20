@@ -239,6 +239,86 @@ interface UpdateProgressResponse {
 }
 
 /**
+ * Update user's current topic/prompt within a specific exercise
+ * This allows the user to resume from where they left off
+ */
+export const updateCurrentTopic = async (
+  userId: string, 
+  stageId: number, 
+  exerciseId: number,
+  topicId: number
+): Promise<UpdateProgressResponse> => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+    const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.GET_CURRENT_TOPIC}`, {
+      method: 'POST',
+      headers: getAuthHeadersWithAccept(),
+      body: JSON.stringify({
+        user_id: userId,
+        stage_id: stageId,
+        exercise_id: exerciseId,
+        topic_id: topicId
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'No response text');
+      throw new Error(`HTTP ${response.status}: ${response.statusText}${errorText ? ` - ${errorText}` : ''}`);
+    }
+
+    const responseText = await response.text();
+    
+    // Try to parse JSON response
+    let result: any;
+    try {
+      result = JSON.parse(responseText);
+    } catch (parseError) {
+      throw new Error('Invalid JSON response from server');
+    }
+
+    // Handle different response formats
+    if (result.success === false) {
+      return {
+        success: false,
+        error: result.message || result.error || 'Failed to update topic progress'
+      };
+    }
+
+    return {
+      success: true,
+      message: result.message || 'Topic progress updated successfully'
+    };
+
+  } catch (error) {
+    console.error('Error updating topic progress:', error);
+    
+    if (error.name === 'AbortError') {
+      return {
+        success: false,
+        error: 'Request timed out. Please check your internet connection.'
+      };
+    }
+    
+    if (error.message.includes('fetch')) {
+      return {
+        success: false,
+        error: 'Unable to connect to the server. Please check your internet connection.'
+      };
+    }
+    
+    return {
+      success: false,
+      error: error.message || 'Failed to update topic progress'
+    };
+  }
+};
+
+/**
  * Update user's current progress for a specific stage and exercise
  * This notifies the backend that the user has made progress
  */

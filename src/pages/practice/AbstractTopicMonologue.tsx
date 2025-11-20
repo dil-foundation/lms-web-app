@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Mic, BookOpen, GitBranch, Loader2, Play, Pause, Volume2, VolumeX, MicOff, CheckCircle, AlertCircle, XCircle, GraduationCap, Target, TrendingUp, MessageSquare, Trophy, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Mic, BookOpen, GitBranch, Loader2, Play, Pause, Volume2, VolumeX, MicOff, CheckCircle, AlertCircle, XCircle, GraduationCap, Target, TrendingUp, MessageSquare, Trophy, RotateCcw, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AbstractTopicsService, { AbstractTopic, AbstractTopicEvaluationResponse, CurrentTopicResponse } from '@/services/abstractTopicsService';
 
@@ -36,6 +36,8 @@ export default function AbstractTopicMonologue() {
   const [currentTopicIndex, setCurrentTopicIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [completedTopics, setCompletedTopics] = useState<Set<number>>(new Set());
+  const [currentTopicId, setCurrentTopicId] = useState<number>(1);
 
   // Audio recording state
   const { isRecording, audioBlob, error: recordingError, startRecording, stopRecording, resetRecording } = useAudioRecorder();
@@ -217,11 +219,40 @@ export default function AbstractTopicMonologue() {
         setIsLoading(true);
         setError(null);
         
-        // Fetch topics and current topic position simultaneously
-        const [fetchedTopics, currentTopicResponse] = await Promise.all([
-          AbstractTopicsService.getAll(),
-          user ? AbstractTopicsService.getCurrentTopic(user.id) : Promise.resolve({ success: false } as CurrentTopicResponse)
-        ]);
+        // Fetch topics
+        const fetchedTopics = await AbstractTopicsService.getAll();
+        
+        // Fetch user's current topic progress if user is logged in
+        let resumeFromTopicIndex = 0;
+        if (user?.id) {
+          try {
+            const { getCurrentTopicProgress } = await import('@/utils/progressTracker');
+            const progressResponse = await getCurrentTopicProgress(
+              user.id,
+              4, // Stage 4
+              1  // Exercise 1 (AbstractTopicMonologue)
+            );
+            
+            if (progressResponse.success && progressResponse.data?.current_topic_id) {
+              const topicId = progressResponse.data.current_topic_id;
+              setCurrentTopicId(topicId);
+              console.log('📍 Current topic ID:', topicId);
+              
+              // Mark all topics before current topic as completed
+              const completed = new Set<number>();
+              for (let i = 1; i < topicId; i++) {
+                completed.add(i);
+              }
+              setCompletedTopics(completed);
+              console.log(`✅ Marked ${completed.size} topics as completed`);
+              
+              // Set resume index (topic ID is 1-based, index is 0-based)
+              resumeFromTopicIndex = Math.max(0, topicId - 1);
+            }
+          } catch (progressError) {
+            console.warn('Could not fetch current topic progress:', progressError);
+          }
+        }
         
         setTopics(fetchedTopics);
         
@@ -268,6 +299,12 @@ export default function AbstractTopicMonologue() {
           setTopics(fallbackTopics);
         }
 
+        // Set current topic index from resume
+        if (resumeFromTopicIndex > 0 && resumeFromTopicIndex < fetchedTopics.length) {
+          setCurrentTopicIndex(resumeFromTopicIndex);
+          console.log(`✅ Resuming from topic ${resumeFromTopicIndex + 1} of ${fetchedTopics.length}`);
+        }
+        
         // Set current topic index based on user's progress
         const topicsToUse = fetchedTopics.length > 0 ? fetchedTopics : [
           { 
@@ -307,38 +344,6 @@ export default function AbstractTopicMonologue() {
             vocabulary_focus: ["connection", "communication", "virtual", "interaction", "community"]
           }
         ];
-        
-        if (currentTopicResponse.success && currentTopicResponse.current_topic) {
-          console.log('🎯 Setting current topic from user progress:', currentTopicResponse.current_topic);
-          
-          // Try to find the topic by ID first
-          const topicIndex = topicsToUse.findIndex(topic => 
-            topic.id === currentTopicResponse.current_topic!.topic_id
-          );
-          
-          if (topicIndex !== -1) {
-            console.log('✅ Found topic by ID, setting index to:', topicIndex);
-            setCurrentTopicIndex(topicIndex);
-            
-            // Show a brief message about resuming
-            if (topicIndex > 0) {
-              console.log(`🔄 Resuming from topic ${topicIndex + 1}: ${topicsToUse[topicIndex].title}`);
-            }
-          } else if (currentTopicResponse.current_topic.topic_index !== undefined) {
-            // Fallback to topic_index if provided and valid
-            const index = Math.max(0, Math.min(currentTopicResponse.current_topic.topic_index, topicsToUse.length - 1));
-            console.log('📍 Using topic_index from response:', index);
-            setCurrentTopicIndex(index);
-            
-            if (index > 0) {
-              console.log(`🔄 Resuming from topic ${index + 1}: ${topicsToUse[index].title}`);
-            }
-          } else {
-            console.log('🔄 No valid topic found in progress, staying at index 0');
-          }
-        } else {
-          console.log('🆕 No current topic found, starting from beginning');
-        }
         
       } catch (err) {
         console.error('Failed to fetch topics:', err);
@@ -828,10 +833,22 @@ export default function AbstractTopicMonologue() {
         {!isLoading && topics.length > 1 && !isRecording && (
           <div className="flex justify-between">
             <Button
-              onClick={() => {
+              onClick={async () => {
                 stopAudio();
-                setCurrentTopicIndex(Math.max(0, currentTopicIndex - 1));
+                const newIndex = Math.max(0, currentTopicIndex - 1);
+                setCurrentTopicIndex(newIndex);
                 scrollToTop();
+                
+                // Save progress
+                if (user?.id) {
+                  try {
+                    const { updateCurrentTopic } = await import('@/utils/progressTracker');
+                    await updateCurrentTopic(user.id, 4, 1, newIndex + 1);
+                    console.log(`Progress saved: Topic ${newIndex + 1} of ${topics.length}`);
+                  } catch (error) {
+                    console.warn('Failed to save progress:', error);
+                  }
+                }
               }}
               disabled={currentTopicIndex === 0}
               variant="outline"
@@ -840,10 +857,22 @@ export default function AbstractTopicMonologue() {
               Previous
             </Button>
             <Button
-              onClick={() => {
+              onClick={async () => {
                 stopAudio();
-                setCurrentTopicIndex(Math.min(topics.length - 1, currentTopicIndex + 1));
+                const newIndex = Math.min(topics.length - 1, currentTopicIndex + 1);
+                setCurrentTopicIndex(newIndex);
                 scrollToTop();
+                
+                // Save progress
+                if (user?.id) {
+                  try {
+                    const { updateCurrentTopic } = await import('@/utils/progressTracker');
+                    await updateCurrentTopic(user.id, 4, 1, newIndex + 1);
+                    console.log(`Progress saved: Topic ${newIndex + 1} of ${topics.length}`);
+                  } catch (error) {
+                    console.warn('Failed to save progress:', error);
+                  }
+                }
               }}
               disabled={currentTopicIndex === topics.length - 1}
               variant="outline"
