@@ -481,7 +481,7 @@ Generate a JSON response that ALWAYS includes all three tables:
 CRITICAL: Always include all three tables in your response, even if some seem less relevant.`
 
         const queryResponse = await openai.chat.completions.create({
-          model: 'gpt-4',
+          model: 'gpt-4o-mini',
           messages: [
             { role: 'system', content: queryGenerationPrompt }
           ],
@@ -566,7 +566,7 @@ IMPORTANT: If the query results contain specific FAQ answers that directly addre
 Provide ONLY the response text, no JSON or additional formatting.`
 
         const finalResponse = await openai.chat.completions.create({
-          model: 'gpt-4',
+          model: 'gpt-4o-mini',
           messages: [
             { role: 'system', content: responsePrompt },
             ...conversationHistory,
