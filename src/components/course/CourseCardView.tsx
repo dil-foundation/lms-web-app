@@ -37,6 +37,7 @@ interface Course {
   imageUrl: string;
   imagePath?: string;
   totalStudents: number;
+  totalTeachers: number;
   totalLessons: number;
   authorName: string;
   authorId: string;
@@ -186,11 +187,20 @@ export const CourseCardView: React.FC<CourseCardViewProps> = ({
 
               {/* Detailed Course Stats */}
               <div className="space-y-3 text-sm text-muted-foreground mb-6 flex-1 min-h-0">
-                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                  <Users className="w-4 h-4 text-primary" />
-                  <div>
-                    <div className="font-medium text-foreground">Students Enrolled</div>
-                    <div className="text-xs">{course.totalStudents} students</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg">
+                    <Users className="w-4 h-4 text-primary flex-shrink-0" />
+                    <div>
+                      <div className="text-xs font-medium text-foreground">{course.totalStudents}</div>
+                      <div className="text-[10px]">Students</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg">
+                    <Users className="w-4 h-4 text-green-600 flex-shrink-0" />
+                    <div>
+                      <div className="text-xs font-medium text-foreground">{course.totalTeachers}</div>
+                      <div className="text-[10px]">Teachers</div>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">

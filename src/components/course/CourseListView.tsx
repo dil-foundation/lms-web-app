@@ -35,6 +35,7 @@ interface Course {
   imageUrl: string;
   imagePath?: string;
   totalStudents: number;
+  totalTeachers: number;
   totalLessons: number;
   authorName: string;
   authorId: string;
@@ -199,14 +200,18 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
                 </div>
 
                 {/* Course Stats */}
-                <div className="flex items-center justify-between text-xs text-muted-foreground border-t border-border/50 pt-2">
+                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground border-t border-border/50 pt-2">
                   <div className="flex items-center gap-1">
-                    <Users className="w-3 h-3" />
-                    <span>{course.totalStudents}</span>
+                    <Users className="w-3 h-3 text-blue-600" />
+                    <span>{course.totalStudents} students</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Users className="w-3 h-3 text-green-600" />
+                    <span>{course.totalTeachers} teachers</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <BookOpen className="w-3 h-3" />
-                    <span>{course.totalLessons}</span>
+                    <span>{course.totalLessons} lessons</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
@@ -268,16 +273,16 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
                   {/* Course Stats */}
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
-                      <Users className="w-3 h-3" />
+                      <Users className="w-3 h-3 text-blue-600" />
                       <span>{course.totalStudents} students</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Users className="w-3 h-3 text-green-600" />
+                      <span>{course.totalTeachers} teachers</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <BookOpen className="w-3 h-3" />
                       <span>{course.totalLessons} lessons</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      <span>{course.duration}</span>
                     </div>
                   </div>
                 </div>
