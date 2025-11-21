@@ -93,6 +93,7 @@ interface Course {
   imageUrl: string;
   imagePath?: string;
   totalStudents: number;
+  totalTeachers: number;
   totalLessons: number;
   authorName: string;
   authorId: string;
@@ -141,9 +142,15 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
           <span className="truncate">{course.duration}</span>
           <span className="truncate">{course.totalLessons} lessons</span>
         </div>
-        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-          <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-          <span className="truncate">{course.totalStudents} students</span>
+        <div className="flex items-center justify-between gap-2 text-xs sm:text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+            <span className="truncate">{course.totalStudents} students</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+            <span className="truncate">{course.totalTeachers} teachers</span>
+          </div>
         </div>
       </CardContent>
       <CardFooter className="p-3 sm:p-4 pt-0 mt-auto">
@@ -380,7 +387,7 @@ const CourseManagement = () => {
             first_name,
             last_name
           ),
-          members:course_members (id),
+          members:course_members (id, role),
           sections:course_sections(lessons:course_lessons(id))
         `, { count: 'exact' });
 
@@ -418,13 +425,18 @@ const CourseManagement = () => {
             }
           }
 
+          // Separate students and teachers from members
+          const students = (course.members || []).filter((member: any) => member.role === 'student');
+          const teachers = (course.members || []).filter((member: any) => member.role === 'teacher');
+
           return {
             id: course.id,
             title: course.title,
             status: course.status,
             imageUrl: imageUrl,
             imagePath: course.image_url,
-            totalStudents: (course.members || []).length,
+            totalStudents: students.length,
+            totalTeachers: teachers.length,
             totalLessons: (course.sections || []).reduce((acc: number, section: any) => acc + (section.lessons || []).length, 0),
             authorName: authorProfile ? `${authorProfile.first_name} ${authorProfile.last_name}`.trim() : 'N/A',
             authorId: course.author_id,
