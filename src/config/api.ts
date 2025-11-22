@@ -113,6 +113,8 @@ export const API_ENDPOINTS = {
   // AI Reports endpoints
   AI_REPORTS_ASSISTANT: '/api/ai/reports-assistant',
   AI_REPORTS_CONTEXT: '/api/reports/context',
+  // Text-to-Speech endpoint
+  TTS: '/tts',
 } as const;
 
 // Health check function

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import {
     ArrowLeft, BookOpen, ChevronRight, Play, Eye, User, Handshake, Smile, Search, Users, Hand, HelpCircle, Edit, MessageCircle, Tag, SmilePlus, Smartphone, Inbox, Settings, Bell, ClipboardList, CheckSquare, Puzzle, PartyPopper, LucideIcon
 } from 'lucide-react';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
+import { textToSpeech } from '@/utils/tts';
 
 // ============================================
 // SUPABASE IMAGE HELPERS FOR LESSON 4
@@ -177,49 +178,27 @@ const SightWordsLesson = () => {
     const [subStep, setSubStep] = useState(0);
     const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
     const [loadingAudio, setLoadingAudio] = useState<string | null>(null);
-    const { playAudio } = useAudioPlayer();
+    const { playAudio, stopAudio } = useAudioPlayer();
 
-    // Cleanup effect to stop speech synthesis on component unmount
-    useEffect(() => {
-        return () => {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-            }
-        };
-    }, []);
-
-    // Function to play text-to-speech audio
+    // Function to play text-to-speech audio using /tts API
     const handlePlayAudio = async (word: string) => {
         if (loadingAudio) return; // Prevent multiple simultaneous plays
         
         setLoadingAudio(word);
         try {
-            // Use browser's Speech Synthesis API
-            if ('speechSynthesis' in window) {
-                // Stop any current speech
-                window.speechSynthesis.cancel();
-                
-                const utterance = new SpeechSynthesisUtterance(word);
-                utterance.lang = 'en-US';
-                utterance.rate = 0.8; // Slightly slower for learning
-                utterance.pitch = 1;
-                utterance.volume = 1;
-                
-                // Set up event handlers
-                utterance.onend = () => {
-                    setLoadingAudio(null);
-                };
-                
-                utterance.onerror = () => {
-                    setLoadingAudio(null);
-                    console.error('Speech synthesis error');
-                };
-                
-                window.speechSynthesis.speak(utterance);
-            } else {
-                console.warn('Speech synthesis not supported');
+            // Stop any currently playing audio
+            stopAudio();
+            
+            // Call TTS API to get audio URL
+            const audioUrl = await textToSpeech(word);
+            
+            // Play the audio using the audio player hook
+            await playAudio(audioUrl);
+            
+            // Clean up loading state after audio starts playing
+            setTimeout(() => {
                 setLoadingAudio(null);
-            }
+            }, 100);
         } catch (error) {
             console.error('Error playing audio:', error);
             setLoadingAudio(null);
