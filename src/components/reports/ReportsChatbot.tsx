@@ -113,12 +113,12 @@ export const ReportsChatbot: React.FC<ReportsChatbotProps> = ({
 
       console.log('📝 sendMessageWithPrompt - Sending conversation history:', conversationHistory.length, 'messages');
       
-      const aiResponse = await ReportsAIService.generateReportResponse(prompt, undefined, conversationHistory);
-      
+      // ReportsAIService removed - using placeholder response
+      // TODO: Implement proper backend API call through Edge Function
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: aiResponse.response || 'Sorry, I could not generate a response.',
+        content: `Report request received: "${prompt}"\n\nThe reporting system is being reimplemented. This placeholder confirms your request was processed.\n\n🔄 Status: Implementation in progress\n📝 Query: ${prompt}\n⏰ Time: ${new Date().toLocaleString()}`,
         timestamp: new Date()
       };
 
