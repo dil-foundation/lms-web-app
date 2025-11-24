@@ -365,35 +365,35 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8">
       {/* Premium Header Section */}
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-4 md:p-8 rounded-3xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-                <Download className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-2xl sm:rounded-3xl"></div>
+        <div className="relative p-3 sm:p-4 md:p-8 rounded-2xl sm:rounded-3xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+            <div className="flex items-start sm:items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                <Download className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-2xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
                   Offline Learning
                 </h1>
-                <p className="text-sm md:text-lg text-muted-foreground font-light">
+                <p className="text-xs sm:text-sm md:text-lg text-muted-foreground font-light mt-0.5 sm:mt-1">
                   Download your courses for offline access
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-start sm:self-auto">
               {isOnline ? (
-                <Badge variant="default" className="bg-green-100 text-green-800 border-green-200 shadow-sm">
-                  <Wifi className="w-3 h-3 mr-1" />
+                <Badge variant="default" className="bg-green-100 text-green-800 border-green-200 shadow-sm text-[10px] sm:text-xs">
+                  <Wifi className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
                   Online
                 </Badge>
               ) : (
-                <Badge variant="destructive" className="shadow-sm">
-                  <WifiOff className="w-3 h-3 mr-1" />
+                <Badge variant="destructive" className="shadow-sm text-[10px] sm:text-xs">
+                  <WifiOff className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
                   Offline
                 </Badge>
               )}
@@ -403,21 +403,21 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
       </div>
 
       {/* Storage Usage */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <HardDrive className="w-5 h-5" />
+      <Card className="rounded-xl sm:rounded-2xl">
+        <CardHeader className="pb-3 p-3 sm:p-4 md:p-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <HardDrive className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
             Storage Usage
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
           <div className="space-y-2">
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-xs sm:text-sm">
               <span>{storageUsed} MB used</span>
               <span>{storageLimit} MB available</span>
             </div>
-            <Progress value={storagePercentage} className="h-2" />
-            <p className="text-xs text-muted-foreground">
+            <Progress value={storagePercentage} className="h-1.5 sm:h-2" />
+            <p className="text-[10px] sm:text-xs text-muted-foreground">
               {Math.round(storageLimit - storageUsed)} MB remaining
             </p>
           </div>
@@ -425,22 +425,23 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
       </Card>
 
       {/* Main Content Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
         {isOnline ? (
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="available" className="flex items-center gap-2">
-              <Download className="w-4 h-4" />
-              Available for Download ({enrolledCourses.length})
+          <TabsList className="grid w-full grid-cols-2 h-auto sm:h-10">
+            <TabsTrigger value="available" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 py-2">
+              <Download className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden xs:inline">Available for Download</span>
+              <span className="xs:hidden">Available</span> ({enrolledCourses.length})
             </TabsTrigger>
-            <TabsTrigger value="downloaded" className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
+            <TabsTrigger value="downloaded" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 py-2">
+              <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
               Downloaded ({downloadedCourses.length})
             </TabsTrigger>
           </TabsList>
         ) : (
-          <TabsList className="grid w-full grid-cols-1">
-            <TabsTrigger value="downloaded" className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
+          <TabsList className="grid w-full grid-cols-1 h-auto sm:h-10">
+            <TabsTrigger value="downloaded" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 py-2">
+              <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
               Downloaded ({downloadedCourses.length})
             </TabsTrigger>
           </TabsList>
@@ -448,57 +449,57 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
 
         {/* Available Courses Tab - Only show when online */}
         {isOnline && (
-          <TabsContent value="available" className="space-y-4">
+          <TabsContent value="available" className="space-y-3 sm:space-y-4">
           {enrolledCourses.length === 0 ? (
             <EmptyState
-              icon={<BookOpen className="h-8 w-8 text-muted-foreground" />}
+              icon={<BookOpen className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />}
               title="No courses available"
               description="You don't have any enrolled courses to download yet."
             />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {enrolledCourses.map((course) => (
-                <Card key={course.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
+                <Card key={course.id} className="hover:shadow-md transition-shadow rounded-lg sm:rounded-xl">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
                       {/* Course Image */}
                       <img
                         src={course.image_url}
                         alt={course.title}
-                        className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                        className="w-full sm:w-14 h-32 sm:h-14 rounded-lg object-cover flex-shrink-0"
                       />
                       
                       {/* Course Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1 min-w-0 w-full">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-2">
                           <div className="min-w-0 flex-1">
-                            <h3 className="font-semibold text-base line-clamp-1">{course.title}</h3>
-                            <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
+                            <h3 className="font-semibold text-sm sm:text-base line-clamp-1">{course.title}</h3>
+                            <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1 mt-0.5 sm:mt-1">
                               {course.subtitle}
                             </p>
                           </div>
-                          <Badge variant="outline" className="text-xs ml-3 flex-shrink-0">
+                          <Badge variant="outline" className="text-[10px] sm:text-xs self-start sm:ml-3 flex-shrink-0">
                             {course.total_lessons} lessons
                           </Badge>
                         </div>
                         
                         {/* Progress and Stats Row */}
-                        <div className="flex items-center gap-6 mb-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 mb-3">
                           <div className="flex-1">
-                            <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                            <div className="flex justify-between text-[10px] sm:text-xs text-muted-foreground mb-1">
                               <span>Progress</span>
                               <span>{course.progress}%</span>
                             </div>
-                            <Progress value={course.progress} className="h-2" />
+                            <Progress value={course.progress} className="h-1.5 sm:h-2" />
                           </div>
                           
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-3 sm:gap-4 text-[10px] sm:text-xs text-muted-foreground">
                             <div className="flex items-center gap-1">
-                              <CheckCircle className="w-3 h-3" />
+                              <CheckCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                               <span>{course.completed_lessons}/{course.total_lessons}</span>
                             </div>
                             {course.last_accessed && (
-                              <div className="flex items-center gap-1">
+                              <div className="hidden sm:flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
                                 <span>Last: {new Date(course.last_accessed).toLocaleDateString()}</span>
                               </div>
@@ -508,18 +509,18 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
                       </div>
 
                       {/* Action Button */}
-                     <div className="flex-shrink-0">
+                     <div className="flex-shrink-0 w-full sm:w-auto">
                        {downloadingCourses.has(course.id) ? (
-                         <div className="min-w-[140px]">
+                         <div className="w-full sm:min-w-[140px]">
                            <Button
                              disabled
                              size="sm"
-                             className="w-full mb-1"
+                             className="w-full mb-1 h-9 sm:h-10 text-xs sm:text-sm"
                            >
-                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                             <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-2 animate-spin" />
                              Downloading...
                            </Button>
-                           <div className="text-xs text-center text-muted-foreground">
+                           <div className="text-[10px] sm:text-xs text-center text-muted-foreground">
                              {(downloadProgress[course.id] && !isNaN(downloadProgress[course.id])) ? downloadProgress[course.id].toFixed(0) : 0}%
                            </div>
                            <Progress 
@@ -532,9 +533,9 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
                            onClick={() => handleViewCourse(course.id)}
                            size="sm"
                            variant="outline"
-                           className="min-w-[140px]"
+                           className="w-full sm:min-w-[140px] h-9 sm:h-10 text-xs sm:text-sm"
                          >
-                           <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+                           <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-2 text-green-500" />
                            Downloaded
                          </Button>
                        ) : (
@@ -542,9 +543,9 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
                            onClick={() => handleDownloadCourse(course.id)}
                            disabled={!isOnline}
                            size="sm"
-                           className="min-w-[140px]"
+                           className="w-full sm:min-w-[140px] h-9 sm:h-10 text-xs sm:text-sm"
                          >
-                           <Download className="w-4 h-4 mr-2" />
+                           <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                            Download Course
                          </Button>
                        )}
@@ -559,83 +560,84 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
         )}
 
         {/* Downloaded Courses Tab */}
-        <TabsContent value="downloaded" className="space-y-4">
+        <TabsContent value="downloaded" className="space-y-3 sm:space-y-4">
           {downloadedCourses.length === 0 ? (
             <EmptyState
-              icon={<Download className="h-8 w-8 text-muted-foreground" />}
+              icon={<Download className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />}
               title="No downloaded courses"
               description="Download some courses to access them offline."
             />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {downloadedCourses.map((course) => (
-                <Card key={course.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
+                <Card key={course.id} className="hover:shadow-md transition-shadow rounded-lg sm:rounded-xl">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
                       {/* Course Image */}
                       <img
                         src={course.image_url}
                         alt={course.title}
-                        className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                        className="w-full sm:w-14 h-32 sm:h-14 rounded-lg object-cover flex-shrink-0"
                       />
                       
                       {/* Course Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="mb-1">
-                          <h3 className="font-semibold text-base truncate">{course.title}</h3>
-                          <p className="text-sm text-muted-foreground truncate">{course.subtitle}</p>
+                      <div className="flex-1 min-w-0 w-full">
+                        <div className="mb-1 sm:mb-2">
+                          <h3 className="font-semibold text-sm sm:text-base truncate">{course.title}</h3>
+                          <p className="text-xs sm:text-sm text-muted-foreground truncate">{course.subtitle}</p>
                         </div>
 
                         {/* Compact Info Grid */}
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground">
                           <span>Size: {course.size}</span>
-                          <span>•</span>
-                          <span>Downloaded: {new Date(course.downloadDate).toLocaleDateString()}</span>
-                          <span>•</span>
+                          <span className="hidden xs:inline">•</span>
+                          <span className="hidden sm:inline">Downloaded: {new Date(course.downloadDate).toLocaleDateString()}</span>
+                          <span className="hidden sm:inline">•</span>
                           <span>Progress: {course.progress}%</span>
-                          <span>•</span>
+                          <span className="hidden xs:inline">•</span>
                           <span>Lessons: {course.completed_lessons}/{course.total_lessons}</span>
                         </div>
 
                         {/* Download Progress - Only show if downloading */}
                         {course.downloadStatus === 'downloading' && course.downloadProgress && (
                           <div className="mt-2">
-                            <div className="flex justify-between text-xs mb-1">
+                            <div className="flex justify-between text-[10px] sm:text-xs mb-1">
                               <span>Downloading...</span>
                               <span>{course.downloadProgress}%</span>
                             </div>
-                            <Progress value={course.downloadProgress} className="h-1.5" />
+                            <Progress value={course.downloadProgress} className="h-1 sm:h-1.5" />
                           </div>
                         )}
                       </div>
 
-                      {/* Status Badge */}
+                      {/* Status Badge - Hidden on mobile */}
                       {course.downloadStatus === 'completed' && (
-                        <Badge variant="outline" className="text-xs flex-shrink-0 bg-green-50 text-green-700 border-green-200 self-center">
+                        <Badge variant="outline" className="hidden sm:flex text-xs flex-shrink-0 bg-green-50 text-green-700 border-green-200">
                           <CheckCircle className="w-3 h-3 mr-1" />
                           Downloaded
                         </Badge>
                       )}
 
                       {/* Action Buttons */}
-                      <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
                         {course.downloadStatus === 'completed' && (
                           <>
                             <Button
                               onClick={() => handleViewCourse(course.id)}
                               size="sm"
-                              className="h-8"
+                              className="h-8 sm:h-9 flex-1 sm:flex-initial text-xs sm:text-sm"
                             >
-                              <Eye className="w-3.5 h-3.5 mr-1.5" />
-                              View Course
+                              <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1.5" />
+                              <span className="hidden sm:inline">View Course</span>
+                              <span className="sm:hidden">View</span>
                             </Button>
                             <Button
                               onClick={() => handleDeleteCourse(course.id)}
                               size="sm"
                               variant="outline"
-                              className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="h-8 sm:h-9 text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                             </Button>
                           </>
                         )}
@@ -646,18 +648,18 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
                               onClick={() => handlePauseResume(course.id, 'pause')}
                               size="sm"
                               variant="outline"
-                              className="h-8"
+                              className="h-8 sm:h-9 flex-1 sm:flex-initial text-xs sm:text-sm"
                             >
-                              <Pause className="w-3.5 h-3.5 mr-1.5" />
+                              <Pause className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1.5" />
                               Pause
                             </Button>
                             <Button
                               onClick={() => handleDeleteCourse(course.id)}
                               size="sm"
                               variant="outline"
-                              className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="h-8 sm:h-9 text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                             </Button>
                           </>
                         )}
@@ -668,18 +670,18 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
                               onClick={() => handleRetryDownload(course.id)}
                               size="sm"
                               variant="outline"
-                              className="h-8"
+                              className="h-8 sm:h-9 flex-1 sm:flex-initial text-xs sm:text-sm"
                             >
-                              <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                              <RotateCcw className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1.5" />
                               Retry
                             </Button>
                             <Button
                               onClick={() => handleDeleteCourse(course.id)}
                               size="sm"
                               variant="outline"
-                              className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="h-8 sm:h-9 text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                             </Button>
                           </>
                         )}

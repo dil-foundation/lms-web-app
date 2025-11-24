@@ -234,37 +234,80 @@ export const CourseCategories = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-                <BookCheck className="w-8 h-8 text-primary" />
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
+        <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl">
+          {/* Desktop Layout */}
+          <div className="hidden lg:flex lg:items-center lg:justify-between gap-3 lg:gap-4 overflow-hidden">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1 overflow-hidden max-w-[60%]">
+              <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0">
+                <BookCheck className="w-6 h-6 md:w-7 md:h-7 text-primary" />
               </div>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <h1 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
                   Course Categories
                 </h1>
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-xs md:text-sm lg:text-base xl:text-lg text-muted-foreground font-light mt-0.5 md:mt-1 break-words">
                   Manage course categories and organize your educational content
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-primary/20">
+            <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+              <Badge variant="secondary" className="px-2 py-0.5 bg-primary/10 text-primary border-primary/20 text-[10px] md:text-xs whitespace-nowrap">
                 <Sparkles className="h-3 w-3 mr-1" />
-                Content Management
+                <span className="hidden xl:inline">Content Management</span>
+                <span className="xl:hidden">Content</span>
               </Badge>
-              <Badge variant="outline" className="px-3 py-1">
+              <Badge variant="outline" className="px-2 py-0.5 text-[10px] md:text-xs whitespace-nowrap">
                 <Clock className="h-3 w-3 mr-1" />
-                Live Data
+                <span className="hidden xl:inline">Live Data</span>
+                <span className="xl:hidden">Live</span>
               </Badge>
               {!isViewOnly && (
                 <Button
                   onClick={() => setIsCreateDialogOpen(true)}
-                  className="bg-[#8DC63F] hover:bg-[#7AB82F] text-white"
+                  className="bg-[#8DC63F] hover:bg-[#7AB82F] text-white h-7 px-2 md:px-3 text-[10px] md:text-[11px] flex-shrink-0 whitespace-nowrap"
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  <span className="hidden xl:inline">Create Category</span>
+                  <span className="xl:hidden">Create</span>
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Mobile & Tablet Layout */}
+          <div className="flex flex-col gap-3 md:gap-4 lg:hidden">
+            <div className="flex items-start gap-2 md:gap-3 min-w-0">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                <BookCheck className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg md:text-xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
+                  Course Categories
+                </h1>
+                <p className="text-xs md:text-sm text-muted-foreground font-light mt-0.5 break-words">
+                  Manage course categories and organize your educational content
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-2 w-full">
+              <Badge variant="secondary" className="px-2 py-0.5 bg-primary/10 text-primary border-primary/20 text-xs whitespace-nowrap">
+                <Sparkles className="h-3 w-3 mr-1" />
+                <span className="hidden sm:inline">Content Management</span>
+                <span className="sm:hidden">Content</span>
+              </Badge>
+              <Badge variant="outline" className="px-2 py-0.5 text-xs whitespace-nowrap">
+                <Clock className="h-3 w-3 mr-1" />
+                <span className="hidden sm:inline">Live Data</span>
+                <span className="sm:hidden">Live</span>
+              </Badge>
+              {!isViewOnly && (
+                <Button
+                  onClick={() => setIsCreateDialogOpen(true)}
+                  className="bg-[#8DC63F] hover:bg-[#7AB82F] text-white h-9 px-3 md:px-4 text-xs md:text-sm flex-1 sm:flex-none"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Create Category
@@ -372,16 +415,20 @@ export const CourseCategories = () => {
       ) : (
         <div className="space-y-6">
           {/* View Toggle */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-foreground">Categories</h2>
-              <p className="text-sm text-muted-foreground">Switch between different views to manage your categories</p>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-6 pb-0">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg sm:text-xl font-semibold text-foreground break-words">Categories</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground break-words">Switch between different views to manage your categories</p>
             </div>
-            <ViewToggle
-              currentView={preferences.courseCategoriesView}
-              onViewChange={setCourseCategoriesView}
-              availableViews={['card', 'tile', 'list']}
-            />
+            <div className="w-full sm:w-auto flex-shrink-0">
+              <ViewToggle
+                currentView={preferences.courseCategoriesView}
+                onViewChange={setCourseCategoriesView}
+                availableViews={['card', 'tile', 'list']}
+                showLabels={true}
+                className="w-full sm:w-auto"
+              />
+            </div>
           </div>
 
           {/* Conditional View Rendering */}

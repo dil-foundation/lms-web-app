@@ -43,9 +43,9 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
   ].filter(option => availableViews.includes(option.mode));
 
   return (
-    <Card className={cn("p-2", className)}>
+    <Card className={cn("p-1 sm:p-2 w-full sm:w-auto", className)}>
       <CardContent className="p-0">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 sm:gap-1">
           {viewOptions.map((option) => {
             const Icon = option.icon;
             const isActive = currentView === option.mode;
@@ -57,17 +57,17 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
                 size="sm"
                 onClick={() => onViewChange(option.mode)}
                 className={cn(
-                  "h-9 px-3 transition-all duration-200",
+                  "h-8 sm:h-9 px-2 sm:px-2.5 transition-all duration-200 flex-1 sm:flex-none min-w-0",
                   isActive 
                     ? "bg-primary text-primary-foreground shadow-sm" 
                     : "hover:bg-muted hover:text-foreground",
-                  showLabels && "gap-2"
+                  showLabels && "gap-1 sm:gap-1.5"
                 )}
                 title={option.description}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                 {showLabels && (
-                  <span className="text-sm font-medium">{option.label}</span>
+                  <span className="text-[10px] sm:text-xs font-medium whitespace-nowrap truncate">{option.label}</span>
                 )}
               </Button>
             );

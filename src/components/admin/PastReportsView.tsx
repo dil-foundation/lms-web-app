@@ -557,32 +557,61 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
   return (
     <div className="space-y-8 mx-auto">
       {/* Premium Header Section */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 flex-1 max-w-2xl">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
+        <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl">
+          {/* Desktop Layout: Side by side */}
+          <div className="hidden lg:flex lg:items-center lg:justify-between gap-6">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center flex-shrink-0">
                 <FileText className="w-6 h-6 text-primary" />
               </div>
-              <div className="flex-1">
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl xl:text-3xl 2xl:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight">
                   Past Observation Reports
                 </h1>
-                <p className="text-lg text-muted-foreground font-light pr-8">
+                <p className="text-sm xl:text-base 2xl:text-lg text-muted-foreground font-light mt-1 leading-snug">
                   Review and analyze previously submitted observation reports with comprehensive analytics
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-2 flex-shrink-0 ml-8">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <Button 
                 variant="outline" 
                 onClick={onBack}
-                className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
+                className="h-9 xl:h-10 px-4 xl:px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 text-sm"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Reporting
+              </Button>
+            </div>
+          </div>
+
+          {/* Mobile & Tablet Layout: Stacked */}
+          <div className="flex flex-col gap-4 lg:hidden">
+            <div className="flex items-start gap-2 sm:gap-3 min-w-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
+                  Past Observation Reports
+                </h1>
+                <p className="text-xs sm:text-sm md:text-base text-muted-foreground font-light mt-0.5 sm:mt-1 leading-snug">
+                  Review and analyze previously submitted observation reports with comprehensive analytics
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 w-full">
+              <Button 
+                variant="outline" 
+                onClick={onBack}
+                className="flex-1 h-8 sm:h-9 px-3 sm:px-4 rounded-lg sm:rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 text-xs sm:text-sm"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 flex-shrink-0" />
+                <span className="truncate">Back to Reporting</span>
               </Button>
             </div>
           </div>
@@ -670,21 +699,23 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
 
           {/* Filters and Search Section */}
           <Card className="bg-gradient-to-br from-card to-primary/5 dark:bg-card">
-            <CardContent className="p-6">
-              <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
-                <div className="flex flex-col sm:flex-row gap-4 flex-1">
-                  <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      placeholder="Search reports by observer, school, or teacher..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 h-11 rounded-xl border-2 focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-300"
-                    />
-                  </div>
-                  
+            <CardContent className="p-3 sm:p-4 md:p-6">
+              <div className="flex flex-col gap-3 sm:gap-4">
+                {/* Search Row */}
+                <div className="relative w-full">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-4 sm:h-4" />
+                  <Input
+                    placeholder="Search reports by observer, school, or teacher..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 sm:pl-10 h-9 sm:h-10 md:h-11 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-300"
+                  />
+                </div>
+
+                {/* Filters Row */}
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <Select value={roleFilter} onValueChange={setRoleFilter}>
-                    <SelectTrigger className="w-[180px] h-11 rounded-xl border-2 focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-300">
+                    <SelectTrigger className="w-full sm:w-[180px] md:w-[200px] h-9 sm:h-10 md:h-11 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-300">
                       <SelectValue placeholder="Filter by role" />
                     </SelectTrigger>
                     <SelectContent>
@@ -698,7 +729,7 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
                   </Select>
 
                   <Select value={schoolFilter} onValueChange={setSchoolFilter}>
-                    <SelectTrigger className="w-[200px] h-11 rounded-xl border-2 focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-300">
+                    <SelectTrigger className="w-full sm:w-[180px] md:w-[200px] h-9 sm:h-10 md:h-11 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-300">
                       <SelectValue placeholder="Filter by school" />
                     </SelectTrigger>
                     <SelectContent>
@@ -710,39 +741,41 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
                       ))}
                     </SelectContent>
                   </Select>
+
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="w-full sm:w-[160px] md:w-[180px] h-9 sm:h-10 md:h-11 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-300">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="recent">Most Recent</SelectItem>
+                      <SelectItem value="oldest">Oldest First</SelectItem>
+                      <SelectItem value="school">School Name</SelectItem>
+                      <SelectItem value="observer">Observer Name</SelectItem>
+                      <SelectItem value="score-high">Highest Score</SelectItem>
+                      <SelectItem value="score-low">Lowest Score</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-[160px] h-11 rounded-xl border-2 focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-300">
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="recent">Most Recent</SelectItem>
-                    <SelectItem value="oldest">Oldest First</SelectItem>
-                    <SelectItem value="school">School Name</SelectItem>
-                    <SelectItem value="observer">Observer Name</SelectItem>
-                    <SelectItem value="score-high">Highest Score</SelectItem>
-                    <SelectItem value="score-low">Lowest Score</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
-
             </CardContent>
           </Card>
 
           {/* View Toggle Section */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold text-foreground">Reports</h3>
-              <span className="text-sm text-muted-foreground">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 min-w-0">
+              <h3 className="text-base sm:text-lg font-semibold text-foreground whitespace-nowrap">Reports</h3>
+              <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                 ({filteredAndSortedReports.length} {filteredAndSortedReports.length === 1 ? 'report' : 'reports'})
               </span>
             </div>
-            <ViewToggle
-              currentView={preferences.observationReportsView}
-              onViewChange={setObservationReportsView}
-              availableViews={['card', 'tile', 'list']}
-            />
+            <div className="flex-shrink-0 w-full sm:w-auto">
+              <ViewToggle
+                currentView={preferences.observationReportsView}
+                onViewChange={setObservationReportsView}
+                availableViews={['card', 'tile', 'list']}
+                className="w-full sm:w-auto"
+              />
+            </div>
           </div>
 
           {/* Reports List */}

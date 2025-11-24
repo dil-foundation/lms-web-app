@@ -82,68 +82,105 @@ export const ClassListView: React.FC<ClassListViewProps> = ({
 
   return (
     <div className={className}>
-      <div className="space-y-2">
+      <div className="space-y-2 sm:space-y-3">
         {classes.map((cls) => (
           <Card
             key={cls.id}
-            className="group cursor-pointer hover:shadow-md transition-all duration-200 hover:bg-muted/50 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-border dark:hover:border-border border-l-4 border-l-transparent hover:border-l-primary"
+            className="group cursor-pointer hover:shadow-lg transition-all duration-200 hover:bg-muted/50 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 border-l-4 border-l-transparent hover:border-l-primary"
+            onClick={() => onView(cls)}
           >
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
+            <CardContent className="p-3 sm:p-4 md:p-5">
+              <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                 {/* Class Icon */}
                 <div className="flex-shrink-0">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
-                    <GraduationCap className="w-6 h-6 text-primary" />
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary/10 via-primary/15 to-primary/20 flex items-center justify-center">
+                    <GraduationCap className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-primary" />
                   </div>
                 </div>
 
                 {/* Class Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
+                <div className="flex-1 min-w-0 w-full sm:w-auto">
+                  {/* Title Row */}
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
+                    <h3 className="font-bold text-sm sm:text-base md:text-lg group-hover:text-primary transition-colors">
                       {cls.name}
                     </h3>
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-[10px] sm:text-xs font-medium">
                       {cls.code}
                     </Badge>
                     {getGradeBadge(cls.grade)}
                   </div>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    {cls.school} • {cls.board}
-                  </p>
+
+                  {/* School and Board */}
+                  <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground mb-3">
+                    <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+                    <span className="truncate font-medium">{cls.school}</span>
+                    <span className="text-muted-foreground/60">•</span>
+                    <span className="truncate">{cls.board}</span>
+                  </div>
                   
-                  {/* Class Stats */}
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Users className="w-3 h-3" />
-                      <span>{cls.students.length}/{cls.max_students || 30} students</span>
+                  {/* Class Stats Grid */}
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-3 p-2 sm:p-2.5 bg-muted/30 dark:bg-muted/20 rounded-lg">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-primary/10">
+                        <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs sm:text-sm font-bold text-foreground">
+                          {cls.students.length}/{cls.max_students || 30}
+                        </span>
+                        <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium">
+                          Students
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <GraduationCap className="w-3 h-3" />
-                      <span>{cls.teachers.length} teacher{cls.teachers.length !== 1 ? 's' : ''}</span>
+
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-primary/10">
+                        <GraduationCap className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs sm:text-sm font-bold text-foreground">
+                          {cls.teachers.length}
+                        </span>
+                        <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium">
+                          Teachers
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      <span className="truncate">{cls.school}</span>
+
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-primary/10">
+                        <BookOpen className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs sm:text-sm font-bold text-foreground">
+                          {cls.courses?.length || 0}
+                        </span>
+                        <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium">
+                          Courses
+                        </span>
+                      </div>
                     </div>
                   </div>
 
                   {/* Teachers Preview */}
                   {cls.teachers.length > 0 && (
-                    <div className="flex items-center gap-2 mt-2">
-                      <User className="w-3 h-3 text-muted-foreground" />
-                      <div className="flex -space-x-1">
-                        {cls.teachers.slice(0, 4).map((teacher, index) => (
-                          <Avatar key={teacher.id} className="h-5 w-5 border border-background">
-                            <AvatarImage src={teacher.avatar_url} />
-                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                    <div className="flex items-center gap-2 p-2 sm:p-2.5 bg-primary/5 dark:bg-primary/10 rounded-lg border border-primary/10">
+                      <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary/70 flex-shrink-0" />
+                      <span className="text-[10px] sm:text-xs font-semibold text-foreground">Teachers:</span>
+                      <div className="flex -space-x-1.5 sm:-space-x-2">
+                        {cls.teachers.slice(0, 5).map((teacher) => (
+                          <Avatar key={teacher.id} className="h-6 w-6 sm:h-7 sm:w-7 border-2 border-background ring-1 ring-primary/10">
+                            <AvatarImage src={teacher.avatar_url} alt={teacher.name} />
+                            <AvatarFallback className="text-[9px] sm:text-[10px] bg-primary/20 text-primary font-bold">
                               {teacher.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                         ))}
-                        {cls.teachers.length > 4 && (
-                          <div className="h-5 w-5 rounded-full bg-muted flex items-center justify-center text-xs border border-background">
-                            +{cls.teachers.length - 4}
+                        {cls.teachers.length > 5 && (
+                          <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-full bg-primary/10 flex items-center justify-center text-[9px] sm:text-[10px] font-bold border-2 border-background text-primary ring-1 ring-primary/10">
+                            +{cls.teachers.length - 5}
                           </div>
                         )}
                       </div>
@@ -152,17 +189,16 @@ export const ClassListView: React.FC<ClassListViewProps> = ({
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2">
+                <div className="flex sm:flex-col items-center gap-2 w-full sm:w-auto sm:ml-auto">
                   <Button
                     size="sm"
-                    variant="outline"
-                    className="h-8 text-xs"
+                    className="flex-1 sm:flex-none h-9 sm:h-10 text-xs sm:text-sm font-semibold bg-[#8DC63F] hover:bg-[#7AB82F] text-white shadow-sm hover:shadow-md"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleView(e, cls);
                     }}
                   >
-                    <Settings className="w-3 h-3 mr-1" />
+                    <Settings className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1.5" />
                     Manage
                   </Button>
                   
@@ -171,25 +207,25 @@ export const ClassListView: React.FC<ClassListViewProps> = ({
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-8 w-8 p-0"
+                        className="h-9 w-9 sm:h-10 sm:w-10 p-0 hover:bg-muted/80"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <MoreHorizontal className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={(e) => handleView(e, cls)}>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem onClick={(e) => handleView(e, cls)} className="cursor-pointer">
                         <Eye className="w-4 h-4 mr-2" />
                         View Details
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={(e) => handleEdit(e, cls)}>
+                      <DropdownMenuItem onClick={(e) => handleEdit(e, cls)} className="cursor-pointer">
                         <Edit className="w-4 h-4 mr-2" />
                         Edit Class
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem 
                         onClick={(e) => handleDelete(e, cls)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Delete Class

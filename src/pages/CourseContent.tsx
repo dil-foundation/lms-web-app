@@ -136,23 +136,23 @@ const QuizQuestionImage = ({ imageUrl, onClick }: { imageUrl: string, onClick: (
 
   if (loading) {
     return (
-      <div className="relative w-8 h-8 rounded-md overflow-hidden border border-purple-200 dark:border-purple-700 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-        <div className="w-3 h-3 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-md overflow-hidden border border-purple-200 dark:border-purple-700 bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   if (!signedUrl) {
     return (
-      <div className="relative w-8 h-8 rounded-md overflow-hidden border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
-        <ImageIcon className="w-3 h-3 text-red-500" />
+      <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-md overflow-hidden border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0">
+        <ImageIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-red-500" />
       </div>
     );
   }
 
   return (
     <div 
-      className="relative w-8 h-8 rounded-md overflow-hidden border border-purple-200 dark:border-purple-700 cursor-pointer hover:border-purple-400 dark:hover:border-purple-500 transition-colors"
+      className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-md overflow-hidden border border-purple-200 dark:border-purple-700 cursor-pointer hover:border-purple-400 dark:hover:border-purple-500 transition-colors flex-shrink-0"
       onClick={onClick}
     >
       <img 
@@ -1729,12 +1729,12 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       return (
         <div className="flex items-center justify-center min-h-[400px]">
           <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg max-w-md">
-            <CardContent className="pt-6">
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
-                  <WifiOff className="w-8 h-8 text-muted-foreground" />
+            <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6 pb-4 sm:pb-6">
+              <div className="text-center space-y-3 sm:space-y-4">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
+                  <WifiOff className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
                   No offline content available
                 </h3>
               </div>
@@ -1868,8 +1868,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             ) : (
               <div className="relative aspect-video bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-3xl overflow-hidden shadow-xl">
                 <div className="text-center p-4">
-                  <PlayCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground text-lg font-medium">
+                  <PlayCircle className="w-12 h-12 sm:w-16 sm:h-16 text-muted-foreground mx-auto mb-3 sm:mb-4" />
+                  <p className="text-muted-foreground text-base sm:text-lg font-medium">
                     No video content available
                     {isOfflineMode && (
                       <span className="block text-sm mt-2 text-red-500">
@@ -1893,35 +1893,54 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       case 'attachment':
         const handleAttachmentInteraction = () => { if (currentContentItem && !currentContentItem.completed && currentLesson) markContentAsComplete(currentContentItem.id, currentLesson.id, actualCourseId); };
         return (
-          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
-                <Paperclip className="w-5 h-5 text-primary" />
-                Attachment
+          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-xl sm:rounded-2xl md:rounded-3xl shadow-lg">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg text-gray-900 dark:text-gray-100">
+                <Paperclip className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+                <span>Attachment</span>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6 pt-0">
               {currentContentItem.signedUrl ? (
-                <div className="flex items-center justify-between gap-4 p-4 border border-gray-200/50 dark:border-gray-600/50 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50">
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-6 h-6 text-primary" />
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{currentContentItem.content_path?.split('/').pop()}</span>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50 rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                    <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+                    <span className="font-medium text-sm sm:text-base text-gray-900 dark:text-gray-100 truncate" title={currentContentItem.content_path?.split('/').pop()}>
+                      {currentContentItem.content_path?.split('/').pop()}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button asChild variant="outline" className="hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300">
+                  <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+                    <Button 
+                      asChild 
+                      variant="outline" 
+                      size="sm"
+                      className="flex-1 sm:flex-initial hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300 text-xs sm:text-sm h-9 sm:h-10"
+                    >
                       <a href={currentContentItem.signedUrl} target="_blank" rel="noopener noreferrer" onClick={handleAttachmentInteraction}>
                         View
                       </a>
                     </Button>
-                    <Button onClick={() => {
-                      handleAttachmentInteraction();
-                      handleDownload(currentContentItem.signedUrl, currentContentItem.content_path?.split('/').pop() || 'download');
-                    }} disabled={isDownloading} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
-                      {isDownloading ? 'Downloading...' : 'Download'}
+                    <Button 
+                      onClick={() => {
+                        handleAttachmentInteraction();
+                        handleDownload(currentContentItem.signedUrl, currentContentItem.content_path?.split('/').pop() || 'download');
+                      }} 
+                      disabled={isDownloading} 
+                      size="sm"
+                      className="flex-1 sm:flex-initial bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm h-9 sm:h-10"
+                    >
+                      {isDownloading ? (
+                        <>
+                          <span className="hidden sm:inline">Downloading...</span>
+                          <span className="sm:hidden">Loading...</span>
+                        </>
+                      ) : (
+                        'Download'
+                      )}
                     </Button>
                   </div>
                 </div>
-              ) : <p className="text-muted-foreground">Attachment not available.</p>}
+              ) : <p className="text-sm sm:text-base text-muted-foreground">Attachment not available.</p>}
             </CardContent>
           </Card>
         );
@@ -1944,23 +1963,42 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               </CardContent>
             </Card>
             {attachments.length > 0 && (
-              <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-gray-900 dark:text-gray-100">Attached Files</CardTitle>
+              <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-xl sm:rounded-2xl md:rounded-3xl shadow-lg">
+                <CardHeader className="p-4 sm:p-6">
+                  <CardTitle className="text-base sm:text-lg text-gray-900 dark:text-gray-100">Attached Files</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-2 sm:space-y-3 p-4 sm:p-6 pt-0">
                   {attachments.map((att, index) => (
-                    <div key={index} className="flex items-center justify-between gap-4 p-4 border border-gray-200/50 dark:border-gray-600/50 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50">
-                      <div className="flex items-center gap-3">
-                        <FileText className="w-6 h-6 text-primary" />
-                        <span className="font-medium text-gray-900 dark:text-gray-100">{att.name}</span>
+                    <div key={index} className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50 rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                        <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+                        <span className="font-medium text-sm sm:text-base text-gray-900 dark:text-gray-100 truncate" title={att.name}>
+                          {att.name}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button asChild variant="outline" className="hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300">
+                      <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+                        <Button 
+                          asChild 
+                          variant="outline" 
+                          size="sm"
+                          className="flex-1 sm:flex-initial hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300 text-xs sm:text-sm h-9 sm:h-10"
+                        >
                           <a href={att.url} target="_blank" rel="noopener noreferrer">View</a>
                         </Button>
-                        <Button onClick={() => handleDownload(att.url, att.name)} disabled={isDownloading} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
-                          {isDownloading ? 'Downloading...' : 'Download'}
+                        <Button 
+                          onClick={() => handleDownload(att.url, att.name)} 
+                          disabled={isDownloading} 
+                          size="sm"
+                          className="flex-1 sm:flex-initial bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm h-9 sm:h-10"
+                        >
+                          {isDownloading ? (
+                            <>
+                              <span className="hidden sm:inline">Downloading...</span>
+                              <span className="sm:hidden">Loading...</span>
+                            </>
+                          ) : (
+                            'Download'
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -2005,18 +2043,18 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           finalHasSubmitted: hasSubmitted
         });
         return (
-          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-gray-100">Knowledge Check</CardTitle>
+          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl sm:rounded-3xl shadow-lg">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg text-gray-900 dark:text-gray-100">Knowledge Check</CardTitle>
               {currentContentItem.due_date && (
-                <div className="flex items-center gap-2 text-sm text-yellow-600 dark:text-yellow-400">
-                  <Calendar className="h-4 w-4" />
+                <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-yellow-600 dark:text-yellow-400">
+                  <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
                   <span className="font-medium">Due:</span>
-                  <span>{new Date(currentContentItem.due_date).toLocaleString()}</span>
+                  <span className="truncate">{new Date(currentContentItem.due_date).toLocaleString()}</span>
                 </div>
               )}
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
               {questions.map((q: any, index: number) => {
                 const correctOptions = q.options.filter((opt: any) => opt.is_correct);
                 const questionType = q.question_type || 'single_choice'; // Default for backward compatibility
@@ -2028,36 +2066,38 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 const isMathExpression = questionType === 'math_expression';
                 
                 return (
-                  <div key={q.id} className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <h4 className="font-medium text-gray-900 dark:text-gray-100">{index + 1}. {q.question_text}</h4>
-                        <Badge 
-                          variant={isMultipleChoice ? 'default' : isTextAnswer ? 'outline' : isMathExpression ? 'secondary' : 'secondary'}
-                          className={`text-xs ${
-                            isMultipleChoice 
-                              ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-700' 
-                              : isTextAnswer
-                              ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200 dark:border-orange-700'
-                              : isMathExpression
-                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-700'
-                              : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-700'
-                          }`}
-                        >
-                          {isMultipleChoice ? 'Multiple Choice' : isTextAnswer ? 'Text Answer' : isMathExpression ? 'Math Expression' : 'Single Choice'}
-                        </Badge>
-                        {/* Quiz Question Image */}
-                        {q.image_url && (
-                          <QuizQuestionImage 
-                            imageUrl={q.image_url}
-                            onClick={() => openImageModal(q.image_url)}
-                          />
-                        )}
+                  <div key={q.id} className="space-y-3 sm:space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                        <h4 className="font-medium text-sm sm:text-base text-gray-900 dark:text-gray-100 break-words">{index + 1}. {q.question_text}</h4>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge 
+                            variant={isMultipleChoice ? 'default' : isTextAnswer ? 'outline' : isMathExpression ? 'secondary' : 'secondary'}
+                            className={`text-[10px] sm:text-xs whitespace-nowrap ${
+                              isMultipleChoice 
+                                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-700' 
+                                : isTextAnswer
+                                ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200 dark:border-orange-700'
+                                : isMathExpression
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-700'
+                                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-700'
+                            }`}
+                          >
+                            {isMultipleChoice ? 'Multiple Choice' : isTextAnswer ? 'Text Answer' : isMathExpression ? 'Math Expression' : 'Single Choice'}
+                          </Badge>
+                          {/* Quiz Question Image */}
+                          {q.image_url && (
+                            <QuizQuestionImage 
+                              imageUrl={q.image_url}
+                              onClick={() => openImageModal(q.image_url)}
+                            />
+                          )}
+                        </div>
                       </div>
                       {/* Points Badge - Right Corner */}
                       <Badge 
                         variant="outline"
-                        className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700 font-semibold"
+                        className="text-[10px] sm:text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700 font-semibold whitespace-nowrap self-start sm:self-auto"
                       >
                         {q.points || 1} {q.points === 1 ? 'point' : 'points'}
                       </Badge>
@@ -2097,14 +2137,14 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                         
                         {/* Math Expression Review Section - Show after submission */}
                         {hasSubmitted && (
-                          <div className="space-y-4 mt-4">
-                            <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border-2 border-blue-200 dark:border-blue-700/50 rounded-xl shadow-sm">
-                              <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
-                                <div className="w-4 h-4 text-blue-600 dark:text-blue-400">📝</div>
+                          <div className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
+                            <div className="p-3 sm:p-4 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border-2 border-blue-200 dark:border-blue-700/50 rounded-lg sm:rounded-xl shadow-sm">
+                              <h4 className="font-semibold text-sm sm:text-base text-blue-900 dark:text-blue-100 mb-2 sm:mb-3 flex items-center gap-2">
+                                <div className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400">📝</div>
                                 Your Answer:
                               </h4>
-                              <div className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg border border-blue-200/50 dark:border-blue-700/30">
-                                <p className="text-gray-900 dark:text-gray-100 font-mono text-lg leading-relaxed">
+                              <div className="p-2.5 sm:p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg border border-blue-200/50 dark:border-blue-700/30">
+                                <p className="text-gray-900 dark:text-gray-100 font-mono text-sm sm:text-base md:text-lg leading-relaxed break-words">
                                   {(() => {
                                     console.log('🔍 Displaying math answer for question', q.id, ':', mathAnswer);
                                     return mathAnswer || (
@@ -2116,13 +2156,13 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                             </div>
                             
                             {q.math_expression && (
-                              <div className="p-4 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 border-2 border-green-200 dark:border-green-700/50 rounded-xl shadow-sm">
-                                <h4 className="font-semibold text-green-900 dark:text-green-100 mb-3 flex items-center gap-2">
-                                  <div className="w-4 h-4 text-green-600 dark:text-green-400">✅</div>
+                              <div className="p-3 sm:p-4 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 border-2 border-green-200 dark:border-green-700/50 rounded-lg sm:rounded-xl shadow-sm">
+                                <h4 className="font-semibold text-sm sm:text-base text-green-900 dark:text-green-100 mb-2 sm:mb-3 flex items-center gap-2">
+                                  <div className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 dark:text-green-400">✅</div>
                                   Correct Answer:
                                 </h4>
-                                <div className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg border border-green-200/50 dark:border-green-700/30">
-                                  <p className="text-gray-900 dark:text-gray-100 font-mono text-lg leading-relaxed">
+                                <div className="p-2.5 sm:p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg border border-green-200/50 dark:border-green-700/30">
+                                  <p className="text-gray-900 dark:text-gray-100 font-mono text-sm sm:text-base md:text-lg leading-relaxed break-words">
                                     {q.math_expression}
                                   </p>
                                 </div>
@@ -2131,17 +2171,17 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                             
                             {/* Show if answer was correct or incorrect - only for non-drawing answers */}
                             {currentContentItem.submission?.results && currentContentItem.submission.results[q.id] !== undefined && !mathDrawings[q.id] && (
-                              <div className={`p-4 rounded-xl shadow-sm border-2 ${
+                              <div className={`p-3 sm:p-4 rounded-lg sm:rounded-xl shadow-sm border-2 ${
                                 currentContentItem.submission.results[q.id] 
                                   ? 'bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 border-green-200 dark:border-green-700/50'
                                   : 'bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-900/20 dark:to-red-800/10 border-red-200 dark:border-red-700/50'
                               }`}>
-                                <div className={`flex items-center gap-2 font-semibold ${
+                                <div className={`flex items-center gap-2 text-sm sm:text-base font-semibold ${
                                   currentContentItem.submission.results[q.id] 
                                     ? 'text-green-900 dark:text-green-100'
                                     : 'text-red-900 dark:text-red-100'
                                 }`}>
-                                  <div className={`w-4 h-4 ${
+                                  <div className={`w-3 h-3 sm:w-4 sm:h-4 ${
                                     currentContentItem.submission.results[q.id] 
                                       ? 'text-green-600 dark:text-green-400'
                                       : 'text-red-600 dark:text-red-400'
@@ -2151,7 +2191,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                                   {currentContentItem.submission.results[q.id] ? 'Correct!' : 'Incorrect'}
                                 </div>
                                 {q.math_tolerance && !mathDrawings[q.id] && (
-                                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                                  <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-2">
                                     <span className="font-medium">Tolerance used:</span> {q.math_tolerance}
                                   </div>
                                 )}
@@ -2160,13 +2200,13 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                             
                             {/* Show manual grading status for drawing answers */}
                             {mathDrawings[q.id] && (
-                              <div className="p-4 rounded-xl shadow-sm border-2 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 border-orange-200 dark:border-orange-700/50">
-                                <div className="flex items-center gap-2 font-semibold text-orange-900 dark:text-orange-100">
-                                  <div className="w-4 h-4 text-orange-600 dark:text-orange-400">📝</div>
+                              <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl shadow-sm border-2 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 border-orange-200 dark:border-orange-700/50">
+                                <div className="flex items-center gap-2 text-sm sm:text-base font-semibold text-orange-900 dark:text-orange-100">
+                                  <div className="w-3 h-3 sm:w-4 sm:h-4 text-orange-600 dark:text-orange-400">📝</div>
                                   {currentContentItem.submission?.manual_grading_completed ? 'Graded by Teacher' : 'Pending Manual Grading'}
                                 </div>
                                 {currentContentItem.submission?.manual_grading_completed && currentContentItem.submission?.manual_grading_score !== null && (
-                                  <div className="text-sm text-orange-700 dark:text-orange-300 mt-2">
+                                  <div className="text-xs sm:text-sm text-orange-700 dark:text-orange-300 mt-2">
                                     <span className="font-medium">Your Grade:</span> {currentContentItem.submission.manual_grading_score}%
                                     {(() => {
                                       const earnedPoints = Math.round((currentContentItem.submission.manual_grading_score / 100) * (q.points || 1));
@@ -2184,28 +2224,28 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                         )}
                       </>
                     ) : isTextAnswer ? (
-                      <div className="space-y-3">
+                      <div className="space-y-2 sm:space-y-3">
                         <Textarea
                           value={textAnswer || ''}
                           onChange={(e) => setTextAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
                           placeholder="Type your answer here..."
-                          className="min-h-[120px] border-2 border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500/20"
+                          className="min-h-[100px] sm:min-h-[120px] text-sm sm:text-base border-2 border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500/20"
                           disabled={hasSubmitted}
                         />
                         {hasSubmitted && !currentContentItem.submission?.manual_grading_completed && (
-                          <div className="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg">
-                            <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
-                              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                              <span className="text-sm font-medium">This answer requires manual grading by your teacher</span>
+                          <div className="p-2.5 sm:p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg">
+                            <div className="flex items-start sm:items-center gap-2 text-orange-700 dark:text-orange-300">
+                              <div className="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0 mt-1 sm:mt-0"></div>
+                              <span className="text-xs sm:text-sm font-medium">This answer requires manual grading by your teacher</span>
                             </div>
                           </div>
                         )}
                         {hasSubmitted && currentContentItem.submission?.manual_grading_completed && (
-                          <div className="space-y-3">
-                            <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
-                              <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
-                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <span className="text-sm font-medium">✓ This answer has been graded by your teacher</span>
+                          <div className="space-y-2 sm:space-y-3">
+                            <div className="p-2.5 sm:p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
+                              <div className="flex items-start sm:items-center gap-2 text-green-700 dark:text-green-300">
+                                <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0 mt-1 sm:mt-0"></div>
+                                <span className="text-xs sm:text-sm font-medium">✓ This answer has been graded by your teacher</span>
                               </div>
                             </div>
                             
@@ -2213,24 +2253,24 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                             {currentContentItem.submission?.text_answer_grades && 
                              currentContentItem.submission.text_answer_grades.length > 0 &&
                              currentContentItem.submission.text_answer_grades.find((grade: any) => grade.question_id === q.id) && (
-                              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+                              <div className="p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
                                 <div className="space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Your Grade for the above question</span>
-                                    <div className="text-right">
-                                      <div className="text-lg font-bold text-blue-700 dark:text-blue-300">
+                                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                    <span className="text-xs sm:text-sm font-medium text-blue-700 dark:text-blue-300">Your Grade for the above question</span>
+                                    <div className="text-left sm:text-right">
+                                      <div className="text-base sm:text-lg font-bold text-blue-700 dark:text-blue-300">
                                         {currentContentItem.submission.text_answer_grades.find((grade: any) => grade.question_id === q.id)?.earned_points || 0} / {q.points || 1} points
                                       </div>
-                                      <div className="text-sm text-blue-600 dark:text-blue-400">
+                                      <div className="text-xs sm:text-sm text-blue-600 dark:text-blue-400">
                                         ({currentContentItem.submission.text_answer_grades.find((grade: any) => grade.question_id === q.id)?.grade || 0}%)
                                       </div>
                                     </div>
                                   </div>
                                   {currentContentItem.submission.text_answer_grades.find((grade: any) => grade.question_id === q.id)?.feedback && 
                                    currentContentItem.submission.text_answer_grades.find((grade: any) => grade.question_id === q.id)?.feedback.trim() && (
-                                    <div className="mt-3 p-3 bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-600 rounded-md">
-                                      <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teacher's Feedback:</div>
-                                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                                    <div className="mt-2 sm:mt-3 p-2.5 sm:p-3 bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-600 rounded-md">
+                                      <div className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teacher's Feedback:</div>
+                                      <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 break-words">
                                         {currentContentItem.submission.text_answer_grades.find((grade: any) => grade.question_id === q.id)?.feedback}
                                       </div>
                                     </div>
@@ -2242,7 +2282,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                         )}
                       </div>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-2 sm:space-y-3">
                         {q.options.sort((a:any,b:any) => a.position-b.position).map((option: any) => {
                           let isSelected = false;
                           if (isMultipleChoice) {
@@ -2275,7 +2315,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                               disabled={hasSubmitted} 
                               onClick={handleOptionClick}
                               className={cn(
-                                "w-full justify-start p-4 h-auto text-left transition-all duration-300 hover:shadow-md", 
+                                "w-full justify-start p-3 sm:p-4 h-auto text-left transition-all duration-300 hover:shadow-md", 
                                 // Override default button hover to prevent color conflicts
                                 "hover:bg-gray-50 hover:text-gray-900 hover:border-gray-300 dark:hover:bg-gray-800/50 dark:hover:text-gray-100 dark:hover:border-gray-600",
                                 isSelected && (isMultipleChoice ? "border-purple-300 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-600 hover:bg-purple-100 hover:border-purple-400 dark:hover:bg-purple-900/30 dark:hover:border-purple-500" : "border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-600 hover:bg-blue-100 hover:border-blue-400 dark:hover:bg-blue-900/30 dark:hover:border-blue-500"), 
@@ -2283,38 +2323,38 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                                 showAsIncorrect && "bg-red-100 border-red-500 dark:bg-red-900/20 dark:border-red-400 hover:bg-red-200 hover:border-red-600 dark:hover:bg-red-900/30 dark:hover:border-red-300"
                               )}
                             >
-                              <div className="flex items-center gap-3 w-full">
+                              <div className="flex items-center gap-2 sm:gap-3 w-full min-w-0">
                                 {isMultipleChoice ? (
                                   // Checkbox for multiple choice
-                                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                  <div className={`w-4 h-4 sm:w-5 sm:h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
                                     isSelected 
                                       ? 'bg-purple-600 border-purple-600'
                                       : 'border-gray-300 dark:border-gray-600'
                                   }`}>
                                     {isSelected && (
-                                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                      <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                       </svg>
                                     )}
                                   </div>
                                 ) : (
                                   // Radio button for single choice
-                                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                  <div className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
                                     isSelected 
                                       ? 'bg-blue-600 border-blue-600'
                                       : 'border-gray-300 dark:border-gray-600'
                                   }`}>
                                     {isSelected && (
-                                      <div className="w-2 h-2 rounded-full bg-white dark:bg-gray-900" />
+                                      <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-white dark:bg-gray-900" />
                                     )}
                                   </div>
                                 )}
-                                <span className="flex-1 text-gray-900 dark:text-gray-100">{option.option_text}</span>
+                                <span className="flex-1 text-sm sm:text-base text-gray-900 dark:text-gray-100 break-words min-w-0">{option.option_text}</span>
                                 {hasSubmitted && option.is_correct && (
-                                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
                                 )}
                                 {hasSubmitted && showAsIncorrect && (
-                                  <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                                  <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
                                 )}
                               </div>
                             </Button>
@@ -2327,15 +2367,15 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               })}
               {!hasSubmitted && (
                 (profile?.role === 'admin' || profile?.role === 'super_user' || profile?.role === 'teacher' || profile?.role === 'content_creator' || profile?.role === 'view_only') ? (
-                  <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-2xl">
-                    <CardContent className="pt-6">
-                      <div className="flex items-start gap-3">
-                        <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-xl sm:rounded-2xl">
+                    <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6 pb-3 sm:pb-6">
+                      <div className="flex items-start gap-2 sm:gap-3">
+                        <Info className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                        <div className="space-y-1 min-w-0">
+                          <p className="text-xs sm:text-sm font-medium text-blue-900 dark:text-blue-100">
                             Preview Mode
                           </p>
-                          <p className="text-sm text-blue-700 dark:text-blue-300">
+                          <p className="text-xs sm:text-sm text-blue-700 dark:text-blue-300">
                             Quizzes can only be submitted by students. As {(profile?.role === 'admin' || profile?.role === 'super_user') ? 'an admin' : (profile?.role === 'content_creator') ? 'a content creator' : profile?.role === 'view_only' ? 'a viewer' : 'a teacher'}, you are viewing this in preview mode.
                           </p>
                         </div>
@@ -2365,16 +2405,16 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                         return !userAnswer || userAnswer === '';
                       }
                     })} 
-                    className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300"
+                    className="w-full sm:w-auto h-10 sm:h-11 text-sm sm:text-base bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300"
                   >
                     Submit Quiz
                   </Button>
                 )
               )}
               {hasSubmitted && currentContentItem.submission && (
-                 <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-lg">
-                   <h4 className="font-semibold text-gray-900 dark:text-gray-100">Quiz Submitted</h4>
-                   <p className="text-muted-foreground text-sm mt-1">
+                 <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-lg">
+                   <h4 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-gray-100">Quiz Submitted</h4>
+                   <p className="text-muted-foreground text-xs sm:text-sm mt-1">
                      {currentContentItem.submission && 
                       (currentContentItem.submission.score !== null || 
                        (currentContentItem.submission.manual_grading_completed && currentContentItem.submission.manual_grading_score !== null)) ? (
@@ -2386,7 +2426,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                            const totalPoints = questions.reduce((sum: number, q: any) => sum + (q.points || 1), 0);
                            const earnedPoints = Math.round((((currentContentItem.submission.manual_grading_score ?? currentContentItem.submission.score) || 0) / 100) * totalPoints);
                            return (
-                             <span className="block mt-1 text-xs">
+                             <span className="block mt-1 text-[10px] sm:text-xs">
                                ({earnedPoints} out of {totalPoints} total points)
                              </span>
                            );
@@ -2509,8 +2549,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 </div>
               ) : (
                 <div className="text-center p-8">
-                  <ClipboardList className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground text-lg font-medium">
+                  <ClipboardList className="w-12 h-12 sm:w-16 sm:h-16 text-muted-foreground mx-auto mb-3 sm:mb-4" />
+                  <p className="text-muted-foreground text-base sm:text-lg font-medium">
                     Lesson plan not available
                     {isOfflineMode && (
                       <span className="block text-sm mt-2 text-red-500">
@@ -2542,18 +2582,18 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   if (isLoading) return <PageSkeleton />;
   if (isCheckingAccess) return <AccessCheckingSkeleton />;
   if (error) return (
-    <div className="flex flex-col items-center justify-center h-full text-center p-8">
-      <h2 className="text-xl font-semibold text-destructive mb-2">Failed to load course</h2>
-      <p className="text-muted-foreground mb-4">{error}</p>
+    <div className="flex flex-col items-center justify-center h-full text-center p-4 sm:p-8">
+      <h2 className="text-lg sm:text-xl font-semibold text-destructive mb-2">Failed to load course</h2>
+      <p className="text-sm sm:text-base text-muted-foreground mb-4">{error}</p>
       <Button onClick={() => navigate(-1)} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
         Go Back
       </Button>
     </div>
   );
   if (!course) return (
-    <div className="flex flex-col items-center justify-center h-full text-center p-8">
-      <h2 className="text-xl font-semibold text-muted-foreground">Course not found</h2>
-      <p className="text-muted-foreground mb-4">The course you're looking for doesn't exist.</p>
+    <div className="flex flex-col items-center justify-center h-full text-center p-4 sm:p-8">
+      <h2 className="text-lg sm:text-xl font-semibold text-muted-foreground">Course not found</h2>
+      <p className="text-sm sm:text-base text-muted-foreground mb-4">The course you're looking for doesn't exist.</p>
       <Button onClick={() => navigate(-1)} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
         Go Back
       </Button>
@@ -2564,10 +2604,10 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     <div className="min-h-screen bg-background">
       {/* Premium Header Section */}
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-2.5 sm:py-3">
+          <div className="flex items-center justify-between gap-2 sm:gap-3 md:gap-4">
             {/* Breadcrumb Navigation */}
-            <div className="flex items-center space-x-4 min-w-0 flex-1">
+            <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -2580,28 +2620,34 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                     navigate(`/dashboard/courses/${actualCourseId}`);
                   }
                 }}
-                className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
               >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                {(profile?.role === 'admin' || profile?.role === 'super_user') ? 'Back to Course Builder' : 'Back to Course'}
+                <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-0.5 sm:mr-1" />
+                <span className="hidden sm:inline">{(profile?.role === 'admin' || profile?.role === 'super_user') ? 'Back to Course Builder' : 'Back to Course'}</span>
+                <span className="sm:hidden">Back</span>
               </Button>
-              <div className="h-4 w-px bg-border flex-shrink-0" />
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground min-w-0 flex-1 overflow-hidden">
-                <span className="font-medium truncate max-w-[200px]" title={currentModule?.title}>{currentModule?.title}</span>
-                <span className="flex-shrink-0">•</span>
-                <span className="truncate" title={currentLesson?.title}>{currentLesson?.title}</span>
+              <div className="h-4 sm:h-5 w-px bg-border flex-shrink-0" />
+              <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 text-xs sm:text-sm text-muted-foreground min-w-0 flex-1 overflow-hidden">
+                <span className="font-medium truncate" title={currentModule?.title}>{currentModule?.title || 'New Section'}</span>
+                <span className="flex-shrink-0 text-muted-foreground/60">•</span>
+                <span className="truncate" title={currentLesson?.title}>{currentLesson?.title || 'New Lesson'}</span>
               </div>
             </div>
             
             {/* Progress Indicator */}
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <div className="text-sm font-semibold text-foreground">
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <div className="text-right hidden sm:block">
+                <div className="text-xs sm:text-sm font-semibold text-foreground leading-tight">
                   {allContentItems.findIndex(item => item.id === currentContentItemId) + 1} of {allContentItems.length}
                 </div>
-                <div className="text-xs text-muted-foreground">Progress</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Progress</div>
               </div>
-              <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+              <div className="text-right sm:hidden">
+                <div className="text-xs font-semibold text-foreground leading-tight">
+                  {allContentItems.findIndex(item => item.id === currentContentItemId) + 1} of {allContentItems.length}
+                </div>
+              </div>
+              <div className="w-12 sm:w-16 md:w-20 h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden flex-shrink-0">
                 <div 
                   className="h-full bg-primary rounded-full transition-all duration-500"
                   style={{ width: `${((allContentItems.findIndex(item => item.id === currentContentItemId) + 1) / allContentItems.length) * 100}%` }}
@@ -2613,30 +2659,30 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       </div>
 
       {/* Main Content Layout */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
           
           {/* Left Sidebar - Course Navigation */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-6">
+          <div className="lg:col-span-1 hidden lg:block">
+            <div className="sticky top-24 space-y-4 sm:space-y-6">
               
               {/* Course Overview Card */}
               <Card className="bg-card border-border shadow-sm">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-bold text-card-foreground leading-tight">
+                <CardHeader className="pb-3 sm:pb-4 p-4 sm:p-6">
+                  <CardTitle className="text-base sm:text-lg font-bold text-card-foreground leading-tight">
                     {course.title}
                   </CardTitle>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Overall Progress</span>
-                    <span className="text-lg font-bold text-primary">{course.totalProgress}%</span>
+                    <span className="text-xs sm:text-sm text-muted-foreground">Overall Progress</span>
+                    <span className="text-base sm:text-lg font-bold text-primary">{course.totalProgress}%</span>
                   </div>
-                  <Progress value={course.totalProgress} className="h-2" />
+                  <Progress value={course.totalProgress} className="h-1.5 sm:h-2" />
                 </CardHeader>
               </Card>
 
               {/* Module Navigation */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">
+              <div className="space-y-2 sm:space-y-3">
+                <h3 className="text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide">
                   Course Modules
                 </h3>
                 <div className="space-y-2">
@@ -2919,7 +2965,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                             • {allContentItems.findIndex(item => item.id === currentContentItemId) + 1} of {allContentItems.length}
                           </span>
                         </div>
-                        <CardTitle className="text-2xl font-bold text-card-foreground leading-tight">
+                        <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold text-card-foreground leading-tight">
                           {currentContentItem?.title}
                         </CardTitle>
                         <p className="text-muted-foreground">
@@ -2957,7 +3003,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
 
               {/* Content Display */}
               <Card className="bg-card border-border shadow-sm">
-                <CardContent className="p-6">
+                <CardContent className="p-3 sm:p-4 md:p-6">
                   {renderContent()}
                 </CardContent>
               </Card>
@@ -2978,13 +3024,13 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           <DialogHeader>
             <DialogTitle>Question Image</DialogTitle>
           </DialogHeader>
-          <div className="flex items-center justify-center p-4 min-h-[400px]">
+          <div className="flex items-center justify-center p-4 min-h-[300px] sm:min-h-[400px]">
             {imageLoading ? (
-              <div className="flex flex-col items-center justify-center space-y-4">
-                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                <div className="text-center">
-                  <p className="text-lg font-medium text-foreground">Loading Image</p>
-                  <p className="text-sm text-muted-foreground">Please wait while we prepare the image...</p>
+              <div className="flex flex-col items-center justify-center space-y-3 sm:space-y-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 border-3 sm:border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <div className="text-center px-4">
+                  <p className="text-base sm:text-lg font-medium text-foreground">Loading Image</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Please wait while we prepare the image...</p>
                 </div>
               </div>
             ) : selectedImageUrl ? (
@@ -2999,13 +3045,13 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 }}
               />
             ) : (
-              <div className="flex flex-col items-center justify-center space-y-4">
-                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
-                  <ImageIcon className="w-8 h-8 text-red-500" />
+              <div className="flex flex-col items-center justify-center space-y-3 sm:space-y-4">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+                  <ImageIcon className="w-6 h-6 sm:w-8 sm:h-8 text-red-500" />
                 </div>
-                <div className="text-center">
-                  <p className="text-lg font-medium text-foreground">Image Not Available</p>
-                  <p className="text-sm text-muted-foreground">The image could not be loaded</p>
+                <div className="text-center px-4">
+                  <p className="text-base sm:text-lg font-medium text-foreground">Image Not Available</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">The image could not be loaded</p>
                 </div>
               </div>
             )}

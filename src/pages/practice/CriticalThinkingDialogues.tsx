@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Mic, Bot, User, Play, Pause, RefreshCw, Loader2, Target, TrendingUp, CheckCircle, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Mic, Bot, User, Play, Pause, RefreshCw, Loader2, Target, TrendingUp, CheckCircle, RotateCcw, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { 
   fetchCriticalThinkingTopics, 
@@ -54,6 +54,8 @@ export default function CriticalThinkingDialogues() {
   const [evaluation, setEvaluation] = useState<CriticalThinkingEvaluationResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showTopicSelection, setShowTopicSelection] = useState(true);
+  const [completedTopics, setCompletedTopics] = useState<Set<number>>(new Set());
+  const [currentTopicIdNum, setCurrentTopicIdNum] = useState<number>(1);
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [recordingStartTime, setRecordingStartTime] = useState<Date | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -93,6 +95,35 @@ export default function CriticalThinkingDialogues() {
     setIsLoading(true);
     try {
       const fetchedTopics = await fetchCriticalThinkingTopics();
+      
+      // Fetch user's current topic progress if user is logged in
+      if (user?.id) {
+        try {
+          const { getCurrentTopicProgress } = await import('@/utils/progressTracker');
+          const progressResponse = await getCurrentTopicProgress(
+            user.id,
+            5, // Stage 5
+            1  // Exercise 1 (CriticalThinkingDialogues)
+          );
+          
+          if (progressResponse.success && progressResponse.data?.current_topic_id) {
+            const topicId = progressResponse.data.current_topic_id;
+            setCurrentTopicIdNum(topicId);
+            console.log('📍 Current topic ID:', topicId);
+            
+            // Mark all topics before current topic as completed
+            const completed = new Set<number>();
+            for (let i = 1; i < topicId; i++) {
+              completed.add(i);
+            }
+            setCompletedTopics(completed);
+            console.log(`✅ Marked ${completed.size} topics as completed`);
+          }
+        } catch (progressError) {
+          console.warn('Could not fetch current topic progress:', progressError);
+        }
+      }
+      
       setTopics(fetchedTopics);
       
       if (fetchedTopics.length > 0) {
@@ -133,6 +164,26 @@ export default function CriticalThinkingDialogues() {
 
       // Reset audio state
       setAudioUrl(null);
+      
+      // Save progress when selecting a topic
+      if (user?.id) {
+        try {
+          const topicIndex = topics.findIndex(t => t.topic_id === topicId);
+          if (topicIndex !== -1) {
+            const topicNumber = topicIndex + 1; // 1-based
+            const { updateCurrentTopic } = await import('@/utils/progressTracker');
+            await updateCurrentTopic(
+              user.id,
+              5, // Stage 5
+              1, // Exercise 1 (CriticalThinkingDialogues)
+              topicNumber
+            );
+            console.log(`Progress saved: Topic ${topicNumber} of ${topics.length}`);
+          }
+        } catch (error) {
+          console.warn('Failed to save progress:', error);
+        }
+      }
     } catch (error) {
       console.error('Error loading topic:', error);
       toast({
@@ -442,12 +493,23 @@ export default function CriticalThinkingDialogues() {
               Select a Critical Thinking Topic
             </h2>
             <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-              {topics.map((topic) => (
+              {topics.map((topic, index) => {
+                const topicNumber = index + 1;
+                const isCompleted = completedTopics.has(topicNumber);
+                
+                return (
                 <Card 
                   key={topic.topic_id}
-                  className="cursor-pointer hover:shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden"
+                  className={`cursor-pointer hover:shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden relative ${
+                    isCompleted ? 'ring-2 ring-primary/50' : ''
+                  }`}
                   onClick={() => loadTopic(topic.topic_id)}
                 >
+                  {isCompleted && (
+                    <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1 shadow-md z-10">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                  )}
                   <CardContent className="p-5 sm:p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -466,7 +528,8 @@ export default function CriticalThinkingDialogues() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
             
             {topics.length === 0 && (

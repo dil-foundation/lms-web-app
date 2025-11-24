@@ -21,6 +21,7 @@ export interface Class {
 export interface ClassWithMembers extends Class {
   teachers: { id: string; name: string; email: string; avatar_url?: string }[];
   students: { id: string; name: string; email: string; avatar_url?: string }[];
+  courses?: { id: string; title: string }[];
 }
 
 export interface CreateClassData {
@@ -111,7 +112,15 @@ class ClassService {
       throw new Error(`Failed to fetch classes: ${error.message}`);
     }
 
-    return data?.map(this.transformClassData) || [];
+    // Fetch course counts for all classes
+    const classesWithCourses = await Promise.all(
+      (data || []).map(async (classData) => {
+        const courses = await this.getCoursesForClass(classData.id);
+        return { ...classData, courses };
+      })
+    );
+
+    return classesWithCourses.map(this.transformClassData);
   }
 
   // Get classes with pagination, search, and filtering
@@ -195,8 +204,16 @@ class ClassService {
     const hasNextPage = page < totalPages;
     const hasPreviousPage = page > 1;
 
+    // Fetch course counts for all classes in current page
+    const classesWithCourses = await Promise.all(
+      (data || []).map(async (classData) => {
+        const courses = await this.getCoursesForClass(classData.id);
+        return { ...classData, courses };
+      })
+    );
+
     return {
-      classes: data?.map(this.transformClassData) || [],
+      classes: classesWithCourses.map(this.transformClassData),
       totalCount,
       totalPages,
       currentPage: page,
@@ -255,7 +272,15 @@ class ClassService {
       throw new Error(`Failed to fetch class: ${error.message}`);
     }
 
-    return data ? this.transformClassData(data) : null;
+    if (!data) {
+      return null;
+    }
+
+    // Fetch courses for this class
+    const courses = await this.getCoursesForClass(id);
+    const classWithCourses = { ...data, courses };
+
+    return this.transformClassData(classWithCourses);
   }
 
   // Create a new class
@@ -781,6 +806,26 @@ class ClassService {
     return data || [];
   }
 
+  // Get course count for a class
+  private async getCoursesForClass(classId: string): Promise<{ id: string; title: string }[]> {
+    try {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('id, title')
+        .contains('class_ids', [classId]);
+
+      if (error) {
+        console.error('Error fetching courses for class:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in getCoursesForClass:', error);
+      return [];
+    }
+  }
+
   // Transform raw database data to our interface
   private transformClassData(data: any): ClassWithMembers {
     const teachers = data.class_teachers?.map((ct: any) => ({
@@ -797,6 +842,12 @@ class ClassService {
       avatar_url: cs.profiles.avatar_url
     })) || [];
 
+    // Extract courses if they exist in the data
+    const courses = data.courses?.map((course: any) => ({
+      id: course.id,
+      title: course.title
+    })) || [];
+
     return {
       id: data.id,
       name: data.name,
@@ -810,6 +861,7 @@ class ClassService {
       max_students: data.max_students || 30,
       teachers,
       students,
+      courses,
       created_at: data.created_at,
       updated_at: data.updated_at
     };

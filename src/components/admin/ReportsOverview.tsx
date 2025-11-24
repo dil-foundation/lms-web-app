@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,6 +11,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ContentLoader } from '@/components/ContentLoader';
 import { Button } from '@/components/ui/button';
+import { ExportButton } from '@/components/ui/ExportButton';
+import { ReportData, ExportColumn } from '@/services/universalExportService';
 
 // TypeScript interfaces for database data
 interface DashboardStats {
@@ -318,6 +320,122 @@ export const ReportsOverview = () => {
     return engagementMetricsData;
   })();
 
+  // Prepare report data for export
+  const exportReportData = useMemo((): ReportData | null => {
+    if (!stats) return null;
+
+    const timeRangeLabels: Record<string, string> = {
+      '7days': 'Last 7 Days',
+      '30days': 'Last 30 Days',
+      '3months': 'Last 3 Months',
+      '6months': 'Last 6 Months',
+      '1year': 'Last Year',
+      'alltime': 'All Time',
+    };
+
+    return {
+      metadata: {
+        title: 'Admin Performance Analytics Report',
+        description: 'Comprehensive platform performance and analytics report',
+        generatedBy: user?.email || 'Unknown',
+        generatedAt: new Date(),
+        timeRange: timeRangeLabels[timeRange] || timeRange,
+      },
+      summary: `This report contains comprehensive analytics for the platform. Total users: ${stats.total_users}, Total courses: ${stats.total_courses}, Engagement rate: ${stats.avg_engagement}%.`,
+      metrics: [
+        { label: 'Total Users', value: stats.total_users },
+        { label: 'Total Teachers', value: stats.total_teachers },
+        { label: 'Total Students', value: stats.total_students },
+        { label: 'Total Admins', value: stats.total_admins },
+        { label: 'Total Courses', value: stats.total_courses },
+        { label: 'Active Courses', value: stats.active_courses },
+        { label: 'Completed Assignments', value: stats.completed_assignments },
+        { label: 'Active Discussions', value: stats.active_discussions },
+        { label: 'Average Engagement', value: `${stats.avg_engagement}%` },
+        { label: 'New Users This Month', value: stats.new_users_this_month },
+        { label: 'Course Completion Rate', value: `${stats.course_completion_rate}%` },
+        { label: 'Total Logins', value: stats.total_logins },
+        { label: 'Active Users Percentage', value: `${stats.active_users_percentage}%` },
+        { label: 'Course Engagement Percentage', value: `${stats.course_engagement_percentage}%` },
+        { label: 'Discussion Participation', value: `${stats.discussion_participation_percentage}%` },
+        { label: 'Assignment Completion', value: `${stats.assignment_completion_percentage}%` },
+      ],
+      tables: [
+        {
+          title: 'User Growth Trends',
+          columns: [
+            { header: 'Period', key: 'period_label', width: 20 },
+            { header: 'New Users', key: 'new_users', width: 15 },
+            { header: 'Active Users', key: 'active_users', width: 15 },
+            { header: 'Churn Rate %', key: 'churn_rate', width: 15, format: (v) => `${v}%` },
+          ],
+          data: userGrowthData,
+        },
+        {
+          title: 'Platform Statistics',
+          columns: [
+            { header: 'Category', key: 'category_name', width: 30 },
+            { header: 'Value', key: 'value', width: 15 },
+          ],
+          data: platformStatsData,
+        },
+        {
+          title: 'Course Analytics',
+          columns: [
+            { header: 'Course Title', key: 'course_title', width: 40 },
+            { header: 'Enrolled Students', key: 'enrolled_students', width: 18 },
+            { header: 'Completion Rate %', key: 'completion_rate', width: 18, format: (v) => `${v}%` },
+            { header: 'Avg Rating', key: 'avg_rating', width: 15 },
+          ],
+          data: courseAnalyticsData,
+        },
+        {
+          title: 'Course Performance',
+          columns: [
+            { header: 'Course Title', key: 'course_title', width: 40 },
+            { header: 'Enrollments', key: 'enrollments', width: 15 },
+            { header: 'Completion Rate %', key: 'completion_rate', width: 18, format: (v) => `${v}%` },
+            { header: 'Avg Rating', key: 'avg_rating', width: 15 },
+          ],
+          data: coursePerformanceData,
+        },
+        {
+          title: 'Engagement Data',
+          columns: [
+            { header: 'Period', key: 'period_label', width: 20 },
+            { header: 'Active Users', key: 'active_users', width: 15 },
+            { header: 'Time Spent (min)', key: 'time_spent', width: 18 },
+            { header: 'Courses', key: 'courses', width: 15 },
+            { header: 'Discussions', key: 'discussions', width: 15 },
+          ],
+          data: engagementData,
+        },
+        {
+          title: 'User Analytics',
+          columns: [
+            { header: 'Period', key: 'period_label', width: 20 },
+            { header: 'Active Users', key: 'active_users', width: 15 },
+            { header: 'New Signups', key: 'new_signups', width: 15 },
+            { header: 'Churn Rate %', key: 'churn_rate', width: 15, format: (v) => `${v}%` },
+          ],
+          data: userAnalyticsData,
+        },
+        {
+          title: 'Engagement Metrics',
+          columns: [
+            { header: 'Period', key: 'period_label', width: 20 },
+            { header: 'Active Users', key: 'active_users', width: 15 },
+            { header: 'Assignments Submitted', key: 'assignments_submitted', width: 20 },
+            { header: 'Quiz Submissions', key: 'quiz_submissions', width: 18 },
+            { header: 'Lessons Completed', key: 'lessons_completed', width: 18 },
+            { header: 'Discussions Created', key: 'discussions_created', width: 18 },
+          ],
+          data: engagementMetricsData,
+        },
+      ],
+    };
+  }, [stats, userGrowthData, platformStatsData, courseAnalyticsData, coursePerformanceData, engagementData, userAnalyticsData, engagementMetricsData, timeRange, user]);
+
   // Debug: Log the data being passed to the chart
   console.log('User Analytics Data:', processedUserAnalyticsData);
   console.log('Data length:', processedUserAnalyticsData.length);
@@ -375,28 +493,68 @@ export const ReportsOverview = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-3 sm:space-y-4 md:space-y-6 px-3 sm:px-4 md:px-0">
       {/* Premium Header Section */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                <BarChart3 className="w-6 h-6 text-primary" />
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl"></div>
+        <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl">
+          {/* Desktop Layout: Side by side */}
+          <div className="hidden sm:flex sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
+                <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text', lineHeight: '3rem' }}>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
                   Performance Analytics
                 </h1>
-                <p className="text-lg text-muted-foreground font-light">
+                <p className="text-sm sm:text-base md:text-lg text-muted-foreground mt-1 sm:mt-2 leading-relaxed">
                   Monitor platform performance and user engagement
+                </p>
+              </div>
+            </div>
+            {exportReportData && (
+              <ExportButton
+                reportData={exportReportData}
+                filename="admin-performance-analytics"
+                variant="outline"
+                className="shrink-0"
+              />
+            )}
+            
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="w-40 sm:w-48 flex-shrink-0">
+                <SelectValue placeholder="Select time range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7days">Last 7 days</SelectItem>
+                <SelectItem value="30days">Last 30 days</SelectItem>
+                <SelectItem value="3months">Last 3 months</SelectItem>
+                <SelectItem value="6months">Last 6 months</SelectItem>
+                <SelectItem value="1year">Last year</SelectItem>
+                <SelectItem value="alltime">All time</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Mobile Layout: Stacked */}
+          <div className="flex flex-col gap-3 sm:hidden">
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                <BarChart3 className="w-4 h-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                  Performance Analytics
+                </h1>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-tight">
+                  Monitor performance & engagement
                 </p>
               </div>
             </div>
             
             <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger className="w-full sm:w-48">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select time range" />
               </SelectTrigger>
               <SelectContent>
@@ -413,21 +571,21 @@ export const ReportsOverview = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
         {summaryCards.map((card, index) => (
           <Card key={index} className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-              <card.icon className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">{card.title}</CardTitle>
+              <card.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{card.value}</div>
+            <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+              <div className="text-xl sm:text-2xl font-bold">{card.value}</div>
               <div className="flex items-center gap-2 mt-2">
-                <div className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
-                  <TrendingUp className="w-4 h-4" />
+                <div className="flex items-center gap-1 text-xs sm:text-sm text-green-600 dark:text-green-400">
+                  <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                   <span className="font-medium">{card.change}</span>
                 </div>
-                <span className="text-xs text-muted-foreground">vs last period</span>
+                <span className="text-[10px] sm:text-xs text-muted-foreground">vs last period</span>
               </div>
             </CardContent>
           </Card>
@@ -435,12 +593,29 @@ export const ReportsOverview = () => {
       </div>
 
              {/* Main Reports Tabs */}
-       <Tabs defaultValue="users" className="space-y-6">
-         <div className="overflow-x-auto">
-           <TabsList className="grid w-full grid-cols-3 min-w-fit">
-             <TabsTrigger value="users" className="text-xs sm:text-sm">User Analytics</TabsTrigger>
-             <TabsTrigger value="courses" className="text-xs sm:text-sm">Course Performance</TabsTrigger>
-             <TabsTrigger value="engagement" className="text-xs sm:text-sm">Engagement</TabsTrigger>
+       <Tabs defaultValue="users" className="space-y-3 sm:space-y-4 md:space-y-6">
+         <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+           <TabsList className="grid w-full grid-cols-3 gap-1 sm:gap-2 h-auto p-1 sm:p-1.5 bg-muted/50">
+             <TabsTrigger 
+               value="users" 
+               className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md sm:rounded-lg whitespace-nowrap"
+             >
+               <span className="hidden sm:inline">User Analytics</span>
+               <span className="sm:hidden">Users</span>
+             </TabsTrigger>
+             <TabsTrigger 
+               value="courses" 
+               className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md sm:rounded-lg whitespace-nowrap"
+             >
+               <span className="hidden sm:inline">Course Performance</span>
+               <span className="sm:hidden">Courses</span>
+             </TabsTrigger>
+             <TabsTrigger 
+               value="engagement" 
+               className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md sm:rounded-lg whitespace-nowrap"
+             >
+               Engagement
+             </TabsTrigger>
            </TabsList>
          </div>
 
@@ -452,32 +627,30 @@ export const ReportsOverview = () => {
         )}
 
         {/* User Analytics Tab */}
-        <TabsContent value="users" className="space-y-6 relative">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">User Growth Trends</CardTitle>
+        <TabsContent value="users" className="space-y-3 sm:space-y-4 md:space-y-6 relative">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
+            <Card className="border-0 shadow-sm sm:shadow-lg bg-gradient-to-br from-card to-blue-50/30 dark:to-blue-950/20">
+              <CardHeader className="pb-3 sm:pb-4 p-3 sm:p-4 md:p-6">
+                <CardTitle className="text-sm sm:text-base md:text-lg font-semibold">User Growth Trends</CardTitle>
               </CardHeader>
-              <CardContent className="p-2 sm:p-6">
-                <div className="w-full h-[350px] sm:h-[400px]">
+              <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                <div className="w-full h-[320px] sm:h-[360px] md:h-[400px]">
                   <ChartContainer config={chartConfig} className="w-full h-full">
-                    <LineChart 
-                      data={processedUserAnalyticsData} 
-                      width={600} 
-                      height={350} 
-                      margin={{ top: 5, right: 10, left: 10, bottom: 120 }}
-                    >
-                        <CartesianGrid strokeDasharray="3 3" />
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart 
+                        data={processedUserAnalyticsData} 
+                        margin={{ top: 10, right: 15, left: 0, bottom: 60 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                         <XAxis 
                           dataKey="period_label" 
-                          tick={{ fontSize: 10 }}
+                          tick={{ fontSize: 9 }}
                           interval={0}
                           angle={-45}
                           textAnchor="end"
-                          height={120}
+                          height={60}
                           minTickGap={5}
-                          dy={15}
-                          dx={-5}
+                          dy={8}
                           allowDataOverflow={false}
                           tickFormatter={(value) => {
                             // Convert date to appropriate format based on time range
@@ -494,34 +667,39 @@ export const ReportsOverview = () => {
                             return value;
                           }}
                         />
-                        <YAxis tick={{ fontSize: 12 }} />
+                        <YAxis tick={{ fontSize: 11 }} width={35} />
                         <ChartTooltip content={<ChartTooltipContent />} />
                         <Line 
                           type="monotone" 
                           dataKey="active_users" 
                           stroke="var(--color-activeUsers)" 
-                          strokeWidth={2}
+                          strokeWidth={3}
                           name="Active Users"
+                          dot={{ r: 4 }}
+                          activeDot={{ r: 6 }}
                         />
                         <Line 
                           type="monotone" 
                           dataKey="new_signups" 
                           stroke="var(--color-newSignups)" 
-                          strokeWidth={2}
+                          strokeWidth={3}
                           name="New Signups"
+                          dot={{ r: 4 }}
+                          activeDot={{ r: 6 }}
                         />
                       </LineChart>
+                    </ResponsiveContainer>
                   </ChartContainer>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">Platform Distribution</CardTitle>
+            <Card className="border-0 shadow-sm sm:shadow-lg bg-gradient-to-br from-card to-green-50/30 dark:to-green-950/20">
+              <CardHeader className="pb-3 sm:pb-4 p-3 sm:p-4 md:p-6">
+                <CardTitle className="text-sm sm:text-base md:text-lg font-semibold">Platform Distribution</CardTitle>
               </CardHeader>
-              <CardContent className="p-2 sm:p-6">
-                <div className="w-full h-[250px] sm:h-[300px]">
+              <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                <div className="w-full h-[280px] sm:h-[320px] md:h-[360px]">
                   <ChartContainer config={chartConfig} className="w-full h-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -533,9 +711,11 @@ export const ReportsOverview = () => {
                           label={({ category_name, value }) => {
                             return window.innerWidth > 640 ? `${category_name} ${value}` : `${value}`;
                           }}
-                          outerRadius="80%"
+                          outerRadius="75%"
+                          innerRadius="35%"
                           fill="#8884d8"
                           dataKey="value"
+                          paddingAngle={2}
                         >
                           {platformStatsData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color_code} />
@@ -552,33 +732,34 @@ export const ReportsOverview = () => {
         </TabsContent>
 
         {/* Course Performance Tab */}
-        <TabsContent value="courses" className="space-y-6 relative">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg sm:text-xl">Top Performing Courses</CardTitle>
+        <TabsContent value="courses" className="space-y-3 sm:space-y-4 md:space-y-6 relative">
+          <Card className="border-0 shadow-sm sm:shadow-lg bg-gradient-to-br from-card to-purple-50/30 dark:to-purple-950/20">
+            <CardHeader className="pb-3 sm:pb-4 p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-sm sm:text-base md:text-lg font-semibold">Top Performing Courses</CardTitle>
             </CardHeader>
-            <CardContent className="p-2 sm:p-6">
-              <div className="w-full h-[350px] sm:h-[400px]">
+            <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+              <div className="w-full h-[320px] sm:h-[360px] md:h-[400px]">
                 <ChartContainer config={chartConfig} className="w-full h-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart 
                       data={coursePerformanceData} 
-                      margin={{ top: 20, right: 10, left: 10, bottom: 80 }}
+                      margin={{ top: 10, right: 15, left: 0, bottom: 60 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" />
+                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                       <XAxis 
                         dataKey="course_title" 
                         angle={-45}
                         textAnchor="end"
-                        height={80}
+                        height={60}
                         interval={0}
-                        tick={{ fontSize: 10 }}
+                        tick={{ fontSize: 9 }}
+                        dy={8}
                       />
-                      <YAxis tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 11 }} width={35} />
                       <ChartTooltip content={<ChartTooltipContent />} />
-                      <Legend />
-                      <Bar dataKey="enrollments" fill="var(--color-enrollments)" name="Enrollments" />
-                      <Bar dataKey="completion_rate" fill="var(--color-completionRate)" name="Completion Rate %" />
+                      <Legend wrapperStyle={{ fontSize: '11px' }} />
+                      <Bar dataKey="enrollments" fill="var(--color-enrollments)" name="Enrollments" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="completion_rate" fill="var(--color-completionRate)" name="Completion %" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </ChartContainer>
@@ -588,38 +769,38 @@ export const ReportsOverview = () => {
         </TabsContent>
 
         {/* Engagement Tab */}
-        <TabsContent value="engagement" className="space-y-6 relative">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">Platform Activity Overview</CardTitle>
+        <TabsContent value="engagement" className="space-y-3 sm:space-y-4 md:space-y-6 relative">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
+            <Card className="border-0 shadow-sm sm:shadow-lg bg-gradient-to-br from-card to-orange-50/30 dark:to-orange-950/20">
+              <CardHeader className="pb-3 sm:pb-4 p-3 sm:p-4 md:p-6">
+                <CardTitle className="text-sm sm:text-base md:text-lg font-semibold">Platform Activity Overview</CardTitle>
               </CardHeader>
-              <CardContent className="p-2 sm:p-6">
-                <div className="w-full h-[250px] sm:h-[300px] overflow-hidden">
+              <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                <div className="w-full h-[280px] sm:h-[320px] md:h-[360px]">
                   <ChartContainer config={chartConfig} className="w-full h-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart 
                         data={processedEngagementMetricsData} 
-                        margin={{ top: 5, right: 10, left: 10, bottom: 80 }}
+                        margin={{ top: 10, right: 15, left: 0, bottom: 60 }}
                       >
-                      <CartesianGrid strokeDasharray="3 3" />
+                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                       <XAxis 
                         dataKey="period_label" 
-                        tick={{ fontSize: 10 }}
+                        tick={{ fontSize: 9 }}
                         interval={0}
                         angle={-45}
                         textAnchor="end"
-                        height={80}
-                        minTickGap={20}
-                        dy={10}
+                        height={60}
+                        minTickGap={5}
+                        dy={8}
                       />
-                      <YAxis tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 11 }} width={35} />
                       <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="active_users" fill="var(--color-activeUsers)" name="Active Users" />
-                      <Bar dataKey="assignments_submitted" fill="var(--color-assignmentsSubmitted)" name="Assignments Submitted" />
-                      <Bar dataKey="quiz_submissions" fill="var(--color-quizSubmissions)" name="Quiz Submissions" />
-                      <Bar dataKey="lessons_completed" fill="var(--color-lessonsCompleted)" name="Lessons Completed" />
-                      <Bar dataKey="discussions_created" fill="var(--color-discussionsCreated)" name="Discussions Created" />
+                      <Bar dataKey="active_users" fill="var(--color-activeUsers)" name="Active Users" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="assignments_submitted" fill="var(--color-assignmentsSubmitted)" name="Assignments Submitted" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="quiz_submissions" fill="var(--color-quizSubmissions)" name="Quiz Submissions" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="lessons_completed" fill="var(--color-lessonsCompleted)" name="Lessons Completed" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="discussions_created" fill="var(--color-discussionsCreated)" name="Discussions Created" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </ChartContainer>
@@ -627,44 +808,48 @@ export const ReportsOverview = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">Learning Activity Trends</CardTitle>
+            <Card className="border-0 shadow-sm sm:shadow-lg bg-gradient-to-br from-card to-teal-50/30 dark:to-teal-950/20">
+              <CardHeader className="pb-3 sm:pb-4 p-3 sm:p-4 md:p-6">
+                <CardTitle className="text-sm sm:text-base md:text-lg font-semibold">Learning Activity Trends</CardTitle>
               </CardHeader>
-              <CardContent className="p-2 sm:p-6">
-                <div className="w-full h-[250px] sm:h-[300px] overflow-hidden">
+              <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                <div className="w-full h-[280px] sm:h-[320px] md:h-[360px]">
                   <ChartContainer config={chartConfig} className="w-full h-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart 
                         data={processedEngagementMetricsData} 
-                        margin={{ top: 5, right: 10, left: 10, bottom: 80 }}
+                        margin={{ top: 10, right: 15, left: 0, bottom: 60 }}
                       >
-                      <CartesianGrid strokeDasharray="3 3" />
+                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                       <XAxis 
                         dataKey="period_label" 
-                        tick={{ fontSize: 10 }}
+                        tick={{ fontSize: 9 }}
                         interval={0}
                         angle={-45}
                         textAnchor="end"
-                        height={80}
-                        minTickGap={20}
-                        dy={10}
+                        height={60}
+                        minTickGap={5}
+                        dy={8}
                       />
-                      <YAxis tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 11 }} width={35} />
                       <ChartTooltip content={<ChartTooltipContent />} />
                       <Line 
                         type="monotone" 
                         dataKey="quiz_submissions" 
                         stroke="var(--color-quizSubmissions)" 
-                        strokeWidth={2}
+                        strokeWidth={3}
                         name="Quiz Submissions"
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
                       />
                       <Line 
                         type="monotone" 
                         dataKey="lessons_completed" 
                         stroke="var(--color-lessonsCompleted)" 
-                        strokeWidth={2}
+                        strokeWidth={3}
                         name="Lessons Completed"
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
                       />
                     </LineChart>
                     </ResponsiveContainer>

@@ -477,65 +477,66 @@ export const AITeacherProgress = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8">
       {/* Premium Header Section */}
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-[#1582B4]/5 rounded-3xl"></div>
-        <div className="relative p-8 md:p-10 rounded-3xl">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-                <BarChart3 className="w-8 h-8 text-primary" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-[#1582B4]/5 rounded-2xl sm:rounded-3xl"></div>
+        <div className="relative p-4 sm:p-6 md:p-8 lg:p-10 rounded-2xl sm:rounded-3xl">
+          <div className="flex flex-col gap-3 sm:gap-4 md:gap-6">
+            <div className="flex items-start sm:items-center gap-2 sm:gap-3 md:gap-4">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                <BarChart3 className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-primary" />
               </div>
-              <div>
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-primary leading-[1.2]">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold tracking-tight text-primary leading-tight">
                   Student Progress
                 </h1>
-                <p className="text-lg text-muted-foreground font-light mt-4 leading-relaxed">
+                <p className="text-xs sm:text-sm md:text-base lg:text-lg text-muted-foreground font-light mt-1 sm:mt-2 md:mt-4 leading-relaxed">
                   Welcome {profile?.first_name || 'Teacher'} - AI-powered learning analytics for {students.length} students
                 </p>
               </div>
             </div>
             
             {/* Action Controls */}
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
               <Button
                 size="sm"
                 variant="outline"
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="gap-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+                className="gap-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary text-xs sm:text-sm h-9"
               >
-                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${refreshing ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
               <Select value={timeRange} onValueChange={handleTimeRangeChange}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-full sm:w-32 text-xs sm:text-sm h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all_time">All Time</SelectItem>
-                  <SelectItem value="this_week">This Week</SelectItem>
-                  <SelectItem value="this_month">This Month</SelectItem>
-                  <SelectItem value="this_year">This Year</SelectItem>
+                  <SelectItem value="all_time" className="text-xs sm:text-sm">All Time</SelectItem>
+                  <SelectItem value="this_week" className="text-xs sm:text-sm">This Week</SelectItem>
+                  <SelectItem value="this_month" className="text-xs sm:text-sm">This Month</SelectItem>
+                  <SelectItem value="this_year" className="text-xs sm:text-sm">This Year</SelectItem>
                 </SelectContent>
               </Select>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setViewMode(viewMode === 'table' ? 'cards' : 'table')}
-                className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
+                className="h-9 px-3 sm:px-4 rounded-lg sm:rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 text-xs sm:text-sm"
               >
                 {viewMode === 'table' ? 'Card View' : 'Table View'}
               </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="h-9 px-4 rounded-xl gap-2 bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
+                className="h-9 px-3 sm:px-4 rounded-lg sm:rounded-xl gap-2 bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 text-xs sm:text-sm"
                 onClick={() => handleExportData('csv', 'all')}
               >
-                <Download className="h-4 w-4" />
-                Export CSV
+                <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Export CSV</span>
+                <span className="sm:hidden">Export</span>
               </Button>
 
             </div>
@@ -544,54 +545,54 @@ export const AITeacherProgress = () => {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Students</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Total Students</CardTitle>
+            <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{progressOverviewData?.totalStudents || 0}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{progressOverviewData?.totalStudents || 0}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">
               Enrolled in AI courses
             </p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Average Completion</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Average Completion</CardTitle>
+            <Target className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{progressOverviewData?.averageCompletion || 0}%</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{progressOverviewData?.averageCompletion || 0}%</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">
               Across all students
             </p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Average Score</CardTitle>
-            <Star className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Average Score</CardTitle>
+            <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{progressOverviewData?.averageScore || 0}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{progressOverviewData?.averageScore || 0}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">
               AI assessment score
             </p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Students at Risk</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Students at Risk</CardTitle>
+            <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{progressOverviewData?.studentsAtRisk || 0}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold text-red-600">{progressOverviewData?.studentsAtRisk || 0}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">
               Need attention
             </p>
           </CardContent>
@@ -600,37 +601,37 @@ export const AITeacherProgress = () => {
 
       {/* Filters */}
       <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card border-0 shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-            <Filter className="h-5 w-5 text-primary" />
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-semibold">
+            <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             Filters & Search
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-muted-foreground">Search Students</label>
+        <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-2 sm:space-y-3">
+              <label className="text-xs sm:text-sm font-medium text-muted-foreground">Search Students</label>
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-2.5 sm:left-3 top-2.5 sm:top-3 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by name or email..."
                   value={searchQuery}
                   onChange={(e) => handleSearchTermChange(e.target.value)}
-                  className="pl-9 h-11 rounded-xl border-2 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                  className="pl-8 sm:pl-9 h-9 sm:h-10 md:h-11 rounded-lg sm:rounded-xl border-2 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 text-sm"
                 />
               </div>
             </div>
             
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-muted-foreground">Stage Filter</label>
+            <div className="space-y-2 sm:space-y-3">
+              <label className="text-xs sm:text-sm font-medium text-muted-foreground">Stage Filter</label>
               <Select value={stageFilter} onValueChange={handleStageFilterChangeLocal}>
-                <SelectTrigger className="h-11 rounded-xl border-2 focus:border-primary/50 focus:ring-2 focus:ring-primary/20">
+                <SelectTrigger className="h-9 sm:h-10 md:h-11 rounded-lg sm:rounded-xl border-2 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 text-sm">
                   <SelectValue placeholder="All Stages" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Stages</SelectItem>
+                  <SelectItem value="all" className="text-sm">All Stages</SelectItem>
                   {stages.map(stage => (
-                    <SelectItem key={stage} value={stage}>{stage}</SelectItem>
+                    <SelectItem key={stage} value={stage} className="text-sm">{stage}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -639,7 +640,7 @@ export const AITeacherProgress = () => {
             <div className="flex items-end">
               <Button 
                 variant="outline" 
-                className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+                className="w-full h-9 sm:h-10 md:h-11 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary text-xs sm:text-sm"
                 onClick={() => {
                   handleSearchTermChange('');
                   handleStageFilterChangeLocal('all');
@@ -655,14 +656,14 @@ export const AITeacherProgress = () => {
       {/* Student Data */}
       {viewMode === 'table' ? (
         <Card className="student-progress-table">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 pb-4 p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
               Student Progress Overview
               {refreshing && (
                 <RefreshCw className="h-4 w-4 animate-spin text-primary" />
               )}
             </CardTitle>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-xs sm:text-sm text-muted-foreground">
               {refreshing ? (
                 "Loading..."
               ) : (

@@ -35,6 +35,7 @@ interface Course {
   imageUrl: string;
   imagePath?: string;
   totalStudents: number;
+  totalTeachers: number;
   totalLessons: number;
   authorName: string;
   authorId: string;
@@ -191,18 +192,26 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
               </div>
 
               {/* Compact Course Stats - Horizontal Layout */}
-              <div className="flex items-center justify-between text-xs text-muted-foreground mb-2 flex-1 min-h-0">
-                <div className="flex items-center gap-1">
-                  <Users className="w-2.5 h-2.5" />
-                  <span>{course.totalStudents}</span>
+              <div className="space-y-1 text-xs text-muted-foreground mb-2 flex-1 min-h-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <Users className="w-2.5 h-2.5 text-blue-600" />
+                    <span>{course.totalStudents}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Users className="w-2.5 h-2.5 text-green-600" />
+                    <span>{course.totalTeachers}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <BookOpen className="w-2.5 h-2.5" />
-                  <span>{course.totalLessons}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="w-2.5 h-2.5" />
-                  <span className="truncate">{course.duration}</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <BookOpen className="w-2.5 h-2.5" />
+                    <span>{course.totalLessons}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-2.5 h-2.5" />
+                    <span className="truncate">{course.duration}</span>
+                  </div>
                 </div>
               </div>
 

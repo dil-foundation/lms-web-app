@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,6 +11,7 @@ import SightWordsLesson from './SightWordsLesson';
 import AppUIWordsLesson from './AppUIWordsLesson';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
+import { textToSpeech } from '@/utils/tts';
 
 // ============================================
 // SUPABASE IMAGE HELPERS FOR STAGE 0
@@ -173,50 +174,28 @@ const AlphabetLesson = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(0);
     const [loadingAudio, setLoadingAudio] = useState<string | null>(null);
-    const { playAudio } = useAudioPlayer();
+    const { playAudio, stopAudio } = useAudioPlayer();
     const progress = ((step + 1) / alphabetSets.length) * 100;
 
-    // Cleanup effect to stop speech synthesis on component unmount
-    useEffect(() => {
-        return () => {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-            }
-        };
-    }, []);
-
-    // Function to play text-to-speech audio
+    // Function to play text-to-speech audio using /tts API
     const handlePlayAudio = async (word: string) => {
         if (loadingAudio) return; // Prevent multiple simultaneous plays
         
         setLoadingAudio(word);
         try {
-            // Use browser's Speech Synthesis API
-            if ('speechSynthesis' in window) {
-                // Stop any current speech
-                window.speechSynthesis.cancel();
-                
-                const utterance = new SpeechSynthesisUtterance(word);
-                utterance.lang = 'en-US';
-                utterance.rate = 0.8; // Slightly slower for learning
-                utterance.pitch = 1;
-                utterance.volume = 1;
-                
-                // Set up event handlers
-                utterance.onend = () => {
-                    setLoadingAudio(null);
-                };
-                
-                utterance.onerror = () => {
-                    setLoadingAudio(null);
-                    console.error('Speech synthesis error');
-                };
-                
-                window.speechSynthesis.speak(utterance);
-            } else {
-                console.warn('Speech synthesis not supported');
+            // Stop any currently playing audio
+            stopAudio();
+            
+            // Call TTS API to get audio URL
+            const audioUrl = await textToSpeech(word);
+            
+            // Play the audio using the audio player hook
+            await playAudio(audioUrl);
+            
+            // Clean up loading state after audio starts playing
+            setTimeout(() => {
                 setLoadingAudio(null);
-            }
+            }, 100);
         } catch (error) {
             console.error('Error playing audio:', error);
             setLoadingAudio(null);
@@ -331,50 +310,28 @@ const PhonicsLesson = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(0);
     const [loadingAudio, setLoadingAudio] = useState<string | null>(null);
-    const { playAudio } = useAudioPlayer();
+    const { playAudio, stopAudio } = useAudioPlayer();
     const progress = ((step + 1) / phonicsSets.length) * 100;
 
-    // Cleanup effect to stop speech synthesis on component unmount
-    useEffect(() => {
-        return () => {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-            }
-        };
-    }, []);
-
-    // Function to play text-to-speech audio
-    const handlePlayAudio = async (text: string) => {
+    // Function to play text-to-speech audio using /tts API
+    const handlePlayAudio = async (word: string) => {
         if (loadingAudio) return; // Prevent multiple simultaneous plays
         
-        setLoadingAudio(text);
+        setLoadingAudio(word);
         try {
-            // Use browser's Speech Synthesis API
-            if ('speechSynthesis' in window) {
-                // Stop any current speech
-                window.speechSynthesis.cancel();
-                
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'en-US';
-                utterance.rate = 0.7; // Even slower for phonics practice
-                utterance.pitch = 1;
-                utterance.volume = 1;
-                
-                // Set up event handlers
-                utterance.onend = () => {
-                    setLoadingAudio(null);
-                };
-                
-                utterance.onerror = () => {
-                    setLoadingAudio(null);
-                    console.error('Speech synthesis error');
-                };
-                
-                window.speechSynthesis.speak(utterance);
-            } else {
-                console.warn('Speech synthesis not supported');
+            // Stop any currently playing audio
+            stopAudio();
+            
+            // Call TTS API to get audio URL
+            const audioUrl = await textToSpeech(word);
+            
+            // Play the audio using the audio player hook
+            await playAudio(audioUrl);
+            
+            // Clean up loading state when audio ends
+            setTimeout(() => {
                 setLoadingAudio(null);
-            }
+            }, 100);
         } catch (error) {
             console.error('Error playing audio:', error);
             setLoadingAudio(null);
@@ -512,51 +469,29 @@ const VocabularyLesson = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(0);
     const [loadingAudio, setLoadingAudio] = useState<string | null>(null);
-    const { playAudio } = useAudioPlayer();
+    const { playAudio, stopAudio } = useAudioPlayer();
     const progress = ((step + 1) / vocabularySets.length) * 100;
     const isCompletion = step === vocabularySets.length;
 
-    // Cleanup effect to stop speech synthesis on component unmount
-    useEffect(() => {
-        return () => {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-            }
-        };
-    }, []);
-
-    // Function to play text-to-speech audio
+    // Function to play text-to-speech audio using /tts API
     const handlePlayAudio = async (word: string) => {
         if (loadingAudio) return; // Prevent multiple simultaneous plays
         
         setLoadingAudio(word);
         try {
-            // Use browser's Speech Synthesis API
-            if ('speechSynthesis' in window) {
-                // Stop any current speech
-                window.speechSynthesis.cancel();
-                
-                const utterance = new SpeechSynthesisUtterance(word);
-                utterance.lang = 'en-US';
-                utterance.rate = 0.8; // Slightly slower for vocabulary learning
-                utterance.pitch = 1;
-                utterance.volume = 1;
-                
-                // Set up event handlers
-                utterance.onend = () => {
-                    setLoadingAudio(null);
-                };
-                
-                utterance.onerror = () => {
-                    setLoadingAudio(null);
-                    console.error('Speech synthesis error');
-                };
-                
-                window.speechSynthesis.speak(utterance);
-            } else {
-                console.warn('Speech synthesis not supported');
+            // Stop any currently playing audio
+            stopAudio();
+            
+            // Call TTS API to get audio URL
+            const audioUrl = await textToSpeech(word);
+            
+            // Play the audio using the audio player hook
+            await playAudio(audioUrl);
+            
+            // Clean up loading state after audio starts playing
+            setTimeout(() => {
                 setLoadingAudio(null);
-            }
+            }, 100);
         } catch (error) {
             console.error('Error playing audio:', error);
             setLoadingAudio(null);
@@ -714,8 +649,8 @@ export const LessonDetail: React.FC = () => {
     const { lessonId } = useParams<{ lessonId?: string }>();
 
     return (
-        <div className="p-4 sm:p-6 lg:p-8">
-            <PracticeBreadcrumb className="mb-6" />
+        <div className="p-3 sm:p-4 md:p-6 lg:p-8">
+            <PracticeBreadcrumb className="mb-3 sm:mb-4 md:mb-6" />
             <div className="max-w-4xl mx-auto flex items-center justify-center">
                 {lessonId === '1' && <AlphabetLesson />}
                 {lessonId === '2' && <PhonicsLesson />}

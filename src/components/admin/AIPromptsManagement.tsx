@@ -179,18 +179,19 @@ const AIPromptsManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">AI Prompts Management</h1>
-          <p className="text-muted-foreground">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight break-words">AI Prompts Management</h1>
+          <p className="text-sm sm:text-base text-muted-foreground break-words">
             Manage dynamic AI prompts for the AI Assistant - No more hardcoded patterns!
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={handleNewPrompt}>
+            <Button onClick={handleNewPrompt} className="w-full sm:w-auto flex-shrink-0">
               <Plus className="h-4 w-4 mr-2" />
-              New Prompt
+              <span className="hidden sm:inline">New Prompt</span>
+              <span className="sm:hidden">New</span>
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
