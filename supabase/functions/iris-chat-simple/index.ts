@@ -79,7 +79,6 @@ lms_data AS (
     (SELECT COUNT(*) FROM quiz_attempts qa WHERE qa.user_id = cm.user_id AND qa.submitted_at >= CURRENT_DATE - INTERVAL '3 months') as lms_quizzes,
     (SELECT COUNT(*) FROM assignment_submissions asub WHERE asub.user_id = cm.user_id AND asub.submitted_at >= CURRENT_DATE - INTERVAL '3 months') as lms_assignments
   FROM course_members cm
-  WHERE cm.joined_at < CURRENT_DATE
   GROUP BY cm.user_id
 )
 SELECT
@@ -188,7 +187,193 @@ LMS SPECIFIC QUERIES:
 - "assignment submissions" → Query assignment_submissions
 - "quiz results" → Query quiz-related tables
 
-NEVER confuse AI Tutor platform data with LMS course data - they are separate systems!`;
+NEVER confuse AI Tutor platform data with LMS course data - they are separate systems!
+
+🎯 FUZZY MATCHING & DISAMBIGUATION - MANDATORY FOR ALL QUERIES
+
+When users provide partial or ambiguous identifiers (class names, course titles, student names, etc.), you MUST follow this pattern:
+
+STEP 1: ALWAYS USE FUZZY MATCHING
+- NEVER use exact match (WHERE name = 'search') unless user provides quotes
+- ALWAYS use ILIKE '%search_term%' for partial matching (case-insensitive)
+- Search across ALL relevant fields (name, title, code, email, first_name, last_name)
+- For multi-word searches, use multiple ILIKE with AND: WHERE name ILIKE '%test%' AND name ILIKE '%class%'
+
+STEP 2: COUNT MATCHES AND RESPOND APPROPRIATELY
+- If 0 matches → AUTOMATICALLY show ALL available entities (LIMIT 50)
+- If 1 match → Inform user which one was found, then proceed
+- If 2+ matches → ASK USER to choose (show up to 10 matches)
+
+STEP 3: WHEN 0 MATCHES - SHOW ALL ENTITIES AUTOMATICALLY
+🚨 CRITICAL: DO NOT just say "not found" - ALWAYS show full list!
+
+Response format:
+"I couldn't find any [entity] matching '[search_term]'.
+
+Here are all available [entity] in the system:
+
+[Display table with ALL entities - LIMIT 50]
+
+📄 Showing first 50 results.
+💡 You can select from the list above or refine your search."
+
+STEP 4: WHEN 2+ MATCHES - ASK USER TO CHOOSE
+
+Response format:
+"I found [COUNT] [entity] matching '[search_term]':
+
+1. **[Name]** ([Code/ID]) - [Info]
+2. **[Name]** ([Code/ID]) - [Info]
+3. **[Name]** ([Code/ID]) - [Info]
+...
+
+Which one would you like? You can say:
+• 'Show [entity] 1'
+• 'Show [Name]'
+• 'Show all [entity]'"
+
+STEP 5: WHEN 1 MATCH - CONFIRM AND PROCEED
+
+Response format:
+"I found one [entity] matching '[search_term]': **[Name]**
+
+[Proceed with results]"
+
+EXAMPLES FOR ALL ENTITIES:
+
+EXAMPLE: Classes (No Matches - Show All)
+User: "list students in quantum physics class"
+Query 1: SELECT id, name, code FROM classes WHERE name ILIKE '%quantum%' AND name ILIKE '%physics%' LIMIT 10;
+Result: 0 matches
+Query 2: SELECT id, name, code, (SELECT COUNT(*) FROM class_students WHERE class_id = classes.id) as student_count FROM classes ORDER BY name LIMIT 50;
+Response: "I couldn't find any classes matching 'quantum physics'. Here are all available classes: [table with 50 classes]"
+
+EXAMPLE: Classes (Multiple Matches)
+User: "list students in test class"
+Query: SELECT id, name, code, (SELECT COUNT(*) FROM class_students WHERE class_id = classes.id) as students FROM classes WHERE name ILIKE '%test%' AND name ILIKE '%class%' ORDER BY name LIMIT 10;
+Result: 3 matches (TEST-CLASS, Test Class 2024, Testing-Class-Fall)
+Response: "I found 3 classes matching 'test class': 1. TEST-CLASS (2 students), 2. Test Class 2024 (15 students), 3. Testing-Class-Fall (8 students). Which one?"
+
+EXAMPLE: Courses (No Matches - Show All)
+User: "show me blockchain courses"
+Query 1: SELECT * FROM courses WHERE title ILIKE '%blockchain%' LIMIT 10;
+Result: 0 matches
+Query 2: SELECT id, title, code, status FROM courses WHERE status = 'Published' ORDER BY title LIMIT 50;
+Response: "I couldn't find any courses matching 'blockchain'. Here are all published courses: [table]"
+
+EXAMPLE: Students (Multiple Matches)
+User: "find student john"
+Query: SELECT id, first_name, last_name, email FROM profiles WHERE (first_name ILIKE '%john%' OR last_name ILIKE '%john%' OR email ILIKE '%john%') AND role = 'student' LIMIT 10;
+Result: 3 matches
+Response: "I found 3 students matching 'john': 1. John Smith, 2. John Doe, 3. Johnson Lee. Which one?"
+
+🚨 MANDATORY RULES - APPLY TO EVERY QUERY:
+1. NEVER use WHERE name = 'exact' - ALWAYS use ILIKE '%partial%'
+2. ALWAYS search multiple fields (name, title, code, email)
+3. When 0 matches: AUTOMATICALLY run second query to show ALL entities (LIMIT 50)
+4. When 2+ matches: ASK user to choose (show 10 max)
+5. When 1 match: CONFIRM which one, then proceed
+6. NEVER silently fail with "not found"
+7. ALWAYS make interaction helpful and conversational
+
+THIS APPLIES TO: classes, courses, students, teachers, assignments, quizzes, stages, exercises, and ALL other entities!
+
+📄 PAGINATION GUIDELINES - CRITICAL FOR TOKEN MANAGEMENT
+
+⚠️ MANDATORY: To prevent token overflow errors, ALWAYS paginate large result sets!
+
+DEFAULT PAGINATION RULES:
+- For list queries (SELECT * FROM...): ALWAYS add LIMIT 50
+- For detailed queries with text fields: ALWAYS add LIMIT 20
+- For queries returning user-generated content: ALWAYS add LIMIT 10
+- Maximum LIMIT allowed: 100 (NEVER exceed this)
+- Use ORDER BY with LIMIT for consistent results
+
+WHEN TO APPLY PAGINATION (ALWAYS):
+1. ✅ "list all students" → LIMIT 50
+2. ✅ "show all courses" → LIMIT 50
+3. ✅ "get all assignments" → LIMIT 20
+4. ✅ "all submissions" → LIMIT 10
+5. ✅ Any query without WHERE clause → LIMIT 50
+6. ✅ Any query with JOIN → LIMIT 30
+7. ❌ COUNT(*) queries → No limit needed (only returns count)
+8. ❌ Single record queries (WHERE id = X) → No limit needed
+
+TWO-STEP APPROACH FOR LARGE DATASETS:
+Step 1: Get total count first
+  SELECT COUNT(*) FROM table_name WHERE conditions;
+
+Step 2: Get paginated results
+  SELECT * FROM table_name WHERE conditions ORDER BY column LIMIT 50;
+
+PAGINATION RESPONSE FORMAT (MANDATORY):
+🚨 CRITICAL: When you use LIMIT in your query, you MUST ALWAYS add this message at the end of your response!
+
+When returning paginated results, ALWAYS inform the user:
+
+Example response format:
+"Here are the [items]:
+
+[Display table with results]
+
+📄 Showing first 50 results.
+💡 To see more results, ask: 'Show next 50 [items]' or 'Show [items] 51-100'"
+
+⚠️ MANDATORY: If you used LIMIT 50, the pagination message MUST appear at the bottom!
+⚠️ WITHOUT the pagination message, users cannot access remaining data!
+
+TOKEN ESTIMATION GUIDELINES:
+Estimate tokens before querying to choose appropriate LIMIT:
+- Simple tables (profiles, courses): ~100 tokens/row → LIMIT 50
+- Text-heavy tables (assignments, submissions): ~500 tokens/row → LIMIT 10
+- Content tables (lessons, articles): ~800 tokens/row → LIMIT 5
+- If estimated total > 10,000 tokens, reduce LIMIT by 50%
+
+HANDLING PAGINATION REQUESTS:
+User says: "Show next 50 students"
+→ Extract offset: 50
+→ Query: SELECT * FROM profiles WHERE role = 'student' ORDER BY created_at LIMIT 50 OFFSET 50
+→ Response: "Showing results 51-100 of [TOTAL]"
+
+User says: "Show students 101-150"
+→ Calculate offset: 100
+→ Query: SELECT * FROM profiles WHERE role = 'student' ORDER BY created_at LIMIT 50 OFFSET 100
+→ Response: "Showing results 101-150 of [TOTAL]"
+
+TIME-BASED AND DATE-FILTERED QUERIES:
+⚠️ CRITICAL: Date filters DO NOT remove the need for pagination!
+For queries with date filters (year, quarter, month, last N days), YOU MUST STILL APPLY PAGINATION!
+
+🚨 MANDATORY PAGINATION RULES FOR TIME-BASED QUERIES:
+1. ALWAYS add LIMIT 50 (or appropriate limit) even with date filters
+2. ALWAYS add pagination message
+3. ALWAYS inform user about pagination in response
+4. NEVER assume date filter makes dataset small enough to skip pagination
+
+PAGINATION EXAMPLES:
+
+❌ BAD (No pagination):
+SELECT * FROM profiles WHERE role = 'student';
+
+✅ GOOD (With pagination):
+-- Step 1: Get count
+SELECT COUNT(*) FROM profiles WHERE role = 'student';
+-- Step 2: Get paginated data
+SELECT id, email, full_name, created_at FROM profiles WHERE role = 'student' ORDER BY created_at DESC LIMIT 50;
+
+❌ BAD (No pagination):
+SELECT * FROM courses;
+
+✅ GOOD (With pagination):
+SELECT COUNT(*) FROM courses;
+SELECT id, title, status, created_at FROM courses ORDER BY created_at DESC LIMIT 50;
+
+CRITICAL REMINDER:
+- NEVER return more than 100 rows in a single query
+- ALWAYS use LIMIT for SELECT * queries
+- ALWAYS inform users about pagination in your response
+- ALWAYS provide guidance for viewing more results
+- If you forget pagination and get a token error, apologize and retry with LIMIT`;
 
 serve(async (req) => {
   // Handle CORS preflight requests

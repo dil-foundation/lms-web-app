@@ -1156,13 +1156,13 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     color: string; 
   }) => (
     <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-lg bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <Icon className={`h-4 w-4 ${color}`} />
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+        <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground truncate">{title}</CardTitle>
+        <Icon className={`h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 ${color}`} />
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
         <div className="space-y-1">
-            <div className="text-2xl font-bold">{typeof value === 'number' ? value.toLocaleString() : value}</div>
+            <div className="text-xl sm:text-2xl font-bold">{typeof value === 'number' ? value.toLocaleString() : value}</div>
         </div>
       </CardContent>
     </Card>
@@ -1171,7 +1171,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8 p-3 sm:p-4 md:p-6 lg:p-8">
       {loading ? (
         <div className="min-h-screen flex items-center justify-center">
           <ContentLoader message="Loading dashboard..." />
@@ -1179,26 +1179,26 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       ) : (
         <>
         {/* Premium Header Section */}
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-          <div className="relative p-8 rounded-3xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                  <GraduationCap className="w-6 h-6 text-primary" />
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
+          <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg sm:rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0">
+                  <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 </div>
-                <div>
-                  <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
                     Teacher Dashboard
                   </h1>
-                  <p className="text-lg text-muted-foreground mt-2 leading-relaxed">
+                  <p className="text-xs sm:text-sm md:text-base lg:text-lg text-muted-foreground mt-0.5 sm:mt-1 md:mt-2 leading-relaxed">
                     Welcome back, {userProfile?.first_name || 'Teacher'}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
                 <Select value={timeRange} onValueChange={setTimeRange}>
-                  <SelectTrigger className="w-40 h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5">
+                  <SelectTrigger className="w-full sm:w-32 md:w-40 h-8 sm:h-9 rounded-lg sm:rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 text-xs sm:text-sm">
                     <SelectValue placeholder="Time range" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1214,10 +1214,10 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                   <DrawerTrigger asChild>
                     <Button
                       variant="outline"
-                      className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
+                      className="h-8 sm:h-9 px-3 sm:px-4 rounded-lg sm:rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 text-xs sm:text-sm"
                     >
-                      <Filter className="h-4 w-4 mr-2" />
-                      Filters
+                      <Filter className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">Filters</span>
                     </Button>
                   </DrawerTrigger>
                   <DrawerContent>
@@ -1439,7 +1439,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         </div>
 
         {/* Metric Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             title="Total Students"
             value={stats?.totalStudents || 0}
@@ -1469,37 +1469,40 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         {/* Tabs Section */}
         <div className="relative">
           <div className="relative">
-            <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="performance">Performance</TabsTrigger>
-                <TabsTrigger value="feedback">Reports</TabsTrigger>
+            <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
+              <TabsList className="grid w-full grid-cols-3 gap-1 sm:gap-2 h-auto p-1">
+                <TabsTrigger value="overview" className="text-xs sm:text-sm py-2 sm:py-2.5">Overview</TabsTrigger>
+                <TabsTrigger value="performance" className="text-xs sm:text-sm py-2 sm:py-2.5">Performance</TabsTrigger>
+                <TabsTrigger value="feedback" className="text-xs sm:text-sm py-2 sm:py-2.5">Reports</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="overview" className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <TabsContent value="overview" className="space-y-4 sm:space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5" />
+                    <CardHeader className="p-4 sm:p-6">
+                      <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                        <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
                         Student Engagement Trends
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="h-[300px]">
+                    <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                      <div className="h-[280px] sm:h-[300px] w-full">
                         {studentEngagementData.length > 0 ? (
                           <ChartContainer config={chartConfig} className="w-full h-full">
                             <ResponsiveContainer width="100%" height="100%">
-                              <AreaChart data={studentEngagementData}>
+                              <AreaChart 
+                                data={studentEngagementData}
+                                margin={{ top: 10, right: 10, left: -10, bottom: 5 }}
+                              >
                                 <defs>
                                   <linearGradient id="colorEngagement" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
                                     <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
                                   </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="week" />
-                                <YAxis />
+                                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                                <XAxis dataKey="week" tick={{ fontSize: 10 }} />
+                                <YAxis tick={{ fontSize: 10 }} width={35} />
                                 <ChartTooltip content={<ChartTooltipContent />} />
                                 <Area 
                                   type="monotone" 
@@ -1516,12 +1519,13 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                                   strokeWidth={2}
                                   name="Completion Rate %"
                                 />
+                                <Legend wrapperStyle={{ fontSize: '10px' }} />
                               </AreaChart>
                             </ResponsiveContainer>
                           </ChartContainer>
                         ) : (
                           <div className="flex items-center justify-center h-full">
-                            <p className="text-muted-foreground">No data to display for this period.</p>
+                            <p className="text-muted-foreground text-xs sm:text-sm">No data to display for this period.</p>
                           </div>
                         )}
                       </div>
@@ -1529,14 +1533,14 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                   </Card>
 
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <PieChartIcon className="h-5 w-5" />
+                    <CardHeader className="p-4 sm:p-6">
+                      <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                        <PieChartIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                         Student Progress Distribution
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="h-[300px]">
+                    <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                      <div className="h-[280px] sm:h-[300px] w-full">
                         {studentProgressData.length > 0 ? (
                           <ChartContainer config={chartConfig} className="w-full h-full">
                             <ResponsiveContainer width="100%" height="100%">
@@ -1547,7 +1551,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                                   cy="50%"
                                   labelLine={false}
                                   label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                                  outerRadius={100}
+                                  outerRadius={80}
                                   fill="#8884d8"
                                   dataKey="value"
                                 >
@@ -1556,12 +1560,13 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                                   ))}
                                 </Pie>
                                 <ChartTooltip />
+                                <Legend wrapperStyle={{ fontSize: '10px' }} />
                               </PieChart>
                             </ResponsiveContainer>
                           </ChartContainer>
                         ) : (
                           <div className="flex items-center justify-center h-full">
-                            <p className="text-muted-foreground">No data to display.</p>
+                            <p className="text-muted-foreground text-xs sm:text-sm">No data to display.</p>
                           </div>
                         )}
                       </div>
@@ -1570,37 +1575,42 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                 </div>
               </TabsContent>
 
-              <TabsContent value="performance" className="space-y-6">
+              <TabsContent value="performance" className="space-y-4 sm:space-y-6">
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Course Performance Overview</CardTitle>
+                  <CardHeader className="p-4 sm:p-6">
+                    <CardTitle className="text-base sm:text-lg md:text-xl">Course Performance Overview</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="h-[400px]">
+                  <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                    <div className="h-[320px] sm:h-[360px] md:h-[400px] w-full">
                       {coursePerformanceData.length > 0 ? (
                       <ChartContainer config={chartConfig} className="w-full h-full">
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={coursePerformanceData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
-                            <CartesianGrid strokeDasharray="3 3" />
+                          <BarChart 
+                            data={coursePerformanceData} 
+                            margin={{ top: 10, right: 10, left: -10, bottom: 60 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                             <XAxis 
                               dataKey="course" 
                               angle={-45}
                               textAnchor="end"
-                              height={80}
+                              height={60}
                               interval={0}
+                              tick={{ fontSize: 9 }}
+                              dy={8}
                             />
-                            <YAxis />
+                            <YAxis tick={{ fontSize: 11 }} width={35} />
                             <ChartTooltip content={<ChartTooltipContent />} />
-                            <Bar dataKey="enrolled" fill="#3B82F6" name="Enrolled" />
-                            <Bar dataKey="completed" fill="#10B981" name="Completed" />
-                            <Bar dataKey="inProgress" fill="#F59E0B" name="In Progress" />
-                            <Legend />
+                            <Bar dataKey="enrolled" fill="#3B82F6" name="Enrolled" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="completed" fill="#10B981" name="Completed" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="inProgress" fill="#F59E0B" name="In Progress" radius={[4, 4, 0, 0]} />
+                            <Legend wrapperStyle={{ fontSize: '11px' }} />
                           </BarChart>
                         </ResponsiveContainer>
                       </ChartContainer>
                       ) : (
                         <div className="flex items-center justify-center h-full">
-                          <p className="text-muted-foreground">No course performance data to display.</p>
+                          <p className="text-muted-foreground text-xs sm:text-sm">No course performance data to display.</p>
                         </div>
                       )}
                     </div>
@@ -1608,23 +1618,26 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="feedback" className="space-y-6">
+              <TabsContent value="feedback" className="space-y-4 sm:space-y-6">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5" />
+                  <CardHeader className="p-4 sm:p-6">
+                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                      <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />
                       Engagement Trends
                     </CardTitle>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Track student engagement across different content types
                     </p>
                   </CardHeader>
-                  <CardContent>
-                    <div className="h-[400px]">
+                  <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                    <div className="h-[320px] sm:h-[360px] md:h-[400px] w-full">
                       {engagementTrendsData.length > 0 ? (
                       <ChartContainer config={chartConfig} className="w-full h-full">
                         <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={engagementTrendsData}>
+                          <AreaChart 
+                            data={engagementTrendsData}
+                            margin={{ top: 10, right: 10, left: -10, bottom: 5 }}
+                          >
                             <defs>
                               <linearGradient id="colorAssignments" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
@@ -1635,9 +1648,9 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                                 <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.1}/>
                               </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="week" />
-                            <YAxis />
+                            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                            <XAxis dataKey="week" tick={{ fontSize: 10 }} />
+                            <YAxis tick={{ fontSize: 10 }} width={35} />
                             <ChartTooltip content={<ChartTooltipContent />} />
                             <Area 
                               type="monotone" 
@@ -1655,13 +1668,13 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                               fill="url(#colorQuizzes)"
                               name="Quizzes"
                             />
-                            <Legend />
+                            <Legend wrapperStyle={{ fontSize: '10px' }} />
                           </AreaChart>
                         </ResponsiveContainer>
                       </ChartContainer>
                       ) : (
                         <div className="flex items-center justify-center h-full">
-                          <p className="text-muted-foreground">No engagement trends data to display for this period.</p>
+                          <p className="text-muted-foreground text-xs sm:text-sm">No engagement trends data to display for this period.</p>
                         </div>
                       )}
                     </div>

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
-import { ArrowLeft, Lightbulb, Mic, Users, Monitor, Loader2, Square, MessageSquare, XCircle, Trophy, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Lightbulb, Mic, Users, Monitor, Loader2, Square, MessageSquare, XCircle, Trophy, RotateCcw, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
@@ -236,6 +236,8 @@ export default function ProblemSolvingSimulations() {
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
   const [isCompleted, setIsCompleted] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [completedScenarios, setCompletedScenarios] = useState<Set<number>>(new Set());
+  const [currentTopicId, setCurrentTopicId] = useState<number>(1);
   
   const hasFetchedData = useRef(false);
 
@@ -272,8 +274,38 @@ export default function ProblemSolvingSimulations() {
       try {
         setIsLoading(true);
         setError(null);
+        
         // Fetch scenarios from API
         const fetchedScenarios = await fetchProblemSolvingScenarios();
+        
+        // Fetch user's current topic progress if user is logged in
+        if (user?.id) {
+          try {
+            const { getCurrentTopicProgress } = await import('@/utils/progressTracker');
+            const progressResponse = await getCurrentTopicProgress(
+              user.id,
+              3, // Stage 3
+              3  // Exercise 3 (ProblemSolvingSimulations)
+            );
+            
+            if (progressResponse.success && progressResponse.data?.current_topic_id) {
+              const topicId = progressResponse.data.current_topic_id;
+              setCurrentTopicId(topicId);
+              console.log('📍 Current topic ID:', topicId);
+              
+              // Mark all scenarios before current topic as completed
+              const completed = new Set<number>();
+              for (let i = 1; i < topicId; i++) {
+                completed.add(i);
+              }
+              setCompletedScenarios(completed);
+              console.log(`✅ Marked ${completed.size} scenarios as completed`);
+            }
+          } catch (progressError) {
+            console.warn('Could not fetch current topic progress:', progressError);
+          }
+        }
+        
         if (fetchedScenarios && fetchedScenarios.length > 0) {
           setScenarios(fetchedScenarios);
         } else {
@@ -291,7 +323,7 @@ export default function ProblemSolvingSimulations() {
     };
 
     fetchScenarios();
-  }, []);
+  }, [user?.id]);
 
   const initializeConversation = async (scenarioId: string) => {
     try {
@@ -378,9 +410,29 @@ export default function ProblemSolvingSimulations() {
     }
   };
 
-  const handleScenarioSelect = (scenarioId: string) => {
+  const handleScenarioSelect = async (scenarioId: string) => {
     setSelectedScenario(scenarioId);
     initializeConversation(scenarioId);
+    
+    // Save progress when selecting a scenario
+    if (user?.id) {
+      try {
+        const scenarioIndex = scenarios.findIndex(s => s.id === scenarioId);
+        if (scenarioIndex !== -1) {
+          const topicId = scenarioIndex + 1; // 1-based
+          const { updateCurrentTopic } = await import('@/utils/progressTracker');
+          await updateCurrentTopic(
+            user.id,
+            3, // Stage 3
+            3, // Exercise 3 (ProblemSolvingSimulations)
+            topicId
+          );
+          console.log(`Progress saved: Scenario ${topicId} of ${scenarios.length}`);
+        }
+      } catch (error) {
+        console.warn('Failed to save progress:', error);
+      }
+    }
   };
 
 
@@ -1109,12 +1161,25 @@ export default function ProblemSolvingSimulations() {
           <div className="mb-4">
             <h2 className="text-xl font-semibold mb-6 text-center text-primary dark:text-primary/90">Choose a Scenario</h2>
             <div className="space-y-4">
-              {scenarios.map((scenario) => (
+              {scenarios.map((scenario, index) => {
+                const scenarioNumber = index + 1;
+                const isCompleted = completedScenarios.has(scenarioNumber);
+                
+                return (
                 <Card
                   key={scenario.id}
-                  className="cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg"
+                  className={`cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border rounded-2xl shadow-lg relative ${
+                    isCompleted 
+                      ? 'border-primary/50 dark:border-primary/50' 
+                      : 'border-gray-200/60 dark:border-gray-700/60'
+                  }`}
                   onClick={() => handleScenarioSelect(scenario.id)}
                 >
+                  {isCompleted && (
+                    <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1 shadow-md z-10">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                  )}
                   <CardContent className="p-4 sm:p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-4">
@@ -1129,8 +1194,8 @@ export default function ProblemSolvingSimulations() {
                       
                       {/* Participants */}
                       <div className="flex items-center space-x-1">
-                        {scenario.participants.map((participant, index) => (
-                          <div key={index} className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-full flex items-center justify-center border border-primary/30 dark:border-primary/40">
+                        {scenario.participants.map((participant, pIndex) => (
+                          <div key={pIndex} className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-full flex items-center justify-center border border-primary/30 dark:border-primary/40">
                             <span className="text-xs text-primary font-medium">
                               {participant === 'You' ? '👤' : participant.split(' ')[0][0]}
                             </span>
@@ -1140,7 +1205,8 @@ export default function ProblemSolvingSimulations() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

@@ -30,16 +30,17 @@ export const QuizRetryManagement: React.FC<QuizRetryManagementProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
-          <p className="text-muted-foreground">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight break-words">{title}</h2>
+          <p className="text-sm sm:text-base text-muted-foreground break-words">
             Manage quiz retry settings, review requests, and monitor analytics
           </p>
         </div>
-        <Badge variant="outline" className="flex items-center gap-1">
+        <Badge variant="outline" className="flex items-center gap-1 whitespace-nowrap flex-shrink-0">
           <RotateCcw className="w-3 h-3" />
-          Retry System
+          <span className="hidden sm:inline">Retry System</span>
+          <span className="sm:hidden">Retry</span>
         </Badge>
       </div>
 

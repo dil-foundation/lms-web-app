@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
-import { ArrowLeft, Users, Mic, Plus, GraduationCap, Heart, Play, Loader2, MicOff, Volume2, MessageSquare, Trophy, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Users, Mic, Plus, GraduationCap, Heart, Play, Loader2, MicOff, Volume2, MessageSquare, Trophy, RotateCcw, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -378,6 +378,8 @@ export default function GroupDialogue() {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [completedScenarios, setCompletedScenarios] = useState<Set<number>>(new Set());
+  const [currentTopicId, setCurrentTopicId] = useState<number>(1);
   
   const hasFetchedData = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -464,8 +466,38 @@ export default function GroupDialogue() {
       try {
         setIsLoading(true);
         setError(null);
+        
         // Fetch scenarios from API
         const fetchedScenarios = await fetchGroupDialogueScenarios();
+        
+        // Fetch user's current topic progress if user is logged in
+        if (user?.id) {
+          try {
+            const { getCurrentTopicProgress } = await import('@/utils/progressTracker');
+            const progressResponse = await getCurrentTopicProgress(
+              user.id,
+              3, // Stage 3
+              2  // Exercise 2 (GroupDialogue)
+            );
+            
+            if (progressResponse.success && progressResponse.data?.current_topic_id) {
+              const topicId = progressResponse.data.current_topic_id;
+              setCurrentTopicId(topicId);
+              console.log('📍 Current topic ID:', topicId);
+              
+              // Mark all scenarios before current topic as completed
+              const completed = new Set<number>();
+              for (let i = 1; i < topicId; i++) {
+                completed.add(i);
+              }
+              setCompletedScenarios(completed);
+              console.log(`✅ Marked ${completed.size} scenarios as completed`);
+            }
+          } catch (progressError) {
+            console.warn('Could not fetch current topic progress:', progressError);
+          }
+        }
+        
         if (fetchedScenarios && fetchedScenarios.length > 0) {
           setScenarios(fetchedScenarios);
         } else {
@@ -483,7 +515,7 @@ export default function GroupDialogue() {
     };
 
     fetchScenarios();
-  }, []);
+  }, [user?.id]);
 
   // Cleanup audio and recording on component unmount
   useEffect(() => {
@@ -1036,9 +1068,29 @@ export default function GroupDialogue() {
     }
   };
 
-  const handleScenarioSelect = (scenarioId: string) => {
+  const handleScenarioSelect = async (scenarioId: string) => {
     setSelectedScenario(scenarioId);
     initializeConversation(scenarioId);
+    
+    // Save progress when selecting a scenario
+    if (user?.id) {
+      try {
+        const scenarioIndex = scenarios.findIndex(s => s.id === scenarioId);
+        if (scenarioIndex !== -1) {
+          const topicId = scenarioIndex + 1; // 1-based
+          const { updateCurrentTopic } = await import('@/utils/progressTracker');
+          await updateCurrentTopic(
+            user.id,
+            3, // Stage 3
+            2, // Exercise 2 (GroupDialogue)
+            topicId
+          );
+          console.log(`Progress saved: Scenario ${topicId} of ${scenarios.length}`);
+        }
+      } catch (error) {
+        console.warn('Failed to save progress:', error);
+      }
+    }
   };
 
   const handleSendMessage = () => {
@@ -1591,20 +1643,33 @@ export default function GroupDialogue() {
         <div className="mb-4">
           <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-center bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent">Choose a Scenario</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            {scenarios.map((scenario) => (
+            {scenarios.map((scenario, index) => {
+              const scenarioNumber = index + 1;
+              const isCompleted = completedScenarios.has(scenarioNumber);
+              
+              return (
               <Card
                 key={scenario.id}
-                className="cursor-pointer bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
+                className={`cursor-pointer bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group relative ${
+                  isCompleted 
+                    ? 'border-primary/50 dark:border-primary/50' 
+                    : 'border-gray-200/60 dark:border-gray-700/60'
+                }`}
                 onClick={() => handleScenarioSelect(scenario.id)}
               >
+                {isCompleted && (
+                  <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1 shadow-md z-10">
+                    <CheckCircle2 className="h-4 w-4" />
+                  </div>
+                )}
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className={`w-10 h-10 sm:w-12 sm:h-12 ${getScenarioColor(scenario)} rounded-2xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
                       {React.createElement(getScenarioIcon(scenario), { className: "h-5 w-5 sm:h-6 sm:w-6 text-white" })}
                     </div>
                     <div className="flex items-center space-x-1">
-                      {scenario.participants.map((participant, index) => (
-                        <div key={index} className="w-5 h-5 sm:w-6 sm:h-6 bg-primary/20 dark:bg-primary/30 rounded-full flex items-center justify-center border border-primary/30 dark:border-primary/40">
+                      {scenario.participants.map((participant, pIndex) => (
+                        <div key={pIndex} className="w-5 h-5 sm:w-6 sm:h-6 bg-primary/20 dark:bg-primary/30 rounded-full flex items-center justify-center border border-primary/30 dark:border-primary/40">
                           <span className="text-xs text-primary font-medium">
                             {participant === 'You' ? 'Y' : participant[0]}
                           </span>
@@ -1616,7 +1681,8 @@ export default function GroupDialogue() {
                   <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">{scenario.description}</p>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         </div>
         )}

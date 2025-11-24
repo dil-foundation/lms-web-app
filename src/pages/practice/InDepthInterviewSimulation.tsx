@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { CompletionDialog } from '@/components/practice/CompletionDialog';
-import { ArrowLeft, Mic, Building2, User, Star, TrendingUp, CheckCircle, Loader2, Play, Pause, Bot, Target, MessageSquare, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Mic, Building2, User, Star, TrendingUp, CheckCircle, Loader2, Play, Pause, Bot, Target, MessageSquare, RotateCcw, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
@@ -37,6 +37,8 @@ export default function InDepthInterviewSimulation() {
   const [selectedPrompt, setSelectedPrompt] = useState<InDepthInterviewPrompt | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasStarted, setHasStarted] = useState(false);
+  const [completedPrompts, setCompletedPrompts] = useState<Set<number>>(new Set());
+  const [currentTopicId, setCurrentTopicId] = useState<number>(1);
   const [evaluation, setEvaluation] = useState<InDepthInterviewEvaluationResponse | null>(null);
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
@@ -67,6 +69,34 @@ export default function InDepthInterviewSimulation() {
       try {
         setLoading(true);
         const fetchedPrompts = await inDepthInterviewService.getAllPrompts();
+        
+        // Fetch user's current topic progress if user is logged in
+        if (user?.id) {
+          try {
+            const { getCurrentTopicProgress } = await import('@/utils/progressTracker');
+            const progressResponse = await getCurrentTopicProgress(
+              user.id,
+              5, // Stage 5
+              3  // Exercise 3 (InDepthInterviewSimulation)
+            );
+            
+            if (progressResponse.success && progressResponse.data?.current_topic_id) {
+              const topicId = progressResponse.data.current_topic_id;
+              setCurrentTopicId(topicId);
+              console.log('📍 Current topic ID:', topicId);
+              
+              // Mark all prompts before current topic as completed
+              const completed = new Set<number>();
+              for (let i = 1; i < topicId; i++) {
+                completed.add(i);
+              }
+              setCompletedPrompts(completed);
+              console.log(`✅ Marked ${completed.size} prompts as completed`);
+            }
+          } catch (progressError) {
+            console.warn('Could not fetch current topic progress:', progressError);
+          }
+        }
 
         setPrompts(fetchedPrompts);
       } catch (error) {
@@ -309,12 +339,41 @@ export default function InDepthInterviewSimulation() {
             
 
             {prompts.length > 0 ? (
-              prompts.map((prompt) => (
+              prompts.map((prompt, index) => {
+                const promptNumber = index + 1;
+                const isCompleted = completedPrompts.has(promptNumber);
+                
+                return (
               <Card 
                   key={prompt.id}
-                  className="cursor-pointer border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
-                  onClick={() => handlePromptSelect(prompt)}
+                  className={`cursor-pointer border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative ${
+                    isCompleted ? 'ring-2 ring-primary/50' : ''
+                  }`}
+                  onClick={async () => {
+                    handlePromptSelect(prompt);
+                    
+                    // Save progress when selecting a prompt
+                    if (user?.id) {
+                      try {
+                        const { updateCurrentTopic } = await import('@/utils/progressTracker');
+                        await updateCurrentTopic(
+                          user.id,
+                          5, // Stage 5
+                          3, // Exercise 3 (InDepthInterviewSimulation)
+                          promptNumber
+                        );
+                        console.log(`Progress saved: Prompt ${promptNumber} of ${prompts.length}`);
+                      } catch (error) {
+                        console.warn('Failed to save progress:', error);
+                      }
+                    }
+                  }}
               >
+                {isCompleted && (
+                  <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1 shadow-md z-10">
+                    <CheckCircle2 className="h-4 w-4" />
+                  </div>
+                )}
                 <CardContent className="p-6">
                   <div className="flex items-start space-x-4">
                     <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center border border-primary/30">
@@ -334,7 +393,8 @@ export default function InDepthInterviewSimulation() {
                   </div>
                 </CardContent>
               </Card>
-              ))
+                );
+              })
             ) : (
               <Card className="border-0 bg-gradient-to-br from-muted/30 to-muted/50 rounded-2xl shadow-lg">
                 <CardContent className="p-8 text-center">

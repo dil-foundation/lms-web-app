@@ -157,91 +157,91 @@ const TeacherStageCard = ({ stage }) => {
   };
 
   return (
-    <Card className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-2xl h-full flex flex-col">
+    <Card className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-xl sm:rounded-2xl h-full flex flex-col">
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-        <img src={stage.imageUrl} alt={stage.title} className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
-        <div className="absolute top-3 left-3 flex gap-2">
+        <img src={stage.imageUrl} alt={stage.title} className="w-full h-36 sm:h-40 md:h-44 lg:h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
+        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex gap-1.5 sm:gap-2">
           {stage.isAITutor && (
-            <Badge className="bg-gradient-to-r from-primary to-primary/90 text-white border-0 shadow-lg">
-              <Sparkles className="w-3 h-3 mr-1" />
+            <Badge className="bg-gradient-to-r from-primary to-primary/90 text-white border-0 shadow-lg text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1">
+              <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
               AI Tutor
             </Badge>
           )}
-          <Badge className={`${getDifficultyColor(stage.difficulty)} border-0 shadow-sm`}>
+          <Badge className={`${getDifficultyColor(stage.difficulty)} border-0 shadow-sm text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1`}>
             {stage.difficulty}
           </Badge>
         </div>
-        <div className="absolute top-3 right-3">
+        <div className="absolute top-2 sm:top-3 right-2 sm:right-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-sm border border-white/20">
-                <MoreVertical className="h-4 w-4" />
+              <Button variant="ghost" size="sm" className="h-7 w-7 sm:h-8 sm:w-8 p-0 bg-white/90 hover:bg-white shadow-sm border border-white/20">
+                <MoreVertical className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="rounded-xl border-0 shadow-xl">
               <DropdownMenuItem onClick={() => {
                 // Small delay to ensure dropdown is fully closed
                 setTimeout(() => setIsEditOpen(true), 100);
-              }} className="rounded-lg">
-                <Edit3 className="mr-2 h-4 w-4" />
+              }} className="rounded-lg text-xs sm:text-sm">
+                <Edit3 className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Customize for Class
               </DropdownMenuItem>
-              <DropdownMenuItem className="rounded-lg">
-                <Copy className="mr-2 h-4 w-4" />
+              <DropdownMenuItem className="rounded-lg text-xs sm:text-sm">
+                <Copy className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Create Assignment
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="rounded-lg">
-                <Settings className="mr-2 h-4 w-4" />
+              <DropdownMenuItem className="rounded-lg text-xs sm:text-sm">
+                <Settings className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Teaching Resources
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <div className="absolute bottom-3 right-3">
-          <div className="flex items-center gap-1 text-white/90 text-xs font-medium">
-            <BookOpen className="w-3 h-3" />
+        <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-3">
+          <div className="flex items-center gap-0.5 sm:gap-1 text-white/90 text-[10px] sm:text-xs font-medium bg-black/30 px-1.5 sm:px-2 py-1 rounded-lg">
+            <BookOpen className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             {stage.lessons} lessons
           </div>
         </div>
       </div>
       
-      <CardContent className="p-6 flex-1 flex flex-col">
-        <div className="space-y-4 flex-1 flex flex-col">
+      <CardContent className="p-3 sm:p-4 md:p-5 lg:p-6 flex-1 flex flex-col">
+        <div className="space-y-2 sm:space-y-3 md:space-y-4 flex-1 flex flex-col">
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 line-clamp-2 leading-tight">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1.5 sm:mb-2 line-clamp-2 leading-tight">
               {stage.title}
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2 sm:mb-3 line-clamp-2">
               {stage.description}
             </p>
           </div>
           
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+          <div className="space-y-2 sm:space-y-3">
+            <div className="flex items-center justify-between text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
               <span>Status</span>
-              <div className="flex items-center gap-2">
-                <div className={`h-2 w-2 rounded-full ${stage.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <div className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full ${stage.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></div>
                 <span className="font-medium">{stage.isActive ? 'Available' : 'Coming Soon'}</span>
               </div>
             </div>
           </div>
           
-          <div className="mt-auto pt-2 space-y-3">
+          <div className="mt-auto pt-1.5 sm:pt-2 space-y-2 sm:space-y-3">
             <Button 
-              className="w-full h-11 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0" 
+              className="w-full h-9 sm:h-10 md:h-11 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0 text-xs sm:text-sm" 
               onClick={handleViewStage}
             >
-              <Eye className="mr-2 h-4 w-4" />
+              <Eye className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
               Preview Stage
             </Button>
             <Button 
               variant="outline" 
-              className="w-full h-11 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/5 hover:border-primary/50 hover:text-primary border-2 rounded-xl" 
+              className="w-full h-9 sm:h-10 md:h-11 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/5 hover:border-primary/50 hover:text-primary border-2 rounded-lg sm:rounded-xl text-xs sm:text-sm" 
               onClick={() => setIsEditOpen(true)}
             >
-              <Settings className="mr-2 h-4 w-4" />
+              <Settings className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
               Customize
             </Button>
           </div>
@@ -250,65 +250,67 @@ const TeacherStageCard = ({ stage }) => {
 
       {/* Customization Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-md rounded-2xl border-0 shadow-2xl">
+        <DialogContent className="max-w-[95vw] sm:max-w-md rounded-xl sm:rounded-2xl border-0 shadow-2xl mx-3 sm:mx-0">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold">Customize Stage for Your Class</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl font-semibold">Customize Stage for Your Class</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Stage Title</Label>
+          <div className="space-y-3 sm:space-y-4">
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="title" className="text-xs sm:text-sm">Stage Title</Label>
               <Input
                 id="title"
                 value={editForm.title}
                 onChange={(e) => setEditForm({...editForm, title: e.target.value})}
+                className="text-sm"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Class Description</Label>
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="description" className="text-xs sm:text-sm">Class Description</Label>
               <Textarea
                 id="description"
                 value={editForm.description}
                 onChange={(e) => setEditForm({...editForm, description: e.target.value})}
                 rows={3}
                 placeholder="Customize this description for your students..."
+                className="text-sm"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="difficulty">Difficulty Level</Label>
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="difficulty" className="text-xs sm:text-sm">Difficulty Level</Label>
               <Select
                 value={editForm.difficulty}
                 onValueChange={(value) => setEditForm({...editForm, difficulty: value})}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full text-sm">
                   <SelectValue placeholder="Select difficulty level" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Beginner">Beginner</SelectItem>
-                  <SelectItem value="Elementary">Elementary</SelectItem>
-                  <SelectItem value="Intermediate">Intermediate</SelectItem>
-                  <SelectItem value="Upper Intermediate">Upper Intermediate</SelectItem>
-                  <SelectItem value="Advanced">Advanced</SelectItem>
-                  <SelectItem value="Proficiency">Proficiency</SelectItem>
+                  <SelectItem value="Beginner" className="text-sm">Beginner</SelectItem>
+                  <SelectItem value="Elementary" className="text-sm">Elementary</SelectItem>
+                  <SelectItem value="Intermediate" className="text-sm">Intermediate</SelectItem>
+                  <SelectItem value="Upper Intermediate" className="text-sm">Upper Intermediate</SelectItem>
+                  <SelectItem value="Advanced" className="text-sm">Advanced</SelectItem>
+                  <SelectItem value="Proficiency" className="text-sm">Proficiency</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="active">Assign to Students</Label>
+              <Label htmlFor="active" className="text-xs sm:text-sm">Assign to Students</Label>
               <Switch
                 id="active"
                 checked={editForm.isActive}
                 onCheckedChange={(checked) => setEditForm({...editForm, isActive: checked})}
               />
             </div>
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-2 sm:gap-3 pt-3 sm:pt-4">
               <Button 
                 variant="outline" 
-                className="flex-1 h-11 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/5 hover:border-primary/30 hover:text-primary border-2 rounded-xl" 
+                className="flex-1 h-9 sm:h-10 md:h-11 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/5 hover:border-primary/30 hover:text-primary border-2 rounded-lg sm:rounded-xl text-xs sm:text-sm" 
                 onClick={() => setIsEditOpen(false)}
               >
                 Cancel
               </Button>
-              <Button className="flex-1 h-11 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0 rounded-xl" onClick={() => setIsEditOpen(false)}>
+              <Button className="flex-1 h-9 sm:h-10 md:h-11 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0 rounded-lg sm:rounded-xl text-xs sm:text-sm" onClick={() => setIsEditOpen(false)}>
                 Save Changes
               </Button>
             </div>
@@ -321,21 +323,21 @@ const TeacherStageCard = ({ stage }) => {
 
 export const AITeacherPractice: React.FC = () => {
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8">
               {/* Premium Header Section */}
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-[#1582B4]/5 rounded-3xl"></div>
-          <div className="relative p-8 md:p-10 rounded-3xl">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-                  <PlayCircle className="w-8 h-8 text-primary" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-[#1582B4]/5 rounded-2xl sm:rounded-3xl"></div>
+          <div className="relative p-4 sm:p-6 md:p-8 lg:p-10 rounded-2xl sm:rounded-3xl">
+            <div className="flex flex-col gap-3 sm:gap-4 md:gap-6">
+              <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg">
+                  <PlayCircle className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-primary leading-[1.2]">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-primary leading-[1.2]">
                     Practice Activities
                   </h1>
-                  <p className="text-lg text-muted-foreground font-light mt-4 leading-relaxed">
+                  <p className="text-sm sm:text-base md:text-lg text-muted-foreground font-light mt-1 sm:mt-2 md:mt-4 leading-relaxed">
                     Preview and customize practice stages for your students
                   </p>
                 </div>
@@ -345,7 +347,7 @@ export const AITeacherPractice: React.FC = () => {
         </div>
 
       {/* Practice Stages Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
         {mockStages.map((stage) => (
           <TeacherStageCard key={stage.id} stage={stage} />
         ))}

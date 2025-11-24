@@ -335,36 +335,69 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
 
   return (
     <TooltipProvider>
-      <div className="space-y-8">
+      <div className="space-y-4 sm:space-y-6 md:space-y-8 px-4 sm:px-0">
       {/* Premium Header Section */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-4 md:p-8 rounded-3xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
+        <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl">
+          {/* Desktop Layout */}
+          <div className="hidden lg:flex lg:items-center lg:justify-between gap-3 lg:gap-4 overflow-hidden">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1 overflow-hidden max-w-[60%]">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0">
                 <Video className="w-5 h-5 md:w-6 md:h-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-2xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <h1 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
                   Zoom Meetings
                 </h1>
-                <p className="text-sm md:text-lg text-muted-foreground font-light">
+                <p className="text-xs md:text-sm lg:text-base xl:text-lg text-muted-foreground font-light mt-0.5 md:mt-1 break-words">
                   Schedule and manage virtual meetings with students
                 </p>
               </div>
             </div>
             
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={loadData} disabled={loading}>
+            <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+              <Button variant="outline" onClick={loadData} disabled={loading} className="h-7 px-2 text-[10px] md:text-[11px] whitespace-nowrap">
+                <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} />
+                <span className="hidden xl:inline">Refresh</span>
+              </Button>
+              <Button 
+                onClick={() => setIsCreateModalOpen(true)}
+                className="h-7 px-2 md:px-3 rounded-lg bg-gradient-to-r from-brand-green-500 to-brand-green-600 hover:from-brand-green-600 hover:to-brand-green-500 text-white shadow-lg hover:shadow-xl transition-all duration-300 text-[10px] md:text-[11px] whitespace-nowrap"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                <span className="hidden xl:inline">Schedule Meeting</span>
+                <span className="xl:hidden">Schedule</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Mobile & Tablet Layout */}
+          <div className="flex flex-col gap-3 md:gap-4 lg:hidden">
+            <div className="flex items-start gap-2 md:gap-3 min-w-0">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Video className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg md:text-xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight break-words">
+                  Zoom Meetings
+                </h1>
+                <p className="text-xs md:text-sm text-muted-foreground font-light mt-0.5 break-words">
+                  Schedule and manage virtual meetings with students
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 w-full">
+              <Button variant="outline" onClick={loadData} disabled={loading} className="h-9 px-3 text-xs md:text-sm flex-1 sm:flex-none">
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
               <Button 
                 onClick={() => setIsCreateModalOpen(true)}
-                className="h-10 px-6 rounded-xl bg-gradient-to-r from-brand-green-500 to-brand-green-600 hover:from-brand-green-600 hover:to-brand-green-500 text-white shadow-lg hover:shadow-xl hover:shadow-brand-green-500/25 transition-all duration-300 hover:-translate-y-0.5"
+                className="h-9 px-3 md:px-4 rounded-lg bg-gradient-to-r from-brand-green-500 to-brand-green-600 hover:from-brand-green-600 hover:to-brand-green-500 text-white shadow-lg text-xs md:text-sm flex-1"
               >
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="h-4 w-4 mr-2" />
                 Schedule Meeting
               </Button>
             </div>
@@ -373,133 +406,136 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Meetings</CardTitle>
-            <Video className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium truncate pr-1">Total Meetings</CardTitle>
+            <Video className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{stats.total}</div>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Upcoming</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium truncate pr-1">Upcoming</CardTitle>
+            <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.upcoming}</div>
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{stats.upcoming}</div>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">1-on-1 Sessions</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium truncate pr-1">1-on-1 Sessions</CardTitle>
+            <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.oneOnOne}</div>
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{stats.oneOnOne}</div>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Class Meetings</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium truncate pr-1">Class Meetings</CardTitle>
+            <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.classMeetings}</div>
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{stats.classMeetings}</div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Teacher Meetings</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium truncate pr-1">Teacher Meetings</CardTitle>
+            <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.teacherToTeacher}</div>
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{stats.teacherToTeacher}</div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Admin Meetings</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium truncate pr-1">Admin Meetings</CardTitle>
+            <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.adminToTeacher}</div>
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{stats.adminToTeacher}</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Meetings Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="upcoming">
-            Upcoming Meetings
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3 sm:space-y-4">
+        <TabsList className="grid w-full grid-cols-2 h-auto">
+          <TabsTrigger value="upcoming" className="text-xs sm:text-sm py-2 sm:py-2.5">
+            <span className="hidden sm:inline">Upcoming Meetings</span>
+            <span className="sm:hidden">Upcoming</span>
           </TabsTrigger>
-          <TabsTrigger value="past">
+          <TabsTrigger value="past" className="text-xs sm:text-sm py-2 sm:py-2.5">
             Past Meetings
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="upcoming" className="space-y-4">
+        <TabsContent value="upcoming" className="space-y-3 sm:space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Upcoming Meetings</CardTitle>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">Upcoming Meetings</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6 pt-0">
               {upcomingMeetings.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Video className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No upcoming meetings scheduled</p>
+                <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                  <Video className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+                  <p className="text-sm sm:text-base">No upcoming meetings scheduled</p>
                   <Button 
-                    className="mt-4" 
+                    className="mt-3 sm:mt-4 text-xs sm:text-sm" 
                     onClick={() => setIsCreateModalOpen(true)}
                   >
                     Schedule Your First Meeting
                   </Button>
                 </div>
               ) : (
-                <Table>
+                <div className="overflow-x-auto -mx-4 sm:mx-0">
+                  <div className="inline-block min-w-full align-middle px-4 sm:px-0">
+                    <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Meeting</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Host</TableHead>
-                      <TableHead>Participant(s)</TableHead>
-                      <TableHead>Date & Time</TableHead>
-                      <TableHead>Duration</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead className="text-xs sm:text-sm">Meeting</TableHead>
+                      <TableHead className="text-xs sm:text-sm">Type</TableHead>
+                      <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Host</TableHead>
+                      <TableHead className="text-xs sm:text-sm">Participant(s)</TableHead>
+                      <TableHead className="text-xs sm:text-sm hidden md:table-cell">Date & Time</TableHead>
+                      <TableHead className="text-xs sm:text-sm hidden lg:table-cell">Duration</TableHead>
+                      <TableHead className="text-xs sm:text-sm">Status</TableHead>
+                      <TableHead className="text-xs sm:text-sm">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {upcomingMeetings.map((meeting) => (
                       <TableRow key={meeting.id}>
-                        <TableCell>
+                        <TableCell className="text-xs sm:text-sm">
                           <div>
                             <div className="font-medium">{meeting.title}</div>
                             {meeting.description && (
-                              <div className="text-sm text-muted-foreground">
+                              <div className="text-xs sm:text-sm text-muted-foreground">
                                 {meeting.description}
                               </div>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
+                        <TableCell className="text-xs sm:text-sm">
+                          <Badge variant="outline" className="text-[10px] sm:text-xs">
                             {meeting.meeting_type === '1-on-1' && '1-on-1'}
                             {meeting.meeting_type === 'class' && 'Class'}
                             {meeting.meeting_type === 'teacher-to-teacher' && 'Teacher-to-Teacher'}
                             {meeting.meeting_type === 'admin-to-teacher' && 'Admin-to-Teacher'}
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          <span className="text-sm">
+                        <TableCell className="text-xs sm:text-sm hidden sm:table-cell">
+                          <span className="text-xs sm:text-sm">
                             {meeting.teacher_id === userProfile.id ? (
                               <span className="text-green-600 font-medium">You</span>
                             ) : (
@@ -507,7 +543,7 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
                             )}
                           </span>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-xs sm:text-sm">
                           {meeting.meeting_type === '1-on-1' && (meeting.student_name || 'Unknown Student')}
                           {meeting.meeting_type === 'class' && (meeting.course_title || 'Unknown Course')}
                           {meeting.meeting_type === 'teacher-to-teacher' && (
@@ -526,15 +562,15 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
                             </span>
                           )}
                         </TableCell>
-                        <TableCell>{formatDateTime(meeting.scheduled_time)}</TableCell>
-                        <TableCell>{meeting.duration} min</TableCell>
-                        <TableCell>
+                        <TableCell className="text-xs sm:text-sm hidden md:table-cell">{formatDateTime(meeting.scheduled_time)}</TableCell>
+                        <TableCell className="text-xs sm:text-sm hidden lg:table-cell">{meeting.duration} min</TableCell>
+                        <TableCell className="text-xs sm:text-sm">
                           <Badge className={getStatusColor(meeting.status)}>
                             {meeting.status}
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
+                        <TableCell className="text-xs sm:text-sm">
+                          <div className="flex items-center gap-1 sm:space-x-2">
                             {meeting.zoom_join_url && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -607,59 +643,63 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                    </Table>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="past" className="space-y-4">
+        <TabsContent value="past" className="space-y-3 sm:space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Past Meetings</CardTitle>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">Past Meetings</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6 pt-0">
               {pastMeetings.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No past meetings found</p>
+                <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                  <Clock className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+                  <p className="text-sm sm:text-base">No past meetings found</p>
                 </div>
               ) : (
-                <Table>
+                <div className="overflow-x-auto -mx-4 sm:mx-0">
+                  <div className="inline-block min-w-full align-middle px-4 sm:px-0">
+                    <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Meeting</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Host</TableHead>
-                      <TableHead>Participant(s)</TableHead>
-                      <TableHead>Date & Time</TableHead>
-                      <TableHead>Duration</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead className="text-xs sm:text-sm">Meeting</TableHead>
+                      <TableHead className="text-xs sm:text-sm">Type</TableHead>
+                      <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Host</TableHead>
+                      <TableHead className="text-xs sm:text-sm">Participant(s)</TableHead>
+                      <TableHead className="text-xs sm:text-sm hidden md:table-cell">Date & Time</TableHead>
+                      <TableHead className="text-xs sm:text-sm hidden lg:table-cell">Duration</TableHead>
+                      <TableHead className="text-xs sm:text-sm">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {pastMeetings.map((meeting) => (
                       <TableRow key={meeting.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{meeting.title}</div>
+                        <TableCell className="text-xs sm:text-sm">
+                          <div className="min-w-0">
+                            <div className="font-medium truncate max-w-[150px] sm:max-w-none" title={meeting.title}>{meeting.title}</div>
                             {meeting.description && (
-                              <div className="text-sm text-muted-foreground">
+                              <div className="text-[10px] sm:text-xs text-muted-foreground truncate max-w-[150px] sm:max-w-none" title={meeting.description}>
                                 {meeting.description}
                               </div>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
+                        <TableCell className="text-xs sm:text-sm">
+                          <Badge variant="outline" className="text-[10px] sm:text-xs whitespace-nowrap">
                             {meeting.meeting_type === '1-on-1' && '1-on-1'}
                             {meeting.meeting_type === 'class' && 'Class'}
-                            {meeting.meeting_type === 'teacher-to-teacher' && 'Teacher-to-Teacher'}
-                            {meeting.meeting_type === 'admin-to-teacher' && 'Admin-to-Teacher'}
+                            {meeting.meeting_type === 'teacher-to-teacher' && 'T2T'}
+                            {meeting.meeting_type === 'admin-to-teacher' && 'A2T'}
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          <span className="text-sm">
+                        <TableCell className="text-xs sm:text-sm hidden sm:table-cell">
+                          <span className="text-xs sm:text-sm truncate max-w-[100px] md:max-w-none" title={meeting.teacher_id === userProfile.id ? 'You' : (meeting.host_name || 'Unknown')}>
                             {meeting.teacher_id === userProfile.id ? (
                               <span className="text-green-600 font-medium">You</span>
                             ) : (
@@ -667,38 +707,50 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
                             )}
                           </span>
                         </TableCell>
-                        <TableCell>
-                          {meeting.meeting_type === '1-on-1' && (meeting.student_name || 'Unknown Student')}
-                          {meeting.meeting_type === 'class' && (meeting.course_title || 'Unknown Course')}
-                          {meeting.meeting_type === 'teacher-to-teacher' && (
-                            <span className="flex items-center gap-1">
-                              <Users className="h-3 w-3" />
-                              {meeting.participant_name || 'Unknown Teacher'}
-                            </span>
-                          )}
-                          {meeting.meeting_type === 'admin-to-teacher' && (
-                            <span className="flex items-center gap-1">
-                              <Users className="h-3 w-3" />
-                              {/* Show host name if user is participant, participant name if user is host */}
-                              {meeting.teacher_id === userProfile.id 
-                                ? (meeting.participant_name || 'Unknown Participant')
-                                : (meeting.host_name || 'Unknown Host')}
-                            </span>
-                          )}
+                        <TableCell className="text-xs sm:text-sm">
+                          <div className="truncate max-w-[120px] sm:max-w-[150px] md:max-w-none" title={
+                            meeting.meeting_type === '1-on-1' ? (meeting.student_name || 'Unknown Student') :
+                            meeting.meeting_type === 'class' ? (meeting.course_title || 'Unknown Course') :
+                            meeting.meeting_type === 'teacher-to-teacher' ? (meeting.participant_name || 'Unknown Teacher') :
+                            meeting.teacher_id === userProfile.id 
+                              ? (meeting.participant_name || 'Unknown Participant')
+                              : (meeting.host_name || 'Unknown Host')
+                          }>
+                            {meeting.meeting_type === '1-on-1' && (meeting.student_name || 'Unknown Student')}
+                            {meeting.meeting_type === 'class' && (meeting.course_title || 'Unknown Course')}
+                            {meeting.meeting_type === 'teacher-to-teacher' && (
+                              <span className="flex items-center gap-1">
+                                <Users className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{meeting.participant_name || 'Unknown Teacher'}</span>
+                              </span>
+                            )}
+                            {meeting.meeting_type === 'admin-to-teacher' && (
+                              <span className="flex items-center gap-1">
+                                <Users className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">
+                                  {meeting.teacher_id === userProfile.id 
+                                    ? (meeting.participant_name || 'Unknown Participant')
+                                    : (meeting.host_name || 'Unknown Host')}
+                                </span>
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
-                        <TableCell>{formatDateTime(meeting.scheduled_time)}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-xs sm:text-sm hidden md:table-cell whitespace-nowrap">{formatDateTime(meeting.scheduled_time)}</TableCell>
+                        <TableCell className="text-xs sm:text-sm hidden lg:table-cell whitespace-nowrap">
                           {meeting.actual_duration || meeting.duration} min
                         </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(meeting.status)}>
+                        <TableCell className="text-xs sm:text-sm">
+                          <Badge className={`${getStatusColor(meeting.status)} text-[10px] sm:text-xs whitespace-nowrap`}>
                             {meeting.status}
                           </Badge>
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                    </Table>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>

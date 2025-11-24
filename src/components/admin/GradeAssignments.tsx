@@ -70,13 +70,13 @@ type StatCardProps = {
 
 const StatCard = ({ title, value, icon: Icon, color }: StatCardProps) => (
   <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-lg bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-      <Icon className={`h-4 w-4 ${color}`} />
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-6">
+      <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground truncate pr-2">{title}</CardTitle>
+      <Icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${color} flex-shrink-0`} />
     </CardHeader>
-    <CardContent>
+    <CardContent className="p-4 sm:p-6 pt-0">
       <div className="space-y-1">
-        <div className="text-2xl font-bold">{value}</div>
+        <div className="text-xl sm:text-2xl font-bold truncate">{value}</div>
       </div>
     </CardContent>
   </Card>
@@ -120,12 +120,17 @@ export const GradeAssignments = () => {
   // Check if user is admin (includes super_user)
   const currentIsAdmin = profile?.role === 'admin' || profile?.role === 'super_user';
   
+  // Track if stable role just got set (to trigger fetches)
+  const [stableRoleSet, setStableRoleSet] = useState(false);
+
   // Once profile is defined, lock in the role (don't let it flicker)
   if (profile?.role && !stableRoleRef.current) {
     stableRoleRef.current = (profile.role === 'admin' || profile.role === 'super_user') ? 'admin' : 'teacher';
     console.log('🔒 [GradeAssignments] Locked stable role:', stableRoleRef.current, 'from profile role:', profile.role);
+    // Trigger state update to cause re-fetch
+    setStableRoleSet(true);
   }
-  
+
   // Use stable role if available, otherwise fall back to current
   const isAdmin = stableRoleRef.current === 'admin';
 
@@ -195,8 +200,9 @@ export const GradeAssignments = () => {
   }, [user, isAdmin]); // Removed 'profile' - using stableRoleRef instead
 
   const fetchAssignments = useCallback(async () => {
-    console.log('🔍 [fetchAssignments] Called with:', { 
-      hasUser: !!user, 
+    console.log('🔍 [fetchAssignments] Called with:', {
+      hasUser: !!user,
+      userId: user?.id,
       hasStableRole: !!stableRoleRef.current,
       stableRole: stableRoleRef.current,
       profileRole: profile?.role,
@@ -208,7 +214,7 @@ export const GradeAssignments = () => {
       selectedCourse,
       timestamp: new Date().toISOString()
     });
-    
+
     // Guard: Don't fetch if user isn't loaded or stable role isn't determined yet
     if (!user || !stableRoleRef.current) {
       console.log('⚠️ [fetchAssignments] Blocked by guard - user or stable role not ready');
@@ -230,10 +236,10 @@ export const GradeAssignments = () => {
     console.log('✅ [fetchAssignments] Starting fetch as', isAdmin ? 'admin' : 'teacher');
     isFetchingRef.current = true;
     fetchingAsAdminRef.current = isAdmin;
-    
+
     // Capture the role at the START of this fetch (immutable for this fetch's lifetime)
     const thisFetchIsForAdmin = isAdmin;
-    
+
     // Use ref to check if we have data (avoids circular dependency)
     // If we already have data, show refresh indicator instead of full loading
     if (hasFetchedRef.current) {
@@ -246,37 +252,69 @@ export const GradeAssignments = () => {
     setError(null);
 
     try {
-      let data, rpcError;
+      let data: any;
+      let rpcError: any;
       const startTime = Date.now();
-      
+
+      // Create a timeout promise (30 seconds)
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000)
+      );
+
       if (thisFetchIsForAdmin) {
-        console.log('📞 [fetchAssignments] Calling get_admin_assessments_data RPC');
-        // Use admin function to get all assessments
-        const result = await supabase.rpc('get_admin_assessments_data', {
+        console.log('📞 [fetchAssignments] Calling get_admin_assessments_data RPC', {
+          search_query: debouncedSearchTerm,
+          course_filter_id: selectedCourse === 'all' ? null : selectedCourse
+        });
+        // Use admin function to get all assessments with timeout
+        const rpcPromise = supabase.rpc('get_admin_assessments_data', {
           search_query: debouncedSearchTerm,
           course_filter_id: selectedCourse === 'all' ? null : selectedCourse,
         });
-        data = result.data;
-        rpcError = result.error;
+
+        try {
+          const result = await Promise.race([rpcPromise, timeoutPromise]);
+          data = result.data;
+          rpcError = result.error;
+        } catch (timeoutError: any) {
+          console.error('⏱️ [fetchAssignments] Request timed out:', timeoutError);
+          throw timeoutError;
+        }
         console.log(`📊 [fetchAssignments] Admin RPC returned in ${Date.now() - startTime}ms:`, {
           dataCount: data?.length || 0,
           hasError: !!rpcError,
-          error: rpcError
+          error: rpcError,
+          errorDetails: rpcError ? JSON.stringify(rpcError) : null
         });
       } else {
-        console.log('📞 [fetchAssignments] Calling get_teacher_assessments_data RPC');
-        // Use teacher function to get only their assessments
-        const result = await supabase.rpc('get_teacher_assessments_data', {
+        console.log('📞 [fetchAssignments] Calling get_teacher_assessments_data RPC', {
+          teacher_id: user.id,
+          search_query: debouncedSearchTerm,
+          course_filter_id: selectedCourse === 'all' ? null : selectedCourse
+        });
+        // Use teacher function to get only their assessments with timeout
+        const rpcPromise = supabase.rpc('get_teacher_assessments_data', {
           teacher_id: user.id,
           search_query: debouncedSearchTerm,
           course_filter_id: selectedCourse === 'all' ? null : selectedCourse,
         });
-        data = result.data;
-        rpcError = result.error;
+
+        try {
+          const result = await Promise.race([rpcPromise, timeoutPromise]);
+          data = result.data;
+          rpcError = result.error;
+        } catch (timeoutError: any) {
+          console.error('⏱️ [fetchAssignments] Request timed out:', timeoutError);
+          throw timeoutError;
+        }
         console.log(`📊 [fetchAssignments] Teacher RPC returned in ${Date.now() - startTime}ms:`, {
           dataCount: data?.length || 0,
           hasError: !!rpcError,
-          error: rpcError
+          error: rpcError,
+          errorDetails: rpcError ? JSON.stringify(rpcError) : null,
+          errorMessage: rpcError?.message,
+          errorCode: rpcError?.code,
+          errorHint: rpcError?.hint
         });
       }
       
@@ -333,6 +371,15 @@ export const GradeAssignments = () => {
     console.log('🔄 [useEffect-fetchAssignments] Triggered');
     fetchAssignments();
   }, [fetchAssignments]);
+
+  // Trigger fetches when stable role gets set
+  useEffect(() => {
+    if (stableRoleSet && user && stableRoleRef.current) {
+      console.log('🎯 [useEffect-stableRoleSet] Stable role just set, triggering fetches');
+      fetchCourses();
+      fetchAssignments();
+    }
+  }, [stableRoleSet, user, fetchCourses, fetchAssignments]);
   
   // Update items per page when view changes
   useEffect(() => {
@@ -396,21 +443,21 @@ export const GradeAssignments = () => {
   ];
 
   if (error) {
-    return <div className="p-8 text-center text-red-500">Error: {error}</div>;
+    return <div className="p-4 sm:p-8 text-center text-red-500 text-sm sm:text-base">Error: {error}</div>;
   }
 
   return (
-    <div className="space-y-6 mx-auto">
-      <div className="relative p-8 rounded-3xl bg-gradient-to-r from-primary/5 via-transparent to-primary/5">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-            <CheckSquare className="w-6 h-6 text-primary" />
+    <div className="space-y-4 sm:space-y-6 mx-auto px-4 sm:px-0">
+      <div className="relative p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-primary/5 via-transparent to-primary/5">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
+            <CheckSquare className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
           </div>
-          <div>
-            <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
               Assessments
             </h1>
-            <p className="text-lg text-muted-foreground mt-2 leading-relaxed">
+            <p className="text-sm sm:text-base md:text-lg text-muted-foreground mt-1 sm:mt-2 leading-relaxed">
               {isAdmin 
                 ? 'View and manage all quizzes and assignments across all courses'
                 : 'Grade quizzes and assignments for your courses'
@@ -420,27 +467,27 @@ export const GradeAssignments = () => {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:gap-6 grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
         {statCardsData.map((card) => <StatCard key={card.title} {...card} />)}
       </div>
 
       <Card className="bg-card border border-border">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold">Assessment Management</CardTitle>
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-lg sm:text-xl font-semibold">Assessment Management</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-            <div className="relative flex-1 md:grow-0">
+        <CardContent className="p-4 sm:p-6 pt-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="relative flex-1 sm:flex-initial sm:min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search assignment or quiz..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 pl-10 h-10 md:w-[250px] lg:w-[350px]"
+                className="w-full rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 pl-10 h-10 sm:w-full sm:max-w-[250px] md:w-[250px] lg:w-[350px]"
               />
             </div>
-            <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
               <Select value={selectedCourse} onValueChange={setSelectedCourse}>
                 <SelectTrigger className="w-full sm:w-[200px] h-10 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5">
                   <SelectValue placeholder="All Courses" />
@@ -457,33 +504,35 @@ export const GradeAssignments = () => {
             </div>
           </div>
         </CardContent>
-        <CardContent>
+        <CardContent className="p-4 sm:p-6">
           {loading ? (
             <ContentLoader message="Loading assessments..." />
           ) : (
             <>
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* View Toggle */}
-                <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  <h2 className="text-lg font-semibold">Assessments ({assignments.length})</h2>
-                  {isRefreshing && (
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                      <span>Refreshing...</span>
-                    </div>
-                  )}
-                </div>
-                  <ViewToggle
-                    currentView={preferences.assignmentView}
-                    onViewChange={setAssignmentView}
-                    availableViews={['card', 'tile', 'list']}
-                  />
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                    <h2 className="text-base sm:text-lg font-semibold truncate">Assessments ({assignments.length})</h2>
+                    {isRefreshing && (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-shrink-0 ml-2">
+                        <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        <span className="hidden sm:inline">Refreshing...</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-shrink-0">
+                    <ViewToggle
+                      currentView={preferences.assignmentView}
+                      onViewChange={setAssignmentView}
+                      availableViews={['card', 'tile', 'list']}
+                    />
+                  </div>
                 </div>
 
                 {/* Assessment Display based on selected view */}
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {paginatedAssignments.length > 0 ? (
                     <>
                       {preferences.assignmentView === 'card' && (
@@ -576,7 +625,7 @@ export const GradeAssignments = () => {
                   onItemsPerPageChange={handleItemsPerPageChange}
                   itemsPerPageOptions={preferences.assignmentView === 'tile' ? [9, 18, 27, 36, 45] : [4, 8, 12, 16, 20]}
                   disabled={loading}
-                  className="mt-6"
+                  className="mt-4 sm:mt-6"
                 />
               )}
             </>

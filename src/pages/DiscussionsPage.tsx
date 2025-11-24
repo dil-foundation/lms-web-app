@@ -512,7 +512,7 @@ export default function DiscussionsPage() {
   const totalPages = Math.ceil(discussionsCount / rowsPerPage);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8 px-4 sm:px-0">
       {/* Deleted Discussion Message */}
       {showDeletedMessage && (
         <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-2 border-amber-300 dark:border-amber-700 rounded-2xl p-6 mb-6 shadow-lg">
@@ -551,18 +551,18 @@ export default function DiscussionsPage() {
 
       {/* Premium Header Section */}
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-4 md:p-8 rounded-3xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                <MessageSquare className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-2xl sm:rounded-3xl"></div>
+        <div className="relative p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
+                <MessageSquare className="w-5 h-5 sm:w-5 sm:h-5 md:w-6 md:h-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-2xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
                   Discussions
                 </h1>
-                <p className="text-sm md:text-lg text-muted-foreground font-light">
+                <p className="text-xs sm:text-sm md:text-base lg:text-lg text-muted-foreground font-light mt-0.5 sm:mt-1">
                   Engage with the community and participate in course discussions
                 </p>
               </div>
@@ -571,10 +571,11 @@ export default function DiscussionsPage() {
             {!isProfileLoading && profile?.role !== 'student' && (
               <Button 
                 onClick={() => setIsNewDiscussionOpen(true)}
-                className="h-10 px-6 rounded-xl bg-gradient-to-r from-brand-green-500 to-brand-green-600 hover:from-brand-green-600 hover:to-brand-green-500 text-white shadow-lg hover:shadow-xl hover:shadow-brand-green-500/25 transition-all duration-300 hover:-translate-y-0.5"
+                className="h-9 sm:h-10 px-4 sm:px-6 rounded-xl bg-gradient-to-r from-brand-green-500 to-brand-green-600 hover:from-brand-green-600 hover:to-brand-green-500 text-white shadow-lg hover:shadow-xl hover:shadow-brand-green-500/25 transition-all duration-300 hover:-translate-y-0.5 flex-shrink-0 text-xs sm:text-sm w-full sm:w-auto"
               >
-                <Plus className="mr-2 h-4 w-4" />
-                New Discussion
+                <Plus className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">New Discussion</span>
+                <span className="sm:hidden">New</span>
               </Button>
             )}
           </div>
@@ -680,10 +681,10 @@ export default function DiscussionsPage() {
       </div>
 
       {/* Discussions List */}
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         <div className="flex items-center gap-2">
-          <MessageSquare className="h-6 w-6 text-primary" />
-          <h2 className="text-xl font-semibold">
+          <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+          <h2 className="text-lg sm:text-xl font-semibold">
             Discussions ({discussions.length})
           </h2>
         </div>
@@ -710,18 +711,20 @@ export default function DiscussionsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* View Toggle */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-foreground">Discussions</h2>
-                <p className="text-sm text-muted-foreground">Switch between different views to browse discussions</p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-lg sm:text-xl font-semibold text-foreground">Discussions</h2>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Switch between different views to browse discussions</p>
               </div>
-              <ViewToggle
-                currentView={preferences.discussionView}
-                onViewChange={setDiscussionView}
-                availableViews={['card', 'tile', 'list']}
-              />
+              <div className="flex-shrink-0">
+                <ViewToggle
+                  currentView={preferences.discussionView}
+                  onViewChange={setDiscussionView}
+                  availableViews={['card', 'tile', 'list']}
+                />
+              </div>
             </div>
 
             {/* Discussion Display based on selected view */}
