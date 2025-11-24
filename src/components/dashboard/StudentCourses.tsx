@@ -146,22 +146,25 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
 
   if (loading) {
     return (
-      <div className="space-y-8 mx-auto">
+      <div className="space-y-6 sm:space-y-8 mx-auto px-2 sm:px-0">
         {/* Premium Header Section */}
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-          <div className="relative p-8 rounded-3xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-2xl sm:rounded-3xl"></div>
+          <div className="relative p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-                  <BookOpen className="w-6 h-6 text-primary" />
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                  <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 </div>
-                <div>
-                  <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                <div className="min-w-0">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent break-words" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
                     My Courses
                   </h1>
-                  <p className="text-lg text-muted-foreground mt-2 leading-relaxed">
+                  <p className="text-sm sm:text-base md:text-lg text-muted-foreground mt-1 sm:mt-2 leading-relaxed hidden sm:block">
                     View and manage your enrolled courses with enterprise-grade tracking
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed sm:hidden">
+                    Manage your enrolled courses
                   </p>
                 </div>
               </div>
@@ -179,22 +182,25 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
   // Show empty state if no courses
   if (courses.length === 0) {
     return (
-      <div className="space-y-8 mx-auto">
+      <div className="space-y-6 sm:space-y-8 mx-auto px-2 sm:px-0">
         {/* Premium Header Section */}
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-          <div className="relative p-8 rounded-3xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-2xl sm:rounded-3xl"></div>
+          <div className="relative p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-                  <BookOpen className="w-6 h-6 text-primary" />
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                  <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 </div>
-                <div>
-                  <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                <div className="min-w-0">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent break-words" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
                     My Courses
                   </h1>
-                  <p className="text-lg text-muted-foreground mt-2 leading-relaxed">
+                  <p className="text-sm sm:text-base md:text-lg text-muted-foreground mt-1 sm:mt-2 leading-relaxed hidden sm:block">
                     View and manage your enrolled courses with enterprise-grade tracking
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed sm:hidden">
+                    Manage your enrolled courses
                   </p>
                 </div>
               </div>
@@ -202,12 +208,12 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
           </div>
         </div>
 
-        <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg overflow-hidden">
-          <CardContent className="py-16">
+        <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl sm:rounded-3xl shadow-lg overflow-hidden">
+          <CardContent className="py-12 sm:py-16">
             <EmptyState
               title="No Courses Enrolled"
               description="Wait for the teacher to enroll you into a course"
-              icon={<BookOpen className="h-8 w-8 text-muted-foreground" />}
+              icon={<BookOpen className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />}
             />
           </CardContent>
         </Card>
@@ -216,22 +222,25 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
   }
 
   return (
-    <div className="space-y-8 mx-auto">
+    <div className="space-y-6 sm:space-y-8 mx-auto px-2 sm:px-0">
       {/* Premium Header Section */}
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-2xl sm:rounded-3xl"></div>
+        <div className="relative p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-                <BookOpen className="w-6 h-6 text-primary" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text', lineHeight: '3rem' }}>
+              <div className="min-w-0">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent break-words" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
                   My Courses
                 </h1>
-                <p className="text-lg text-muted-foreground leading-relaxed">
+                <p className="text-sm sm:text-base md:text-lg text-muted-foreground mt-1 sm:mt-2 leading-relaxed hidden sm:block">
                   View and manage your enrolled courses with enterprise-grade tracking
+                </p>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed sm:hidden">
+                  Manage your enrolled courses
                 </p>
               </div>
             </div>
@@ -240,118 +249,126 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
       </div>
 
       {/* Course Statistics Overview - Consistent with Overview Page */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 md:gap-6 sm:grid-cols-3">
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Courses</CardTitle>
+            <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalCourses}</div>
-            <p className="text-xs text-muted-foreground">Enrolled courses</p>
+          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{totalCourses}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Enrolled courses</p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card border border-border">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Progress</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Average Progress</CardTitle>
+            <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{averageProgress}%</div>
-            <p className="text-xs text-muted-foreground">Across all courses</p>
+          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{averageProgress}%</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Across all courses</p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card border border-border">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <Award className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Completed</CardTitle>
+            <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{completedCourses}</div>
-            <p className="text-xs text-muted-foreground">Fully completed</p>
+          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{completedCourses}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Fully completed</p>
           </CardContent>
         </Card>
       </div>
       
       {/* View Toggle and Course Display */}
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* View Toggle */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-foreground">Your Courses</h2>
-            <p className="text-sm text-muted-foreground">Switch between different views to browse your courses</p>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg sm:text-xl font-semibold text-foreground break-words">Your Courses</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 break-words">Switch between different views to browse your courses</p>
           </div>
-          <ViewToggle
-            currentView={preferences.studentView}
-            onViewChange={setStudentView}
-            availableViews={['card', 'tile', 'list']}
-          />
+          <div className="w-full sm:w-auto flex-shrink-0">
+            <ViewToggle
+              currentView={preferences.studentView}
+              onViewChange={setStudentView}
+              availableViews={['card', 'tile', 'list']}
+              showLabels={true}
+              className="w-full sm:w-auto"
+            />
+          </div>
         </div>
 
         {/* Course Display based on selected view */}
         {preferences.studentView === 'card' && (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {currentCourses.map((course) => (
               <Card key={course.id} className="bg-card border border-border flex flex-col h-full">
                 <CardHeader className="p-0 relative">
                   <img 
                     src={course.image_url} 
                     alt={course.title} 
-                    className="w-full h-40 object-cover rounded-t-lg" 
+                    className="w-full h-32 sm:h-40 object-cover rounded-t-lg" 
                   />
                   {course.progress === 100 && (
-                    <Badge className="absolute top-2 left-2 bg-green-500">
-                      <CheckCircle className="w-3 h-3 mr-1" />
+                    <Badge className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 bg-green-500 text-[10px] sm:text-xs">
+                      <CheckCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
                       Completed
                     </Badge>
                   )}
                   {course.progress !== undefined && course.progress !== null && course.progress > 0 && course.progress < 100 && (
-                    <Badge variant="secondary" className="absolute top-2 left-2">
+                    <Badge variant="secondary" className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 text-[10px] sm:text-xs">
                       In Progress
                     </Badge>
                   )}
                 </CardHeader>
-                <CardContent className="p-4 space-y-2 flex-grow">
-                  <h3 className="font-semibold text-lg">{course.title}</h3>
-                  <p className="text-sm text-muted-foreground">{course.subtitle}</p>
-                  <div className="flex justify-between text-sm text-muted-foreground">
+                <CardContent className="p-3 sm:p-4 space-y-1.5 sm:space-y-2 flex-grow">
+                  <h3 className="font-semibold text-base sm:text-lg line-clamp-2">{course.title}</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{course.subtitle}</p>
+                  <div className="flex justify-between text-xs sm:text-sm text-muted-foreground flex-wrap gap-1">
                     <span>{course.total_lessons || 0} lessons</span>
                     {course.progress !== undefined && course.progress !== null && (
                       <span>{course.progress}% complete</span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    <span>Last accessed: {course.last_accessed ? new Date(course.last_accessed).toLocaleDateString() : 'Never'}</span>
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
+                    <Clock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="truncate">Last: {course.last_accessed ? new Date(course.last_accessed).toLocaleDateString() : 'Never'}</span>
                   </div>
                 </CardContent>
-                <CardFooter className="p-4 pt-0 mt-auto">
+                <CardFooter className="p-3 sm:p-4 pt-0 mt-auto">
                   <Button 
                     asChild
-                    className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 rounded-xl"
+                    className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-2 sm:py-3 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 rounded-xl"
                   >
                     <Link to={course.progress && course.progress > 0 ? `/dashboard/courses/${course.id}/content` : `/dashboard/courses/${course.id}`}>
                       {isViewOnly ? (
                         <>
-                          <Eye className="w-4 h-4 mr-2" />
-                          Preview Course
+                          <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                          <span className="hidden sm:inline">Preview Course</span>
+                          <span className="sm:hidden">Preview</span>
                         </>
                       ) : course.progress === 100 ? (
                         <>
-                          <BookOpen className="w-4 h-4 mr-2" />
-                          Review Course
+                          <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                          <span className="hidden sm:inline">Review Course</span>
+                          <span className="sm:hidden">Review</span>
                         </>
                       ) : course.progress && course.progress > 0 ? (
                         <>
-                          <Play className="w-4 h-4 mr-2" />
-                          Continue Learning
+                          <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                          <span className="hidden sm:inline">Continue Learning</span>
+                          <span className="sm:hidden">Continue</span>
                         </>
                       ) : (
                         <>
-                          <BookOpen className="w-4 h-4 mr-2" />
-                          Start Course
+                          <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                          <span className="hidden sm:inline">Start Course</span>
+                          <span className="sm:hidden">Start</span>
                         </>
                       )}
                     </Link>
@@ -395,7 +412,7 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
             onItemsPerPageChange={handleItemsPerPageChange}
             itemsPerPageOptions={preferences.studentView === 'tile' ? [9, 18, 27, 36, 45] : [4, 8, 12, 16, 20]}
             disabled={loading}
-            className="py-4"
+            className="py-3 sm:py-4"
           />
         )}
       </div>

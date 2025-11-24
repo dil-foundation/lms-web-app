@@ -1518,30 +1518,33 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
           <TabsTrigger value="engagement" className="text-xs sm:text-sm">Engagement</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TabsContent value="overview" className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
                   User Growth Trends
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
+              <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                <div className="h-[280px] sm:h-[300px] w-full">
                   {hasUserGrowthData ? (
                   <ChartContainer config={chartConfig} className="w-full h-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={userGrowthData}>
+                      <AreaChart 
+                        data={userGrowthData}
+                        margin={{ top: 10, right: 10, left: -10, bottom: 5 }}
+                      >
                         <defs>
                           <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
                             <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
+                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                        <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                        <YAxis tick={{ fontSize: 10 }} width={35} />
                         <ChartTooltip content={<ChartTooltipContent />} />
                         <Area 
                           type="monotone" 
@@ -1558,12 +1561,13 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                           strokeWidth={2}
                           name="Active Users"
                         />
+                        <Legend wrapperStyle={{ fontSize: '10px' }} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </ChartContainer>
                   ) : (
                     <div className="flex items-center justify-center h-full">
-                      <p className="text-muted-foreground">No data to display for this period.</p>
+                      <p className="text-muted-foreground text-xs sm:text-sm">No data to display for this period.</p>
                     </div>
                   )}
                 </div>
@@ -1571,14 +1575,14 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Globe className="h-4 w-4 sm:h-5 sm:w-5" />
                   Platform Distribution
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
+              <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                <div className="h-[280px] sm:h-[300px] w-full">
                   {hasPlatformStatsData ? (
                   <ChartContainer config={chartConfig} className="w-full h-full">
                     <ResponsiveContainer width="100%" height="100%">
@@ -1589,7 +1593,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                           cy="50%"
                           labelLine={false}
                           label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                          outerRadius={100}
+                          outerRadius={80}
                           fill="#8884d8"
                           dataKey="value"
                         >
@@ -1598,12 +1602,13 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                           ))}
                         </Pie>
                         <ChartTooltip />
+                        <Legend wrapperStyle={{ fontSize: '10px' }} />
                       </PieChart>
                     </ResponsiveContainer>
                   </ChartContainer>
                   ) : (
                     <div className="flex items-center justify-center h-full">
-                      <p className="text-muted-foreground">No data to display.</p>
+                      <p className="text-muted-foreground text-xs sm:text-sm">No data to display.</p>
                     </div>
                   )}
                 </div>
@@ -1612,31 +1617,35 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                      </div>
          </TabsContent>
 
-        <TabsContent value="users" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TabsContent value="users" className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <Card>
-              <CardHeader>
-                <CardTitle>User Role Distribution</CardTitle>
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="text-base sm:text-lg">User Role Distribution</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
+              <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                <div className="h-[280px] sm:h-[300px] w-full">
                   {hasUserGrowthData ? (
                   <ChartContainer config={chartConfig} className="w-full h-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={userGrowthData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
+                      <BarChart 
+                        data={userGrowthData}
+                        margin={{ top: 10, right: 10, left: -10, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                        <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                        <YAxis tick={{ fontSize: 10 }} width={35} />
                         <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="students" fill="#8B5CF6" name="Students" />
-                        <Bar dataKey="teachers" fill="#10B981" name="Teachers" />
-                        <Bar dataKey="admins" fill="#F59E0B" name="Admins" />
+                        <Bar dataKey="students" fill="#8B5CF6" name="Students" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="teachers" fill="#10B981" name="Teachers" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="admins" fill="#F59E0B" name="Admins" radius={[4, 4, 0, 0]} />
+                        <Legend wrapperStyle={{ fontSize: '10px' }} />
                       </BarChart>
                     </ResponsiveContainer>
                   </ChartContainer>
                   ) : (
                     <div className="flex items-center justify-center h-full">
-                      <p className="text-muted-foreground">No data to display for this period.</p>
+                      <p className="text-muted-foreground text-xs sm:text-sm">No data to display for this period.</p>
                     </div>
                   )}
                 </div>
@@ -1644,57 +1653,57 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>User Activity Overview</CardTitle>
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="text-base sm:text-lg">User Activity Overview</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium w-32">Active Users</span>
-                    <div className="flex items-center gap-2">
-                          <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <CardContent className="p-4 sm:p-6">
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="flex justify-between items-center gap-2">
+                        <span className="text-xs sm:text-sm font-medium w-24 sm:w-32 flex-shrink-0">Active Users</span>
+                    <div className="flex items-center gap-1 sm:gap-2 flex-1">
+                          <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-green-500 transition-all duration-300 ease-in-out"
                               style={{ width: `${stats?.activeUsersPercentage ?? 0}%` }}
                             />
                           </div>
-                          <span className="text-sm w-8 text-right">{stats?.activeUsersPercentage ?? 0}%</span>
+                          <span className="text-xs sm:text-sm w-8 text-right flex-shrink-0">{stats?.activeUsersPercentage ?? 0}%</span>
                     </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium w-32">Course Engagement</span>
-                    <div className="flex items-center gap-2">
-                          <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div className="flex justify-between items-center gap-2">
+                        <span className="text-xs sm:text-sm font-medium w-24 sm:w-32 flex-shrink-0">Course Engagement</span>
+                    <div className="flex items-center gap-1 sm:gap-2 flex-1">
+                          <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-green-500 transition-all duration-300 ease-in-out"
                               style={{ width: `${stats?.courseEngagementPercentage ?? 0}%` }}
                             />
                           </div>
-                          <span className="text-sm w-8 text-right">{stats?.courseEngagementPercentage ?? 0}%</span>
+                          <span className="text-xs sm:text-sm w-8 text-right flex-shrink-0">{stats?.courseEngagementPercentage ?? 0}%</span>
                     </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium w-32">Discussion Participation</span>
-                    <div className="flex items-center gap-2">
-                          <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div className="flex justify-between items-center gap-2">
+                        <span className="text-xs sm:text-sm font-medium w-24 sm:w-32 flex-shrink-0">Discussion Participation</span>
+                    <div className="flex items-center gap-1 sm:gap-2 flex-1">
+                          <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-green-500 transition-all duration-300 ease-in-out"
                               style={{ width: `${stats?.discussionParticipationPercentage ?? 0}%` }}
                             />
                           </div>
-                          <span className="text-sm w-8 text-right">{stats?.discussionParticipationPercentage ?? 0}%</span>
+                          <span className="text-xs sm:text-sm w-8 text-right flex-shrink-0">{stats?.discussionParticipationPercentage ?? 0}%</span>
                     </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium w-32">Assignment Completion</span>
-                    <div className="flex items-center gap-2">
-                          <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div className="flex justify-between items-center gap-2">
+                        <span className="text-xs sm:text-sm font-medium w-24 sm:w-32 flex-shrink-0">Assignment Completion</span>
+                    <div className="flex items-center gap-1 sm:gap-2 flex-1">
+                          <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-green-500 transition-all duration-300 ease-in-out"
                               style={{ width: `${stats?.assignmentCompletionPercentage ?? 0}%` }}
                             />
                           </div>
-                          <span className="text-sm w-8 text-right">{stats?.assignmentCompletionPercentage ?? 0}%</span>
+                          <span className="text-xs sm:text-sm w-8 text-right flex-shrink-0">{stats?.assignmentCompletionPercentage ?? 0}%</span>
                     </div>
                   </div>
                 </div>
@@ -1706,32 +1715,43 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
         <TabsContent value="courses" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Course Performance Analytics</CardTitle>
+              <CardTitle className="text-base sm:text-lg md:text-xl">Course Performance Analytics</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="h-[400px]">
+            <CardContent className="p-3 sm:p-4 md:p-6">
+              <div className="h-[320px] sm:h-[360px] md:h-[400px] w-full">
                 {hasCourseAnalyticsData ? (
                 <ChartContainer config={chartConfig} className="w-full h-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={courseAnalyticsData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
+                    <BarChart 
+                      data={courseAnalyticsData} 
+                      margin={{ 
+                        top: 10, 
+                        right: 10, 
+                        left: -10, 
+                        bottom: 60 
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                       <XAxis 
                         dataKey="course" 
                         angle={-45}
                         textAnchor="end"
-                        height={80}
+                        height={60}
                         interval={0}
+                        tick={{ fontSize: 9 }}
+                        dy={8}
                       />
-                      <YAxis />
+                      <YAxis tick={{ fontSize: 11 }} width={35} />
                       <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="enrolled" fill="#3B82F6" name="Enrolled" />
-                      <Bar dataKey="completed" fill="#10B981" name="Completed" />
+                      <Bar dataKey="enrolled" fill="#3B82F6" name="Enrolled" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="completed" fill="#10B981" name="Completed" radius={[4, 4, 0, 0]} />
+                      <Legend wrapperStyle={{ fontSize: '11px' }} />
                     </BarChart>
                   </ResponsiveContainer>
                 </ChartContainer>
                 ) : (
                   <div className="flex items-center justify-center h-full">
-                    <p className="text-muted-foreground">No course data to display.</p>
+                    <p className="text-muted-foreground text-xs sm:text-sm">No course data to display.</p>
                   </div>
                 )}
               </div>
@@ -1739,36 +1759,40 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="engagement" className="space-y-6">
+        <TabsContent value="engagement" className="space-y-4 sm:space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Daily Engagement Metrics</CardTitle>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg md:text-xl">Daily Engagement Metrics</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="h-[400px] w-full">
+            <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+              <div className="h-[320px] sm:h-[360px] md:h-[400px] w-full">
                 {!hasEngagementData ? (
                   <div className="flex items-center justify-center h-full">
-                    <p className="text-muted-foreground">No engagement data to display for this period.</p>
+                    <p className="text-muted-foreground text-xs sm:text-sm">No engagement data to display for this period.</p>
                   </div>
                 ) : (
                 <div className="relative w-full h-full">
                   <ChartContainer config={chartConfig} className="w-full h-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={engagementData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="day" />
-                        <YAxis />
+                      <LineChart 
+                        data={engagementData}
+                        margin={{ top: 10, right: 10, left: -10, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                        <XAxis dataKey="day" tick={{ fontSize: 10 }} />
+                        <YAxis tick={{ fontSize: 10 }} width={35} />
                         <ChartTooltip content={<ChartTooltipContent />} />
                         <Line type="monotone" dataKey="activeUsers" stroke="#3B82F6" strokeWidth={2} name="Active Users" />
                         <Line type="monotone" dataKey="courses" stroke="#10B981" strokeWidth={2} name="Courses Accessed" />
                         <Line type="monotone" dataKey="discussions" stroke="#F59E0B" strokeWidth={2} name="Discussions" />
+                        <Legend wrapperStyle={{ fontSize: '10px' }} />
                       </LineChart>
                     </ResponsiveContainer>
                   </ChartContainer>
                   {engagementData.every(d => d.activeUsers === 0 && d.courses === 0 && d.discussions === 0) && (
                     <div className="absolute inset-0 flex items-center justify-center bg-background/90 backdrop-blur-sm rounded-lg">
-                      <div className="text-center">
-                        <p className="text-sm text-muted-foreground">No activity recorded for this period</p>
+                      <div className="text-center p-4">
+                        <p className="text-xs sm:text-sm text-muted-foreground">No activity recorded for this period</p>
                         <p className="text-xs text-muted-foreground mt-1">Overall engagement: {stats?.avgEngagement ?? 0}%</p>
                       </div>
                     </div>

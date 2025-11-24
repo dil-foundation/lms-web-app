@@ -681,25 +681,25 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
                     {pastMeetings.map((meeting) => (
                       <TableRow key={meeting.id}>
                         <TableCell className="text-xs sm:text-sm">
-                          <div>
-                            <div className="font-medium">{meeting.title}</div>
+                          <div className="min-w-0">
+                            <div className="font-medium truncate max-w-[150px] sm:max-w-none" title={meeting.title}>{meeting.title}</div>
                             {meeting.description && (
-                              <div className="text-xs sm:text-sm text-muted-foreground">
+                              <div className="text-[10px] sm:text-xs text-muted-foreground truncate max-w-[150px] sm:max-w-none" title={meeting.description}>
                                 {meeting.description}
                               </div>
                             )}
                           </div>
                         </TableCell>
                         <TableCell className="text-xs sm:text-sm">
-                          <Badge variant="outline" className="text-[10px] sm:text-xs">
+                          <Badge variant="outline" className="text-[10px] sm:text-xs whitespace-nowrap">
                             {meeting.meeting_type === '1-on-1' && '1-on-1'}
                             {meeting.meeting_type === 'class' && 'Class'}
-                            {meeting.meeting_type === 'teacher-to-teacher' && 'Teacher-to-Teacher'}
-                            {meeting.meeting_type === 'admin-to-teacher' && 'Admin-to-Teacher'}
+                            {meeting.meeting_type === 'teacher-to-teacher' && 'T2T'}
+                            {meeting.meeting_type === 'admin-to-teacher' && 'A2T'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-xs sm:text-sm hidden sm:table-cell">
-                          <span className="text-xs sm:text-sm">
+                          <span className="text-xs sm:text-sm truncate max-w-[100px] md:max-w-none" title={meeting.teacher_id === userProfile.id ? 'You' : (meeting.host_name || 'Unknown')}>
                             {meeting.teacher_id === userProfile.id ? (
                               <span className="text-green-600 font-medium">You</span>
                             ) : (
@@ -708,30 +708,40 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
                           </span>
                         </TableCell>
                         <TableCell className="text-xs sm:text-sm">
-                          {meeting.meeting_type === '1-on-1' && (meeting.student_name || 'Unknown Student')}
-                          {meeting.meeting_type === 'class' && (meeting.course_title || 'Unknown Course')}
-                          {meeting.meeting_type === 'teacher-to-teacher' && (
-                            <span className="flex items-center gap-1">
-                              <Users className="h-3 w-3" />
-                              {meeting.participant_name || 'Unknown Teacher'}
-                            </span>
-                          )}
-                          {meeting.meeting_type === 'admin-to-teacher' && (
-                            <span className="flex items-center gap-1">
-                              <Users className="h-3 w-3" />
-                              {/* Show host name if user is participant, participant name if user is host */}
-                              {meeting.teacher_id === userProfile.id 
-                                ? (meeting.participant_name || 'Unknown Participant')
-                                : (meeting.host_name || 'Unknown Host')}
-                            </span>
-                          )}
+                          <div className="truncate max-w-[120px] sm:max-w-[150px] md:max-w-none" title={
+                            meeting.meeting_type === '1-on-1' ? (meeting.student_name || 'Unknown Student') :
+                            meeting.meeting_type === 'class' ? (meeting.course_title || 'Unknown Course') :
+                            meeting.meeting_type === 'teacher-to-teacher' ? (meeting.participant_name || 'Unknown Teacher') :
+                            meeting.teacher_id === userProfile.id 
+                              ? (meeting.participant_name || 'Unknown Participant')
+                              : (meeting.host_name || 'Unknown Host')
+                          }>
+                            {meeting.meeting_type === '1-on-1' && (meeting.student_name || 'Unknown Student')}
+                            {meeting.meeting_type === 'class' && (meeting.course_title || 'Unknown Course')}
+                            {meeting.meeting_type === 'teacher-to-teacher' && (
+                              <span className="flex items-center gap-1">
+                                <Users className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{meeting.participant_name || 'Unknown Teacher'}</span>
+                              </span>
+                            )}
+                            {meeting.meeting_type === 'admin-to-teacher' && (
+                              <span className="flex items-center gap-1">
+                                <Users className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">
+                                  {meeting.teacher_id === userProfile.id 
+                                    ? (meeting.participant_name || 'Unknown Participant')
+                                    : (meeting.host_name || 'Unknown Host')}
+                                </span>
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
-                        <TableCell className="text-xs sm:text-sm hidden md:table-cell">{formatDateTime(meeting.scheduled_time)}</TableCell>
-                        <TableCell className="text-xs sm:text-sm hidden lg:table-cell">
+                        <TableCell className="text-xs sm:text-sm hidden md:table-cell whitespace-nowrap">{formatDateTime(meeting.scheduled_time)}</TableCell>
+                        <TableCell className="text-xs sm:text-sm hidden lg:table-cell whitespace-nowrap">
                           {meeting.actual_duration || meeting.duration} min
                         </TableCell>
                         <TableCell className="text-xs sm:text-sm">
-                          <Badge className={getStatusColor(meeting.status)}>
+                          <Badge className={`${getStatusColor(meeting.status)} text-[10px] sm:text-xs whitespace-nowrap`}>
                             {meeting.status}
                           </Badge>
                         </TableCell>
