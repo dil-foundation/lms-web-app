@@ -279,60 +279,60 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Meetings</CardTitle>
-            <Video className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Meetings</CardTitle>
+            <Video className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{stats.total}</div>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Upcoming</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Upcoming</CardTitle>
+            <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.upcoming}</div>
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{stats.upcoming}</div>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">1-on-1 Sessions</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">1-on-1 Sessions</CardTitle>
+            <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.oneOnOne}</div>
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{stats.oneOnOne}</div>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Class Meetings</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Class Meetings</CardTitle>
+            <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.classMeetings}</div>
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{stats.classMeetings}</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Upcoming Meetings */}
       <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card border-0 shadow-lg">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-3 text-xl">
-              <div className="p-2 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl">
-                <Calendar className="h-5 w-5 text-primary" />
+        <CardHeader className="pb-3 sm:pb-4 p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+            <CardTitle className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl">
+              <div className="p-1.5 sm:p-2 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg sm:rounded-xl">
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
-              Upcoming Meetings
+              <span>Upcoming Meetings</span>
             </CardTitle>
             {upcomingMeetings.length > 0 && (
-              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-xs sm:text-sm">
                 {upcomingMeetings.length} meeting{upcomingMeetings.length !== 1 ? 's' : ''}
               </Badge>
             )}
@@ -340,12 +340,12 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
         </CardHeader>
         <CardContent>
           {upcomingMeetings.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Video className="h-8 w-8 text-primary" />
+            <div className="text-center py-8 sm:py-12 px-4">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <Video className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">No upcoming meetings</h3>
-              <p className="text-muted-foreground max-w-sm mx-auto">
+              <h3 className="text-base sm:text-lg font-semibold mb-1.5 sm:mb-2">No upcoming meetings</h3>
+              <p className="text-sm sm:text-base text-muted-foreground max-w-sm mx-auto">
                 Your teachers will schedule meetings that will appear here. Check back later or contact your teacher.
               </p>
             </div>
@@ -361,52 +361,52 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
                 return (
                   <div
                     key={meeting.id}
-                    className="group p-4 border rounded-xl transition-all duration-200 hover:shadow-md hover:border-primary/30 bg-gradient-to-r from-card to-muted/30"
+                    className="group p-3 sm:p-4 border rounded-lg sm:rounded-xl transition-all duration-200 hover:shadow-md hover:border-primary/30 bg-gradient-to-r from-card to-muted/30"
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className="p-2 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                      <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 flex-1 w-full sm:w-auto">
+                        <div className="p-2 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg sm:rounded-xl flex-shrink-0">
                           {meeting.meeting_type === '1-on-1' ? (
-                            <User className="h-5 w-5 text-primary" />
+                            <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                           ) : (
-                            <Users className="h-5 w-5 text-primary" />
+                            <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                           )}
                         </div>
-                        <div className="flex-1">
-                          <h3 className="text-base font-semibold mb-1 group-hover:text-primary transition-colors">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm sm:text-base font-semibold mb-1 group-hover:text-primary transition-colors truncate" title={meeting.title}>
                             {meeting.title}
                           </h3>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            with {teacherName}
+                          <p className="text-xs sm:text-sm text-muted-foreground mb-2 flex flex-wrap items-center gap-1.5 sm:gap-2">
+                            <span className="truncate">with {teacherName}</span>
                             {courseTitle && (
-                              <span className="ml-2 px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
+                              <span className="px-2 py-0.5 sm:py-1 bg-primary/10 text-primary text-[10px] sm:text-xs rounded-full truncate max-w-full sm:max-w-none" title={courseTitle}>
                                 {courseTitle}
                               </span>
                             )}
                           </p>
                           
                           {meeting.description && (
-                            <p className="text-sm text-muted-foreground mb-2 p-2 bg-muted/50 rounded-lg">
+                            <p className="text-xs sm:text-sm text-muted-foreground mb-2 p-2 bg-muted/50 rounded-lg line-clamp-2">
                               {meeting.description}
                             </p>
                           )}
                           
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 text-xs sm:text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1 whitespace-nowrap">
+                              <Calendar className="h-3 w-3 flex-shrink-0" />
                               <span>{date}</span>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
+                            <div className="flex items-center gap-1 whitespace-nowrap">
+                              <Clock className="h-3 w-3 flex-shrink-0" />
                               <span>{time}</span>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Timer className="h-3 w-3" />
+                            <div className="flex items-center gap-1 whitespace-nowrap">
+                              <Timer className="h-3 w-3 flex-shrink-0" />
                               <span>{meeting.duration} min</span>
                             </div>
                             <Badge 
                               variant="secondary" 
-                              className="bg-primary/10 text-primary border-primary/20 text-xs"
+                              className="bg-primary/10 text-primary border-primary/20 text-[10px] sm:text-xs whitespace-nowrap"
                             >
                               {timeUntil}
                             </Badge>
@@ -414,33 +414,38 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2 ml-4">
+                      <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto justify-end sm:justify-start">
                         {meeting.zoom_join_url && (
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleCopyMeetingLink(meeting)}
-                            className="hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+                            className="hover:bg-primary/10 hover:text-primary hover:border-primary/30 h-9 sm:h-10 px-2 sm:px-3"
                           >
-                            <Copy className="h-4 w-4" />
+                            <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            <span className="hidden sm:inline ml-1.5 sm:ml-2">Copy</span>
                           </Button>
                         )}
                         {canJoin ? (
                           <Button
                             onClick={() => handleJoinMeeting(meeting)}
-                            className="bg-gradient-to-r from-brand-green-500 to-brand-green-600 hover:from-brand-green-600 hover:to-brand-green-500 text-white shadow-lg hover:shadow-xl hover:shadow-brand-green-500/25 transition-all duration-300 hover:-translate-y-0.5"
+                            size="sm"
+                            className="bg-gradient-to-r from-brand-green-500 to-brand-green-600 hover:from-brand-green-600 hover:to-brand-green-500 text-white shadow-lg hover:shadow-xl hover:shadow-brand-green-500/25 transition-all duration-300 hover:-translate-y-0.5 h-9 sm:h-10 text-xs sm:text-sm px-3 sm:px-4"
                           >
-                            <Play className="h-4 w-4 mr-2" />
-                            Join Meeting
+                            <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                            <span className="hidden sm:inline">Join Meeting</span>
+                            <span className="sm:hidden">Join</span>
                           </Button>
                         ) : (
                           <Button
                             variant="outline"
                             disabled
-                            className="opacity-50"
+                            size="sm"
+                            className="opacity-50 h-9 sm:h-10 text-xs sm:text-sm px-3 sm:px-4"
                           >
-                            <Clock className="h-4 w-4 mr-2" />
-                            Not Yet Available
+                            <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                            <span className="hidden sm:inline">Not Yet Available</span>
+                            <span className="sm:hidden">Soon</span>
                           </Button>
                         )}
                       </div>
@@ -455,16 +460,16 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
 
       {/* Past Meetings */}
       <Card className="bg-gradient-to-br from-card to-slate-500/5 dark:bg-card border-0 shadow-lg">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-3 text-xl">
-              <div className="p-2 bg-gradient-to-br from-slate-500/10 to-slate-500/20 rounded-xl">
-                <CheckCircle className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+        <CardHeader className="pb-3 sm:pb-4 p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+            <CardTitle className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl">
+              <div className="p-1.5 sm:p-2 bg-gradient-to-br from-slate-500/10 to-slate-500/20 rounded-lg sm:rounded-xl">
+                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-slate-600 dark:text-slate-400" />
               </div>
-              Past Meetings
+              <span>Past Meetings</span>
             </CardTitle>
             {pastMeetings.length > 0 && (
-              <Badge variant="secondary" className="bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+              <Badge variant="secondary" className="bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs sm:text-sm">
                 {pastMeetings.length} meeting{pastMeetings.length !== 1 ? 's' : ''}
               </Badge>
             )}
@@ -472,12 +477,12 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
         </CardHeader>
         <CardContent>
           {pastMeetings.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gradient-to-br from-slate-500/10 to-slate-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Clock className="h-8 w-8 text-slate-600 dark:text-slate-400" />
+            <div className="text-center py-8 sm:py-12 px-4">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-slate-500/10 to-slate-500/20 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-slate-600 dark:text-slate-400" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">No past meetings yet</h3>
-              <p className="text-muted-foreground max-w-sm mx-auto">
+              <h3 className="text-base sm:text-lg font-semibold mb-1.5 sm:mb-2">No past meetings yet</h3>
+              <p className="text-sm sm:text-base text-muted-foreground max-w-sm mx-auto">
                 Completed and cancelled meetings will appear here for your reference.
               </p>
             </div>
@@ -491,11 +496,12 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
                 return (
                   <div
                     key={meeting.id}
-                    className="group p-4 border rounded-xl transition-all duration-200 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 bg-gradient-to-r from-card to-slate-50/50 dark:to-slate-900/50"
+                    className="group p-3 sm:p-4 border rounded-lg sm:rounded-xl transition-all duration-200 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 bg-gradient-to-r from-card to-slate-50/50 dark:to-slate-900/50"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-xl ${
+                    {/* Top Section: Avatar, Name, Participant and Date/Time */}
+                    <div className="flex items-start justify-between gap-3 mb-3 sm:mb-4">
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl flex-shrink-0 ${
                           meeting.status === 'completed' 
                             ? 'bg-green-100 dark:bg-green-900/50' 
                             : meeting.status === 'cancelled'
@@ -503,7 +509,7 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
                             : 'bg-slate-100 dark:bg-slate-800'
                         }`}>
                           {meeting.meeting_type === '1-on-1' ? (
-                            <User className={`h-4 w-4 ${
+                            <User className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${
                               meeting.status === 'completed' 
                                 ? 'text-green-600 dark:text-green-400' 
                                 : meeting.status === 'cancelled'
@@ -511,7 +517,7 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
                                 : 'text-slate-600 dark:text-slate-400'
                             }`} />
                           ) : (
-                            <Users className={`h-4 w-4 ${
+                            <Users className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${
                               meeting.status === 'completed' 
                                 ? 'text-green-600 dark:text-green-400' 
                                 : meeting.status === 'cancelled'
@@ -520,45 +526,51 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
                             }`} />
                           )}
                         </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-base mb-1 group-hover:text-primary transition-colors">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-sm sm:text-base mb-1 group-hover:text-primary transition-colors truncate" title={meeting.title}>
                             {meeting.title}
                           </h4>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span className="font-medium">{teacherName}</span>
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {date}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {time}
-                            </div>
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground flex-wrap">
+                            <span className="font-medium truncate">{teacherName}</span>
                             {courseTitle && (
-                              <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
+                              <span className="px-2 py-0.5 sm:py-1 bg-primary/10 text-primary text-[10px] sm:text-xs rounded-full truncate" title={courseTitle}>
                                 {courseTitle}
                               </span>
                             )}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <Badge 
-                          variant="secondary"
-                          className={`font-medium ${
-                            meeting.status === 'completed' 
-                              ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700' 
-                              : meeting.status === 'cancelled'
-                              ? 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-700'
-                              : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
-                          }`}
-                        >
-                          {meeting.status}
-                        </Badge>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Timer className="h-3 w-3" />
-                          <span className="font-medium">{meeting.duration} min</span>
+                      
+                      {/* Date and Time in Top Right */}
+                      <div className="flex flex-col items-end gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-muted-foreground flex-shrink-0">
+                        <div className="flex items-center gap-1 whitespace-nowrap">
+                          <Calendar className="h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0" />
+                          <span>{date}</span>
                         </div>
+                        <div className="flex items-center gap-1 whitespace-nowrap">
+                          <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0" />
+                          <span>{time}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bottom Section: Status and Duration */}
+                    <div className="flex items-center gap-2 sm:gap-3 justify-between sm:justify-start pl-0 sm:pl-12">
+                      <Badge 
+                        variant="secondary"
+                        className={`font-medium text-[10px] sm:text-xs ${
+                          meeting.status === 'completed' 
+                            ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700' 
+                            : meeting.status === 'cancelled'
+                            ? 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-700'
+                            : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                        }`}
+                      >
+                        {meeting.status}
+                      </Badge>
+                      <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+                        <Timer className="h-3 w-3 flex-shrink-0" />
+                        <span className="font-medium">{meeting.duration} min</span>
                       </div>
                     </div>
                   </div>
@@ -566,21 +578,24 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
               })}
               
               {pastMeetings.length > 5 && (
-                <div className="text-center pt-6">
+                <div className="text-center pt-4 sm:pt-6">
                   <Button 
                     variant="outline" 
                     onClick={() => setShowAllPast(!showAllPast)}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600"
+                    size="sm"
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 text-xs sm:text-sm h-9 sm:h-10"
                   >
                     {showAllPast ? (
                       <>
-                        <ChevronUp className="h-4 w-4 mr-2" />
-                        Show Less
+                        <ChevronUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                        <span className="hidden sm:inline">Show Less</span>
+                        <span className="sm:hidden">Less</span>
                       </>
                     ) : (
                       <>
-                        <ChevronDown className="h-4 w-4 mr-2" />
-                        Show All {pastMeetings.length} Meetings
+                        <ChevronDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                        <span className="hidden sm:inline">Show All {pastMeetings.length} Meetings</span>
+                        <span className="sm:hidden">Show All ({pastMeetings.length})</span>
                       </>
                     )}
                   </Button>

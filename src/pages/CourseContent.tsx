@@ -1893,35 +1893,54 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       case 'attachment':
         const handleAttachmentInteraction = () => { if (currentContentItem && !currentContentItem.completed && currentLesson) markContentAsComplete(currentContentItem.id, currentLesson.id, actualCourseId); };
         return (
-          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
-                <Paperclip className="w-5 h-5 text-primary" />
-                Attachment
+          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-xl sm:rounded-2xl md:rounded-3xl shadow-lg">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg text-gray-900 dark:text-gray-100">
+                <Paperclip className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+                <span>Attachment</span>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6 pt-0">
               {currentContentItem.signedUrl ? (
-                <div className="flex items-center justify-between gap-4 p-4 border border-gray-200/50 dark:border-gray-600/50 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50">
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-6 h-6 text-primary" />
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{currentContentItem.content_path?.split('/').pop()}</span>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50 rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                    <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+                    <span className="font-medium text-sm sm:text-base text-gray-900 dark:text-gray-100 truncate" title={currentContentItem.content_path?.split('/').pop()}>
+                      {currentContentItem.content_path?.split('/').pop()}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button asChild variant="outline" className="hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300">
+                  <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+                    <Button 
+                      asChild 
+                      variant="outline" 
+                      size="sm"
+                      className="flex-1 sm:flex-initial hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300 text-xs sm:text-sm h-9 sm:h-10"
+                    >
                       <a href={currentContentItem.signedUrl} target="_blank" rel="noopener noreferrer" onClick={handleAttachmentInteraction}>
                         View
                       </a>
                     </Button>
-                    <Button onClick={() => {
-                      handleAttachmentInteraction();
-                      handleDownload(currentContentItem.signedUrl, currentContentItem.content_path?.split('/').pop() || 'download');
-                    }} disabled={isDownloading} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
-                      {isDownloading ? 'Downloading...' : 'Download'}
+                    <Button 
+                      onClick={() => {
+                        handleAttachmentInteraction();
+                        handleDownload(currentContentItem.signedUrl, currentContentItem.content_path?.split('/').pop() || 'download');
+                      }} 
+                      disabled={isDownloading} 
+                      size="sm"
+                      className="flex-1 sm:flex-initial bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm h-9 sm:h-10"
+                    >
+                      {isDownloading ? (
+                        <>
+                          <span className="hidden sm:inline">Downloading...</span>
+                          <span className="sm:hidden">Loading...</span>
+                        </>
+                      ) : (
+                        'Download'
+                      )}
                     </Button>
                   </div>
                 </div>
-              ) : <p className="text-muted-foreground">Attachment not available.</p>}
+              ) : <p className="text-sm sm:text-base text-muted-foreground">Attachment not available.</p>}
             </CardContent>
           </Card>
         );
@@ -1944,23 +1963,42 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               </CardContent>
             </Card>
             {attachments.length > 0 && (
-              <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-gray-900 dark:text-gray-100">Attached Files</CardTitle>
+              <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-xl sm:rounded-2xl md:rounded-3xl shadow-lg">
+                <CardHeader className="p-4 sm:p-6">
+                  <CardTitle className="text-base sm:text-lg text-gray-900 dark:text-gray-100">Attached Files</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-2 sm:space-y-3 p-4 sm:p-6 pt-0">
                   {attachments.map((att, index) => (
-                    <div key={index} className="flex items-center justify-between gap-4 p-4 border border-gray-200/50 dark:border-gray-600/50 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50">
-                      <div className="flex items-center gap-3">
-                        <FileText className="w-6 h-6 text-primary" />
-                        <span className="font-medium text-gray-900 dark:text-gray-100">{att.name}</span>
+                    <div key={index} className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50 rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                        <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+                        <span className="font-medium text-sm sm:text-base text-gray-900 dark:text-gray-100 truncate" title={att.name}>
+                          {att.name}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button asChild variant="outline" className="hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300">
+                      <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+                        <Button 
+                          asChild 
+                          variant="outline" 
+                          size="sm"
+                          className="flex-1 sm:flex-initial hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300 text-xs sm:text-sm h-9 sm:h-10"
+                        >
                           <a href={att.url} target="_blank" rel="noopener noreferrer">View</a>
                         </Button>
-                        <Button onClick={() => handleDownload(att.url, att.name)} disabled={isDownloading} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
-                          {isDownloading ? 'Downloading...' : 'Download'}
+                        <Button 
+                          onClick={() => handleDownload(att.url, att.name)} 
+                          disabled={isDownloading} 
+                          size="sm"
+                          className="flex-1 sm:flex-initial bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm h-9 sm:h-10"
+                        >
+                          {isDownloading ? (
+                            <>
+                              <span className="hidden sm:inline">Downloading...</span>
+                              <span className="sm:hidden">Loading...</span>
+                            </>
+                          ) : (
+                            'Download'
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -2566,10 +2604,10 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     <div className="min-h-screen bg-background">
       {/* Premium Header Section */}
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-2.5 sm:py-3">
+          <div className="flex items-center justify-between gap-2 sm:gap-3 md:gap-4">
             {/* Breadcrumb Navigation */}
-            <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1 w-full sm:w-auto">
+            <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -2582,29 +2620,34 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                     navigate(`/dashboard/courses/${actualCourseId}`);
                   }
                 }}
-                className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 text-xs sm:text-sm h-8 sm:h-9"
+                className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
               >
                 <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-0.5 sm:mr-1" />
                 <span className="hidden sm:inline">{(profile?.role === 'admin' || profile?.role === 'super_user') ? 'Back to Course Builder' : 'Back to Course'}</span>
                 <span className="sm:hidden">Back</span>
               </Button>
-              <div className="h-3 sm:h-4 w-px bg-border flex-shrink-0" />
-              <div className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm text-muted-foreground min-w-0 flex-1 overflow-hidden">
-                <span className="font-medium truncate max-w-[100px] sm:max-w-[150px] md:max-w-[200px]" title={currentModule?.title}>{currentModule?.title}</span>
-                <span className="flex-shrink-0">•</span>
-                <span className="truncate" title={currentLesson?.title}>{currentLesson?.title}</span>
+              <div className="h-4 sm:h-5 w-px bg-border flex-shrink-0" />
+              <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 text-xs sm:text-sm text-muted-foreground min-w-0 flex-1 overflow-hidden">
+                <span className="font-medium truncate" title={currentModule?.title}>{currentModule?.title || 'New Section'}</span>
+                <span className="flex-shrink-0 text-muted-foreground/60">•</span>
+                <span className="truncate" title={currentLesson?.title}>{currentLesson?.title || 'New Lesson'}</span>
               </div>
             </div>
             
             {/* Progress Indicator */}
-            <div className="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto">
-              <div className="text-right flex-1 sm:flex-initial">
-                <div className="text-xs sm:text-sm font-semibold text-foreground">
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <div className="text-right hidden sm:block">
+                <div className="text-xs sm:text-sm font-semibold text-foreground leading-tight">
                   {allContentItems.findIndex(item => item.id === currentContentItemId) + 1} of {allContentItems.length}
                 </div>
                 <div className="text-[10px] sm:text-xs text-muted-foreground">Progress</div>
               </div>
-              <div className="w-12 sm:w-16 h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden">
+              <div className="text-right sm:hidden">
+                <div className="text-xs font-semibold text-foreground leading-tight">
+                  {allContentItems.findIndex(item => item.id === currentContentItemId) + 1} of {allContentItems.length}
+                </div>
+              </div>
+              <div className="w-12 sm:w-16 md:w-20 h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden flex-shrink-0">
                 <div 
                   className="h-full bg-primary rounded-full transition-all duration-500"
                   style={{ width: `${((allContentItems.findIndex(item => item.id === currentContentItemId) + 1) / allContentItems.length) * 100}%` }}
