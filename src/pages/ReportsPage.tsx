@@ -8,8 +8,10 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Responsive
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { PaginationControls } from '@/components/ui/PaginationControls';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { TeacherReportsService, TeacherReportsData } from '@/services/teacherReportsService';
+import { ExportButton } from '@/components/ui/ExportButton';
+import { ReportData, ExportColumn } from '@/services/universalExportService';
 import { 
   TrendingUp, 
   Activity, 
@@ -59,6 +61,121 @@ const chartConfig = {
   },
 };
 
+/**
+ * Prepare teacher reports data for export
+ */
+function prepareReportDataForExport(
+  reportsData: TeacherReportsData,
+  user: any
+): ReportData {
+  const columns: ExportColumn[] = [
+    { header: 'Student Name', key: 'studentName', width: 25 },
+    { header: 'Email', key: 'studentEmail', width: 30 },
+    { header: 'Course', key: 'courseTitle', width: 30 },
+    { header: 'Progress %', key: 'completionRate', width: 15, format: (v) => `${v}%` },
+    { header: 'Avg Score %', key: 'averageScore', width: 15, format: (v) => `${v}%` },
+    { header: 'Assignments', key: 'assignmentsCompleted', width: 15, format: (v: any, row?: any) => row ? `${v}/${row.totalAssignments}` : String(v) },
+    { header: 'Status', key: 'status', width: 15 },
+    { header: 'Last Activity', key: 'lastActivity', width: 20 },
+  ];
+
+  const courseColumns: ExportColumn[] = [
+    { header: 'Course Title', key: 'courseTitle', width: 40 },
+    { header: 'Total Students', key: 'totalStudents', width: 15 },
+    { header: 'Active Students', key: 'activeStudents', width: 15 },
+    { header: 'Completion Rate %', key: 'completionRate', width: 18, format: (v) => `${v}%` },
+    { header: 'Avg Score %', key: 'averageScore', width: 15, format: (v) => `${v}%` },
+    { header: 'Total Assignments', key: 'totalAssignments', width: 18 },
+    { header: 'Completed', key: 'completedAssignments', width: 15 },
+    { header: 'Last Activity', key: 'lastActivity', width: 20 },
+  ];
+
+  const assignmentColumns: ExportColumn[] = [
+    { header: 'Assignment Title', key: 'assignmentTitle', width: 35 },
+    { header: 'Course', key: 'courseTitle', width: 30 },
+    { header: 'Submissions', key: 'totalSubmissions', width: 15 },
+    { header: 'Avg Score %', key: 'averageScore', width: 15, format: (v) => `${v}%` },
+    { header: 'Completion %', key: 'completionRate', width: 15, format: (v) => `${v}%` },
+    { header: 'Due Date', key: 'dueDate', width: 20 },
+    { header: 'Status', key: 'status', width: 15 },
+  ];
+
+  return {
+    metadata: {
+      title: 'Teacher Performance Analytics Report',
+      description: 'Comprehensive performance analytics for teacher dashboard',
+      generatedBy: user?.email || 'Unknown',
+      generatedAt: new Date(),
+    },
+    summary: `This report contains performance analytics for ${reportsData.overallMetrics.totalStudents} students across ${reportsData.overallMetrics.coursesPublished} courses. Overall completion rate: ${reportsData.overallMetrics.averageCompletion}%, Average score: ${reportsData.overallMetrics.averageScore}%.`,
+    metrics: [
+      { label: 'Total Students', value: reportsData.overallMetrics.totalStudents },
+      { label: 'Active Students', value: reportsData.overallMetrics.activeStudents },
+      { label: 'Average Completion', value: `${reportsData.overallMetrics.averageCompletion}%` },
+      { label: 'Average Score', value: `${reportsData.overallMetrics.averageScore}%` },
+      { label: 'Courses Published', value: reportsData.overallMetrics.coursesPublished },
+      { label: 'Total Assignments', value: reportsData.overallMetrics.totalAssignments },
+      { label: 'Total Enrollments', value: reportsData.overallMetrics.totalEnrollments },
+      { label: 'Average Engagement', value: `${reportsData.overallMetrics.averageEngagement}%` },
+    ],
+    tables: [
+      {
+        title: 'Student Progress',
+        columns,
+        data: reportsData.studentProgress.map(student => ({
+          studentName: student.studentName,
+          studentEmail: student.studentEmail,
+          courseTitle: student.courseTitle,
+          completionRate: student.completionRate,
+          averageScore: student.averageScore,
+          assignmentsCompleted: student.assignmentsCompleted,
+          totalAssignments: student.totalAssignments,
+          status: student.status,
+          lastActivity: student.lastActivity,
+        })),
+      },
+      {
+        title: 'Course Performance',
+        columns: courseColumns,
+        data: reportsData.coursePerformance.map(course => ({
+          courseTitle: course.courseTitle,
+          totalStudents: course.totalStudents,
+          activeStudents: course.activeStudents,
+          completionRate: course.completionRate,
+          averageScore: course.averageScore,
+          totalAssignments: course.totalAssignments,
+          completedAssignments: course.completedAssignments,
+          lastActivity: course.lastActivity,
+        })),
+      },
+      {
+        title: 'Assignment Performance',
+        columns: assignmentColumns,
+        data: reportsData.assignmentPerformance.map(assignment => ({
+          assignmentTitle: assignment.assignmentTitle,
+          courseTitle: assignment.courseTitle,
+          totalSubmissions: assignment.totalSubmissions,
+          averageScore: assignment.averageScore,
+          completionRate: assignment.completionRate,
+          dueDate: assignment.dueDate,
+          status: assignment.status,
+        })),
+      },
+      {
+        title: 'Monthly Trends',
+        columns: [
+          { header: 'Month', key: 'month', width: 20 },
+          { header: 'Enrollments', key: 'enrollments', width: 15 },
+          { header: 'Completions', key: 'completions', width: 15 },
+          { header: 'Avg Score', key: 'averageScore', width: 15, format: (v) => `${v}%` },
+          { header: 'Active Students', key: 'activeStudents', width: 15 },
+        ],
+        data: reportsData.monthlyTrends,
+      },
+    ],
+  };
+}
+
 export default function ReportsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -85,7 +202,11 @@ export default function ReportsPage() {
     setCurrentPage(1); // Reset to first page when changing items per page
   };
 
-
+  // Prepare report data for export (memoized at top level to avoid hook order issues)
+  const exportReportData = useMemo(() => {
+    if (!reportsData || !user) return null;
+    return prepareReportDataForExport(reportsData, user);
+  }, [reportsData, user]);
 
   // Fetch reports data from database
   const fetchReportsData = async () => {
@@ -348,6 +469,14 @@ export default function ReportsPage() {
                 Monitor platform performance and user engagement
               </p>
             </div>
+            {exportReportData && (
+              <ExportButton
+                reportData={exportReportData}
+                filename="teacher-performance-analytics"
+                variant="outline"
+                className="shrink-0"
+              />
+            )}
           </div>
         </div>
       </div>

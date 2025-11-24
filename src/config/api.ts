@@ -110,6 +110,11 @@ export const API_ENDPOINTS = {
   ADMIN_REPORTS_TIME_USAGE_PATTERNS: '/admin/reports/time-usage-patterns',
   ADMIN_REPORTS_TOP_CONTENT_ACCESSED: '/admin/reports/top-content-accessed',
   ADMIN_REPORTS_ANALYTICS_OVERVIEW: '/admin/reports/analytics-overview',
+  // AI Reports endpoints
+  AI_REPORTS_ASSISTANT: '/api/ai/reports-assistant',
+  AI_REPORTS_CONTEXT: '/api/reports/context',
+  // Text-to-Speech endpoint
+  TTS: '/tts',
 } as const;
 
 // Health check function
