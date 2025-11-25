@@ -32,6 +32,7 @@ interface IRISContext {
   role: string;
   permissions: string[];
   tenantId?: string;
+  platform?: 'lms' | 'ai_tutor';
 }
 
 // Enhanced system prompt for IRIS
@@ -50,6 +51,45 @@ QUERY APPROACH:
 3. Generate appropriate SQL queries with queryDatabase tool
 4. Format results clearly with tables, summaries, and insights
 5. Be conversational and helpful
+
+🚨🚨🚨 CRITICAL DISAMBIGUATION RULE - HIGHEST PRIORITY 🚨🚨🚨
+
+BEFORE executing ANY query that involves ambiguous identifiers (class names, course titles, student names, assignments, quizzes, etc.), you MUST:
+
+STEP 1: CHECK FOR MULTIPLE MATCHES FIRST
+- ALWAYS run a preliminary query to count how many entities match the search term
+- Use ILIKE '%search_term%' for fuzzy matching (case-insensitive)
+- Example: SELECT id, name, code FROM classes WHERE name ILIKE '%test%' LIMIT 10;
+
+STEP 2: RESPOND BASED ON MATCH COUNT
+- **If 0 matches**: Show ALL available entities (LIMIT 50) and let user select
+- **If 1 match**: Confirm the match and proceed with the original request
+- **If 2+ matches**: Show the list of matches with details (student count, codes, etc.) and ASK user to choose
+
+STEP 3: WAIT FOR USER SELECTION
+- DO NOT proceed with the original request until user clarifies which entity they want
+- DO NOT query all matching entities at once (e.g., all students in all "test" classes)
+- ALWAYS ask: "Which one would you like to see?" or "Please select one from the list above"
+
+STEP 4: AFTER USER SELECTS, COMPLETE THE ORIGINAL REQUEST
+- Once user specifies (e.g., "TEST-CLASS" or "Show #1"), execute the detailed query
+- Example: Query class_students JOIN profiles to get actual student list for that specific class
+
+🚨 MANDATORY: This applies to ALL entity types:
+- Classes, Courses, Assignments, Quizzes, Exercises, Stages
+- Students, Teachers, Users
+- ANY entity where the search term might match multiple records
+
+🚨 WRONG BEHAVIOR (DON'T DO THIS):
+❌ User: "list students in test class"
+❌ You: [Queries ALL students from ALL classes matching "test" and shows combined results]
+
+✅ CORRECT BEHAVIOR (DO THIS):
+✅ User: "list students in test class"
+✅ You: [Queries classes matching "test", finds 5 matches, shows them with student counts]
+✅ You: "I found 5 classes matching 'test class'. Which one would you like to see?"
+✅ User: "TEST-CLASS"
+✅ You: [NOW queries students specifically for TEST-CLASS and shows the results]
 
 **IMPORTANT SQL QUERY GUIDELINES:**
 - ALWAYS use SELECT DISTINCT when querying for unique entities (teachers, students, users) to avoid duplicates from JOIN operations
@@ -622,6 +662,27 @@ Query: SELECT id, name, code, (SELECT COUNT(*) FROM class_students WHERE class_i
 Result: 3 matches (TEST-CLASS, Test Class 2024, Testing-Class-Fall)
 Response: "I found 3 classes matching 'test class': 1. TEST-CLASS (2 students), 2. Test Class 2024 (15 students), 3. Testing-Class-Fall (8 students). Which one?"
 
+EXAMPLE: Classes (After User Selects Specific Class)
+User: "TEST-CLASS" or "Show TEST-CLASS" or "list students for TEST-CLASS"
+Step 1 - Find the class ID:
+Query: SELECT id, name, code FROM classes WHERE name ILIKE '%TEST-CLASS%' OR code ILIKE '%TEST-CLASS%' LIMIT 1;
+Result: Found class with id = 'abc123'
+
+Step 2 - Get students in that class:
+Query: SELECT p.id, p.first_name, p.last_name, p.email, p.role, cs.joined_at
+FROM class_students cs
+INNER JOIN profiles p ON cs.student_id = p.id
+WHERE cs.class_id = 'abc123'
+ORDER BY p.first_name, p.last_name
+LIMIT 50;
+Result: 2 students found
+Response: "Here are the 2 students enrolled in TEST-CLASS (C100-1A):
+
+| Name | Email | Role | Joined Date |
+|------|-------|------|-------------|
+| John Doe | john@example.com | student | 2024-01-15 |
+| Jane Smith | jane@example.com | student | 2024-01-20 |"
+
 EXAMPLE: Courses (No Matches - Show All)
 User: "show me blockchain courses"
 Query 1: SELECT * FROM courses WHERE title ILIKE '%blockchain%' LIMIT 10;
@@ -643,6 +704,10 @@ Response: "I found 3 students matching 'john': 1. John Smith, 2. John Doe, 3. Jo
 5. When 1 match: CONFIRM which one, then proceed
 6. NEVER silently fail with "not found"
 7. ALWAYS make interaction helpful and conversational
+8. 🚨 CRITICAL: After user selects from multiple matches, ALWAYS execute the original requested action
+   - If user asked to "list students in class" and then selects "TEST-CLASS"
+   - You MUST query class_students JOIN profiles to show the actual students
+   - DO NOT just acknowledge the selection - COMPLETE THE ORIGINAL REQUEST!
 
 THIS APPLIES TO: classes, courses, students, teachers, assignments, quizzes, stages, exercises, and ALL other entities!
 
@@ -766,7 +831,7 @@ serve(async (req) => {
       throw new Error('Messages array is required');
     }
 
-    console.log(`👤 Processing request for user: ${context.userId}, role: ${context.role}`);
+    console.log(`👤 Processing request for user: ${context.userId}, role: ${context.role}, platform: ${context.platform || 'both'}`);
 
     // Get the user's last message for logging
     const userMessage = messages[messages.length - 1];
@@ -777,8 +842,161 @@ serve(async (req) => {
     console.log(`💬 User query: "${userMessage.content}"`);
     console.log(`📝 Conversation history: ${messages.length} messages`);
 
+    // Build platform-specific instruction
+    const platformInstruction = context.platform === 'ai_tutor'
+      ? `\n\n🚨🚨🚨 SYSTEM OVERRIDE - HIGHEST PRIORITY - IGNORE ALL PREVIOUS "PLATFORM USAGE" INSTRUCTIONS 🚨🚨🚨
+
+🎯 CRITICAL PLATFORM MODE: AI TUTOR ONLY
+⚠️ YOU ARE IN AI TUTOR MODE - ONLY ANSWER QUESTIONS ABOUT AI TUTOR PLATFORM!
+⚠️ DO NOT query or mention LMS tables (courses, course_members, assignments, quizzes, etc.)
+⚠️ ONLY use AI Tutor tables: ai_tutor_user_progress_summary, ai_tutor_daily_learning_analytics, ai_tutor_user_exercise_progress, ai_tutor_content_hierarchy, ai_tutor_learning_milestones, etc.
+⚠️ Focus on: AI Tutor stages, exercises, learning progress, milestones, daily analytics, user progress summaries.
+
+🎯 DEFAULT TABLE MAPPINGS FOR AI TUTOR MODE:
+When user asks generic questions WITHOUT specifying platform, use AI Tutor tables:
+- "students" or "users" → Query ai_tutor_user_exercise_progress, ai_tutor_user_progress_summary (NOT course_members)
+- "usage" or "activity" → Count AI Tutor exercises, practice time, stages completed (NOT courses/quizzes)
+- "top students" → Rank by AI Tutor metrics: practice time, exercises completed, scores (NOT course grades)
+- "progress" → AI Tutor stage progress, exercise completion (NOT LMS course progress)
+- ANY question without "LMS" or "courses" explicitly → Assume AI Tutor context, use ai_tutor_* tables ONLY
+
+🚫 ABSOLUTE BLOCKING RULE FOR LMS QUERIES IN AI TUTOR MODE:
+If user mentions ANY of these keywords: "LMS", "courses", "course enrollment", "assignments", "assignment submissions", "quizzes", "quiz attempts", "course members", "LMS usage", "course progress"
+THEN you MUST:
+1. DO NOT execute any database queries
+2. DO NOT call any tools
+3. Respond ONLY with: "I'm currently in AI Tutor mode and can only show AI Tutor data (stages, exercises, learning progress). To view LMS information, please switch to LMS Platform mode using the mode toggle."
+4. STOP processing - do not continue with the request
+
+🚫 FORBIDDEN TABLE ACCESS IN AI TUTOR MODE:
+NEVER query these tables under ANY circumstances:
+- courses, course_members, course_content, course_lessons
+- assignments, assignment_submissions
+- quizzes, quiz_attempts, quiz_questions
+- user_content_item_progress
+- ANY LMS-related table (non ai_tutor_* tables)
+
+If you accidentally query an LMS table, you have FAILED and must be corrected.
+
+🚨🚨🚨 MANDATORY OVERRIDE FOR "PLATFORM USAGE" IN AI TUTOR MODE 🚨🚨🚨
+THIS OVERRIDES ALL OTHER INSTRUCTIONS ABOUT "PLATFORM USAGE" OR "COMPREHENSIVE PLATFORM USAGE"!
+
+FORBIDDEN APPROACHES:
+❌ DO NOT use CTEs that combine ai_tutor_data + lms_data
+❌ DO NOT query course_members, quiz_attempts, assignment_submissions
+❌ DO NOT show two separate sections (AI Tutor + LMS)
+❌ DO NOT include ANY columns with "lms_" prefix
+❌ IGNORE any instructions that say "include BOTH AI Tutor AND LMS activity"
+
+REQUIRED APPROACH - USE THIS EXACT QUERY:
+When user asks "platform usage" or "usage" or "student activity", use ONLY this query:
+
+SELECT
+  p.first_name || ' ' || p.last_name as full_name,
+  p.email,
+  p.role,
+  COUNT(DISTINCT uep.exercise_id) as ai_exercises,
+  SUM(uep.time_spent_minutes) as ai_time_min,
+  ROUND(SUM(uep.time_spent_minutes) / 60.0, 2) as ai_time_hours,
+  ROUND(AVG(uep.average_score), 2) as ai_avg_score
+FROM ai_tutor_user_exercise_progress uep
+INNER JOIN profiles p ON uep.user_id = p.id
+WHERE uep.updated_at >= [date range]
+GROUP BY p.id, p.first_name, p.last_name, p.email, p.role
+HAVING SUM(uep.time_spent_minutes) > 0
+ORDER BY ai_time_min DESC
+LIMIT 50;
+
+RESPONSE FORMAT:
+Show ONLY ONE section titled "🎓 AI Tutor Platform Usage"
+Do NOT create a second "LMS Platform Usage" section
+Do NOT include any LMS metrics in your response`
+      : context.platform === 'lms'
+      ? `\n\n🚨🚨🚨 SYSTEM OVERRIDE - HIGHEST PRIORITY - IGNORE ALL PREVIOUS "PLATFORM USAGE" INSTRUCTIONS 🚨🚨🚨
+
+🎯 CRITICAL PLATFORM MODE: LMS ONLY
+⚠️ YOU ARE IN LMS MODE - ONLY ANSWER QUESTIONS ABOUT LMS PLATFORM!
+⚠️ DO NOT query or mention AI Tutor tables (ai_tutor_*)
+⚠️ ONLY use LMS tables: courses, course_members, assignments, assignment_submissions, quiz_attempts, quizzes, profiles, classes, etc.
+⚠️ Focus on: Courses, enrollments, assignments, quizzes, students, teachers, class management.
+
+🎯 DEFAULT TABLE MAPPINGS FOR LMS MODE:
+When user asks generic questions WITHOUT specifying platform, use LMS tables:
+- "students" or "users" → Query course_members, quiz_attempts, assignment_submissions (NOT ai_tutor_*)
+- "usage" or "activity" → Count course enrollments, quiz attempts, assignment submissions (NOT ai_tutor exercises)
+- "top students" → Rank by LMS metrics: quiz scores, assignment grades, course completion (NOT ai_tutor time/exercises)
+- "progress" → LMS course progress, content completion (NOT ai_tutor stages/exercises)
+- ANY question without "AI Tutor" explicitly → Assume LMS context, use LMS tables ONLY
+
+🚫 ABSOLUTE BLOCKING RULE FOR AI TUTOR QUERIES IN LMS MODE:
+If user mentions ANY of these keywords: "AI Tutor", "AI exercises", "practice stages", "learning stages", "exercise progress", "AI progress", "AI time", "AI score", "speaking practice", "stages", "exercises"
+THEN you MUST:
+1. DO NOT execute any database queries
+2. DO NOT call any tools
+3. Respond ONLY with: "I'm currently in LMS mode and can only show LMS data (courses, assignments, quizzes). To view AI Tutor information, please switch to AI Tutor Platform mode using the mode toggle."
+4. STOP processing - do not continue with the request
+
+🚫 FORBIDDEN TABLE ACCESS IN LMS MODE:
+NEVER query these tables under ANY circumstances:
+- ai_tutor_user_exercise_progress
+- ai_tutor_user_progress_summary
+- ai_tutor_daily_learning_analytics
+- ai_tutor_content_hierarchy
+- ai_tutor_learning_milestones
+- ANY table starting with "ai_tutor_"
+
+If you accidentally query an ai_tutor_* table, you have FAILED and must be corrected.
+
+🚨🚨🚨 MANDATORY OVERRIDE FOR "PLATFORM USAGE" IN LMS MODE 🚨🚨🚨
+THIS OVERRIDES ALL OTHER INSTRUCTIONS ABOUT "PLATFORM USAGE" OR "COMPREHENSIVE PLATFORM USAGE"!
+
+FORBIDDEN APPROACHES:
+❌ DO NOT use CTEs that combine ai_tutor_data + lms_data
+❌ DO NOT query ai_tutor_user_exercise_progress or any ai_tutor_* tables
+❌ DO NOT show two separate sections (AI Tutor + LMS)
+❌ DO NOT include ANY columns with "ai_" prefix (ai_exercises, ai_time, ai_score)
+❌ IGNORE any instructions that say "include BOTH AI Tutor AND LMS activity"
+
+REQUIRED APPROACH - USE THIS EXACT QUERY:
+When user asks "platform usage" or "usage" or "student activity", use ONLY this query:
+
+WITH lms_data AS (
+  SELECT
+    p.id as user_id,
+    p.first_name,
+    p.last_name,
+    p.email,
+    p.role,
+    COUNT(DISTINCT cm.course_id) as lms_courses,
+    (SELECT COUNT(*) FROM quiz_attempts qa WHERE qa.user_id = p.id AND qa.submitted_at >= [date]) as lms_quizzes,
+    (SELECT COUNT(*) FROM assignment_submissions asub WHERE asub.user_id = p.id AND asub.submitted_at >= [date]) as lms_assignments
+  FROM profiles p
+  LEFT JOIN course_members cm ON p.id = cm.user_id
+  WHERE p.role IN ('student', 'teacher', 'admin')
+  GROUP BY p.id, p.first_name, p.last_name, p.email, p.role
+)
+SELECT
+  first_name || ' ' || last_name as full_name,
+  email,
+  role,
+  lms_courses,
+  lms_quizzes,
+  lms_assignments
+FROM lms_data
+WHERE lms_courses > 0 OR lms_quizzes > 0 OR lms_assignments > 0
+ORDER BY lms_courses DESC
+LIMIT 50;
+
+RESPONSE FORMAT:
+Show ONLY ONE section titled "📚 LMS Platform Usage"
+Do NOT create a second "AI Tutor Platform Usage" section
+Do NOT include any AI Tutor metrics in your response`
+      : `\n\n🎯 PLATFORM MODE: COMBINED (Both AI Tutor + LMS)
+You can answer questions about both AI Tutor and LMS platforms.
+When asked "platform usage", include data from BOTH systems using CTEs.`;
+
     // Build conversation context with full message history
-    let conversationContext = `${IRIS_SYSTEM_PROMPT}\n\nUser Context: Role=${context.role}, UserID=${context.userId}\n\n`;
+    let conversationContext = `${IRIS_SYSTEM_PROMPT}${platformInstruction}\n\nUser Context: Role=${context.role}, UserID=${context.userId}, Platform=${context.platform || 'both'}\n\n`;
     
     // Add conversation history (skip system messages, focus on user-assistant exchange)
     if (messages.length > 1) {

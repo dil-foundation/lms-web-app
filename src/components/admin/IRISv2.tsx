@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { IRISService } from '@/services/irisService';
 import { IRISMessage, IRISContext, PlatformType } from '@/types/iris';
 import { useAuth } from '@/hooks/useAuth';
+import { useAILMS } from '@/contexts/AILMSContext';
 import { toast } from '@/hooks/use-toast';
 import { ReportExportService, ExportFormat } from '@/services/reportExportService';
 import {
@@ -53,7 +54,12 @@ import {
 
 export const IRISv2 = () => {
   const { user } = useAuth();
-  const [selectedPlatform, setSelectedPlatform] = useState<PlatformType>('lms');
+  const { isAIMode } = useAILMS();
+
+  // Auto-detect platform based on current mode (AI Tutor vs LMS)
+  // When in AI mode, lock to 'ai_tutor', when in LMS mode, lock to 'lms'
+  const lockedPlatform: PlatformType = isAIMode ? 'ai_tutor' : 'lms';
+  const [selectedPlatform, setSelectedPlatform] = useState<PlatformType>(lockedPlatform);
   const [messages, setMessages] = useState<IRISMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -147,10 +153,25 @@ export const IRISv2 = () => {
 
   const currentActions = selectedPlatform === 'ai_tutor' ? aiTutorActions : lmsActions;
 
+  // Sync platform with current mode (AI vs LMS)
+  useEffect(() => {
+    const newPlatform: PlatformType = isAIMode ? 'ai_tutor' : 'lms';
+    if (selectedPlatform !== newPlatform) {
+      setSelectedPlatform(newPlatform);
+    }
+  }, [isAIMode]);
+
   // Initialize component
   useEffect(() => {
     initializeIRIS();
   }, [user]);
+
+  // Re-initialize when platform changes
+  useEffect(() => {
+    if (userContext) {
+      initializeIRIS();
+    }
+  }, [selectedPlatform]);
 
   // Auto-scroll to bottom when messages change (only if user is near bottom)
   useEffect(() => {
@@ -205,7 +226,7 @@ export const IRISv2 = () => {
   const initializeIRIS = async () => {
     try {
       console.log('🚀 Initializing IRIS...');
-      
+
       // Get user context first
       const context = await IRISService.getUserContext();
       setUserContext(context);
@@ -233,14 +254,19 @@ export const IRISv2 = () => {
           setServiceHealth(false);
         });
 
-      // Set welcome message
+      // Set welcome message based on selected platform
+      const platformName = selectedPlatform === 'ai_tutor' ? 'AI Tutor' : 'LMS';
+      const platformDescription = selectedPlatform === 'ai_tutor'
+        ? 'Ask me about AI Tutor stages, exercises, student progress, learning milestones, and analytics!'
+        : 'Ask me about courses, enrollments, assignments, quizzes, students, and teachers!';
+
       const welcomeMessage: IRISMessage = {
         role: 'assistant',
-        content: `Hello! I'm IRIS, your AI assistant for platform analytics and insights.
+        content: `Hello! I'm IRIS, your AI assistant for **${platformName} Platform** analytics and insights.
 
-**Role:** ${context.role.charAt(0).toUpperCase() + context.role.slice(1)} | **Access:** ${context.role === 'admin' ? 'Full Platform' : context.role === 'teacher' ? 'Course & Students' : 'Student View'}
+**Role:** ${context.role.charAt(0).toUpperCase() + context.role.slice(1)} | **Platform:** ${platformName} | **Access:** ${context.role === 'admin' ? 'Full Platform' : context.role === 'teacher' ? 'Course & Students' : 'Student View'}
 
-Ask me about students, courses, analytics, or any platform data you need!`,
+${platformDescription}`,
         timestamp: new Date()
       };
       setMessages([welcomeMessage]);
@@ -252,14 +278,14 @@ Ask me about students, courses, analytics, or any platform data you need!`,
 
     } catch (error) {
       console.error('Failed to initialize IRIS:', error);
-      
+
       // Set error message
       const errorMessage: IRISMessage = {
         role: 'assistant',
         content: `I encountered an error during initialization. This might be due to:
 
 • **Network connectivity issues**
-• **Authentication problems** 
+• **Authentication problems**
 • **Service unavailability**
 
 **What you can try:**
@@ -271,9 +297,9 @@ Ask me about students, courses, analytics, or any platform data you need!`,
 Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
         timestamp: new Date()
       };
-      
+
       setMessages([errorMessage]);
-      
+
       toast({
         title: "Initialization Error",
         description: "IRIS encountered an error during startup. See the chat for details.",
@@ -327,10 +353,10 @@ Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
 
       console.log(`📊 Message history: ${allMessages.length} total, sending ${truncatedMessages.length} to IRIS`);
 
-      // Use streaming API
+      // Use streaming API with platform context
       await IRISService.sendMessageStream(
         truncatedMessages,
-        userContext,
+        { ...userContext, platform: selectedPlatform },
         // onChunk - update the message content as chunks arrive
         (chunk: string) => {
           setMessages(prev => {
@@ -971,27 +997,23 @@ formatted = formatted.replace(/💡 Recommendations:?|Recommendations:?/g,
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 p-4">
-              {/* Platform Selector */}
-              <div>
-                <Select value={selectedPlatform} onValueChange={(value: 'ai_tutor' | 'lms') => setSelectedPlatform(value)}>
-                  <SelectTrigger className="w-full bg-background border-border hover:border-primary/30 focus:border-primary">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ai_tutor" className="focus:bg-primary/10 data-[highlighted]:bg-primary/10">
-                      <div className="flex items-center gap-2">
-                        <Bot className="h-4 w-4 text-primary" />
-                        <span>AI Tutor Platform</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="lms" className="focus:bg-secondary/10 data-[highlighted]:bg-secondary/10">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-secondary data-[highlighted]:text-secondary" />
-                        <span>LMS Platform</span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+              {/* Platform Indicator - Auto-detected based on mode */}
+              <div className="p-3 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+                <div className="flex items-center gap-2 mb-1">
+                  {selectedPlatform === 'ai_tutor' ? (
+                    <Brain className="h-4 w-4 text-primary" />
+                  ) : (
+                    <BookOpen className="h-4 w-4 text-primary" />
+                  )}
+                  <span className="font-semibold text-sm text-foreground">
+                    {selectedPlatform === 'ai_tutor' ? 'AI Tutor Platform' : 'LMS Platform'}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {selectedPlatform === 'ai_tutor'
+                    ? 'Answering questions about AI Tutor stages, exercises, and progress'
+                    : 'Answering questions about courses, assignments, and enrollments'}
+                </p>
               </div>
 
               <div className="space-y-2">
