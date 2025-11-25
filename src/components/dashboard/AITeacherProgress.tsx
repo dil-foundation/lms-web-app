@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -168,7 +167,7 @@ export const AITeacherProgress = () => {
   });
 
   // Local state for UI components
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [viewMode, setViewMode] = useState<'list' | 'cards'>('list');
   const [selectedStudent, setSelectedStudent] = useState<StudentProgressData | null>(null);
   const [studentDetailData, setStudentDetailData] = useState<StudentDetailData | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -179,7 +178,7 @@ export const AITeacherProgress = () => {
   // Get default items per page based on current view
   const getDefaultItemsPerPage = (view: string) => {
     switch (view) {
-      case 'table': return 8; // Table view is like list view
+      case 'list': return 8; // List view is like traditional rows
       case 'cards': return 8; // Cards view
       default: return 8;
     }
@@ -523,10 +522,10 @@ export const AITeacherProgress = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setViewMode(viewMode === 'table' ? 'cards' : 'table')}
+                onClick={() => setViewMode(viewMode === 'list' ? 'cards' : 'list')}
                 className="h-9 px-3 sm:px-4 rounded-lg sm:rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 text-xs sm:text-sm"
               >
-                {viewMode === 'table' ? 'Card View' : 'Table View'}
+                {viewMode === 'list' ? 'Card View' : 'List View'}
               </Button>
               <Button 
                 variant="outline" 
@@ -654,7 +653,7 @@ export const AITeacherProgress = () => {
       </Card>
 
       {/* Student Data */}
-      {viewMode === 'table' ? (
+      {viewMode === 'list' ? (
         <Card className="student-progress-table">
           <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 pb-4 p-4 sm:p-6">
             <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
@@ -671,105 +670,131 @@ export const AITeacherProgress = () => {
               )}
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Student</TableHead>
-                    <TableHead>Stage</TableHead>
-                    <TableHead>Avg Score</TableHead>
-                    <TableHead>AI Feedback</TableHead>
-                    <TableHead>Last Active</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {refreshing ? (
-                    // Loading skeleton rows
-                    [...Array(itemsPerPage)].map((_, index) => (
-                      <TableRow key={`skeleton-${index}`} className="animate-pulse">
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 bg-muted rounded-full"></div>
-                            <div>
-                              <div className="h-4 bg-muted rounded w-24 mb-1"></div>
-                              <div className="h-3 bg-muted rounded w-32"></div>
-                            </div>
+          <CardContent className="space-y-4">
+            {refreshing ? (
+              <div className="space-y-3">
+                {Array.from({ length: itemsPerPage }).map((_, index) => (
+                  <div
+                    key={`skeleton-${index}`}
+                    className="p-4 sm:p-5 rounded-2xl border bg-muted/40 animate-pulse space-y-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-full bg-muted-foreground/30" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-muted-foreground/30 rounded w-32" />
+                        <div className="h-3 bg-muted-foreground/20 rounded w-48" />
+                      </div>
+                      <div className="h-6 w-16 bg-muted-foreground/20 rounded" />
+                    </div>
+                    <div className="h-2 bg-muted-foreground/20 rounded" />
+                    <div className="space-y-2">
+                      <div className="h-3 bg-muted-foreground/10 rounded w-3/4" />
+                      <div className="h-3 bg-muted-foreground/10 rounded w-2/3" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {paginatedStudents.map((student) => {
+                  return (
+                    <div
+                      key={student.id}
+                      className="p-4 sm:p-5 rounded-2xl border bg-card/60 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow duration-200 space-y-4"
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-12 w-12">
+                            <AvatarFallback>
+                              {student.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-semibold text-base">{student.name}</p>
+                            <p className="text-sm text-muted-foreground break-all">{student.email}</p>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="h-6 bg-muted rounded w-16"></div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="h-6 bg-muted rounded w-12"></div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="h-4 bg-muted rounded w-40"></div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="h-4 bg-muted rounded w-20"></div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="h-8 bg-muted rounded w-10 ml-auto"></div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    paginatedStudents.map((student) => (
-                      <TableRow key={student.id} className="hover:bg-muted/50">
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10">
-                              <AvatarFallback>
-                                {student.name.split(' ').map(n => n[0]).join('')}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="font-medium">{student.name}</div>
-                              <div className="text-sm text-muted-foreground">{student.email}</div>
-                            </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="outline" className="text-xs px-2 py-0.5">
+                            {student.stage}
+                          </Badge>
+                          {student.flags.excessive_retries && (
+                            <Badge variant="destructive" className="text-xs px-2 py-0.5">
+                              High retries
+                            </Badge>
+                          )}
+                          {student.flags.stuck_days && (
+                            <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                              Stuck {student.flags.stuck_days}d
+                            </Badge>
+                          )}
+                          {student.flags.inactive_days && (
+                            <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                              Inactive {student.flags.inactive_days}d
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <div>
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Completion</p>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-lg font-semibold">{student.completionPercentage}%</span>
+                            {getTrendIcon(student.performance.trend)}
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{student.stage}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="text-lg font-semibold">{student.averageScore}</div>
+                          <Progress value={student.completionPercentage} className="h-2 mt-2" />
+                        </div>
+                        <div>
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Avg Score</p>
+                          <div className="flex items-center gap-2 mt-1">
                             <Star className="h-4 w-4 text-yellow-500" />
+                            <span className="text-lg font-semibold">{student.averageScore}</span>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className={`text-sm ${getSentimentColor(student.aiTutorFeedback.sentiment)}`}>
-                            {student.aiTutorFeedback.summary.substring(0, 50)}...
+                        </div>
+                        <div>
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Lessons</p>
+                          <div className="flex items-center gap-1 mt-1 text-lg font-semibold">
+                            <span>{student.completedLessons}</span>
+                            <span className="text-muted-foreground text-sm">/ {student.totalLessons}</span>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            {new Date(student.lastActive).toLocaleDateString()}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center gap-2 justify-end">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewStudentDetail(student)}
-                              className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-            
-            {/* Pagination for Table View */}
+                        </div>
+                        <div>
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Last Active</p>
+                          <p className="text-base font-medium mt-1">
+                            {student.lastActive ? new Date(student.lastActive).toLocaleDateString() : 'Never'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Enrolled {student.enrolledDate ? new Date(student.enrolledDate).toLocaleDateString() : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="text-xs text-muted-foreground flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          <span>Updated {student.lastActive ? new Date(student.lastActive).toLocaleDateString() : 'Never'}</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewStudentDetail(student)}
+                            className="gap-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+                          >
+                            <Eye className="h-4 w-4" />
+                            <span className="hidden sm:inline">View Details</span>
+                            <span className="sm:hidden">View</span>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Pagination for List View */}
             {totalPages > 1 && (
               <PaginationControls
                 currentPage={currentPage}
@@ -854,15 +879,6 @@ export const AITeacherProgress = () => {
                   <Star className="h-4 w-4 text-yellow-500" />
                   <span className="font-semibold">{student.averageScore}</span>
                   <span className="text-sm text-muted-foreground">avg score</span>
-                </div>
-                
-                <div className="text-sm">
-                  <div className={`font-medium ${getSentimentColor(student.aiTutorFeedback.sentiment)}`}>
-                    AI Feedback:
-                  </div>
-                  <div className="text-muted-foreground">
-                    {student.aiTutorFeedback.summary.substring(0, 80)}...
-                  </div>
                 </div>
                 
                 {Object.keys(student.flags).length > 0 && (

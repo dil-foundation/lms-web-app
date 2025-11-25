@@ -289,9 +289,9 @@ const LinkCard = ({
             </div>
 
             {link.usedBy && (
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-1">
                 <span className="text-muted-foreground">Used by:</span>
-                <span className="font-medium truncate max-w-32" title={link.usedBy}>
+                <span className="font-medium text-right break-words">
                   {link.usedBy}
                 </span>
               </div>
@@ -392,7 +392,7 @@ const LinkCard = ({
               {link.usedBy && (
                 <div className="flex items-center gap-1">
                   <span className="text-muted-foreground">Used by:</span>
-                  <span className="font-medium truncate max-w-24" title={link.usedBy}>
+                  <span className="font-medium">
                     {link.usedBy}
                   </span>
                 </div>
@@ -656,7 +656,7 @@ export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
         <div className="relative p-4 sm:p-6 md:p-8 rounded-3xl">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex flex-col items-start gap-4">
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center flex-shrink-0">
                 <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
@@ -670,8 +670,7 @@ export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
           </p>
         </div>
             </div>
-            
-            <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
+            <div className="flex items-center gap-2 w-full flex-shrink-0">
               <Button 
                 variant="outline" 
                 onClick={handleRefresh}

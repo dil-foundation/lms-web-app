@@ -412,7 +412,7 @@ export default function SensitiveScenarioRoleplay() {
                 <div className="inline-block p-2.5 sm:p-3 md:p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl shadow-lg">
                   <Users className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-primary" />
                 </div>
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                <h1 className="text-xl sm:text-2xl md:text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                   Sensitive Scenario Roleplay
                 </h1>
                 <p className="text-muted-foreground text-sm sm:text-base md:text-lg px-2">

@@ -828,9 +828,12 @@ export const ReportsAnalytics = () => {
         <CardContent className="pt-0">
           <div className="space-y-3">
             {(topContentData?.content || []).slice(0, 5).map((content, index) => (
-              <div key={index} className="group relative p-3 sm:p-4 rounded-xl border-0 bg-gradient-to-r from-background to-muted/20 hover:from-muted/30 hover:to-muted/40 transition-all duration-300 shadow-sm hover:shadow-md">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="flex items-center gap-3 sm:gap-4 flex-1">
+              <div
+                key={index}
+                className="group relative p-3 sm:p-4 rounded-xl border-0 bg-gradient-to-r from-background to-muted/20 hover:from-muted/30 hover:to-muted/40 transition-all duration-300 shadow-sm hover:shadow-md overflow-hidden"
+              >
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
                     <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 group-hover:from-primary/20 group-hover:to-primary/10 transition-colors shrink-0">
                       <div className="text-sm sm:text-lg font-bold text-primary">#{index + 1}</div>
                     </div>
@@ -851,30 +854,30 @@ export const ReportsAnalytics = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6">
-                    <div className="text-center">
-                      <div className="flex items-center gap-1 justify-center">
+                  <div className="flex flex-wrap items-stretch gap-3 w-full lg:w-auto">
+                    <div className="flex-1 min-w-[90px] text-center rounded-lg border border-border/40 px-3 py-2 bg-background/70">
+                      <div className="flex items-center gap-1 justify-center text-foreground">
                         <Eye className="h-3 w-3 text-blue-500" />
-                        <span className="text-xs sm:text-sm font-bold text-foreground">
+                        <span className="text-xs sm:text-sm font-bold">
                           {content.accessCount.toLocaleString()}
                         </span>
                       </div>
-                      <div className="text-xs text-muted-foreground font-medium">views</div>
+                      <div className="text-[11px] text-muted-foreground font-medium">views</div>
                     </div>
-                    <div className="text-center">
-                      <div className="flex items-center gap-1 justify-center">
+                    <div className="flex-1 min-w-[90px] text-center rounded-lg border border-border/40 px-3 py-2 bg-background/70">
+                      <div className="flex items-center gap-1 justify-center text-foreground">
                         <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                        <span className="text-xs sm:text-sm font-bold text-foreground">
+                        <span className="text-xs sm:text-sm font-bold">
                           {content.avgRating.toFixed(1)}
                         </span>
                       </div>
-                      <div className="text-xs text-muted-foreground font-medium">rating</div>
+                      <div className="text-[11px] text-muted-foreground font-medium">rating</div>
                     </div>
-                    <div className="text-center">
+                    <div className="flex-1 min-w-[90px] text-center rounded-lg border border-border/40 px-3 py-2 bg-background/70">
                       <div className="text-xs sm:text-sm font-bold text-green-600 dark:text-green-400">
                         {Math.round(content.completionRate)}%
                       </div>
-                      <div className="text-xs text-muted-foreground font-medium">completion</div>
+                      <div className="text-[11px] text-muted-foreground font-medium">completion</div>
                     </div>
                   </div>
                 </div>

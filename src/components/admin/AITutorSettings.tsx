@@ -81,8 +81,8 @@ export const AITutorSettings = ({ userProfile }: AITutorSettingsProps) => {
   return (
     <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 md:p-0">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center flex-shrink-0">
             <Bot className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
           </div>
@@ -99,12 +99,12 @@ export const AITutorSettings = ({ userProfile }: AITutorSettingsProps) => {
           </div>
         </div>
         
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
           <Button 
             variant="outline" 
             onClick={handleReset}
             disabled={saving}
-            className="flex-1 sm:flex-none"
+            className="flex-1 sm:flex-none min-w-0"
           >
             <RefreshCw className="w-4 h-4 sm:mr-2" />
             <span className="hidden sm:inline">Reset</span>
@@ -112,7 +112,7 @@ export const AITutorSettings = ({ userProfile }: AITutorSettingsProps) => {
           <Button 
             onClick={handleSave} 
             disabled={saving || validationErrors.length > 0}
-            className="flex-1 sm:flex-none"
+            className="flex-1 sm:flex-none min-w-0"
           >
             <Save className="w-4 h-4 sm:mr-2" />
             <span className="hidden sm:inline">{saving ? 'Saving...' : 'Save Changes'}</span>
