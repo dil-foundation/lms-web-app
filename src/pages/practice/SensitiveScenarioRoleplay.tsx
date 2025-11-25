@@ -559,27 +559,30 @@ export default function SensitiveScenarioRoleplay() {
           <PracticeBreadcrumb className="mb-4 sm:mb-6" />
           
           {/* Header with Back Button and Title */}
-          <div className="relative flex items-center justify-center mb-6 sm:mb-8 text-center">
+          <div className="flex items-center justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
             <Button
               variant="outline"
               size="icon"
               onClick={resetRoleplay}
-              className="absolute left-0 group w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl sm:rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+              className="group w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl sm:rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg flex-shrink-0"
             >
               <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 group-hover:-translate-x-1 transition-transform duration-300" />
             </Button>
             
-            <div className="space-y-2 sm:space-y-3 px-10 sm:px-12 md:px-0">
-              <div className="inline-block p-2.5 sm:p-3 md:p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl shadow-lg">
-                <Users className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-primary" />
-              </div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Sensitive Scenario Roleplay
-              </h1>
-              <p className="text-muted-foreground text-sm sm:text-base md:text-lg px-2">
-                Practice handling sensitive situations with empathy and communication skills
-              </p>
-            </div>
+             <div className="space-y-2 sm:space-y-3 flex-1 min-w-0 text-center">
+               <div className="inline-block p-2.5 sm:p-3 md:p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl shadow-lg">
+                 <Users className="h-6 w-6 sm:h-7 sm:w-7 md:h-10 md:w-10 text-primary" />
+               </div>
+               <h1 className="text-base sm:text-lg md:text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent break-words">
+                 Sensitive Scenario Roleplay
+               </h1>
+               <p className="text-muted-foreground text-xs sm:text-sm md:text-base px-2 break-words">
+                 Practice handling sensitive situations with empathy and communication skills
+               </p>
+             </div>
+            
+            {/* Spacer to balance the back button */}
+            <div className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex-shrink-0"></div>
           </div>
         </div>
 

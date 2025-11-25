@@ -696,37 +696,37 @@ export const APEXAdmin = () => {
             <CardHeader className="p-4 sm:p-6">
               <CardTitle className="text-base sm:text-lg">FAQ Management</CardTitle>
             </CardHeader>
-            <CardContent className="p-0 sm:p-6">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="min-w-[200px] sm:min-w-0">Question</TableHead>
-                      <TableHead className="min-w-[120px] sm:min-w-0">Category</TableHead>
-                      <TableHead className="min-w-[100px] sm:min-w-0">Priority</TableHead>
-                      <TableHead className="min-w-[150px] sm:min-w-0 hidden sm:table-cell">Tags</TableHead>
-                      <TableHead className="min-w-[100px] sm:min-w-0">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedFAQs.map((faq) => (
-                      <TableRow key={faq.id}>
-                        <TableCell className="font-medium text-sm sm:text-base max-w-[200px] sm:max-w-none">
-                          <div className="truncate" title={faq.question}>{faq.question}</div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-xs">{faq.category}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={faq.priority === 'high' ? 'destructive' : faq.priority === 'medium' ? 'default' : 'secondary'}
-                            className="text-xs"
-                          >
-                            {faq.priority}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          <div className="flex flex-wrap gap-1">
+            <CardContent className="p-3 sm:p-4 md:p-6">
+              {paginatedFAQs.length === 0 ? (
+                <div className="text-center py-8 px-4">
+                  <HelpCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground text-sm">No FAQs found</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {paginatedFAQs.map((faq) => (
+                    <Card key={faq.id} className="border hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        {/* Mobile & Desktop Layout */}
+                        <div className="flex flex-col gap-3">
+                          {/* Question */}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-sm sm:text-base break-words">
+                              {faq.question}
+                            </h3>
+                          </div>
+                          
+                          {/* Badges: Category, Priority, and Tags */}
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {faq.category}
+                            </Badge>
+                            <Badge 
+                              variant={faq.priority === 'high' ? 'destructive' : faq.priority === 'medium' ? 'default' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {faq.priority}
+                            </Badge>
                             {faq.tags.slice(0, 2).map((tag, index) => (
                               <Badge key={index} variant="outline" className="text-xs">
                                 {tag}
@@ -736,34 +736,34 @@ export const APEXAdmin = () => {
                               <Badge variant="outline" className="text-xs">+{faq.tags.length - 2}</Badge>
                             )}
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1 sm:gap-2">
+                          
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-2 pt-1">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleEditFAQ(faq)}
-                              className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
+                              className="flex-1 sm:flex-none h-8 sm:h-9 text-xs sm:text-sm"
                             >
-                              <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                              <span className="hidden sm:inline ml-2">Edit</span>
+                              <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />
+                              Edit
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleDeleteFAQ(faq.id)}
-                              className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
+                              className="flex-1 sm:flex-none h-8 sm:h-9 text-xs sm:text-sm"
                             >
-                              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                              <span className="hidden sm:inline ml-2">Delete</span>
+                              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />
+                              Delete
                             </Button>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 

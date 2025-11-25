@@ -1023,17 +1023,20 @@ export default function StudentsPage() {
 
           {/* View Toggle and Students Display */}
           <div className="space-y-4 sm:space-y-6">
-            {/* View Toggle - Improved Responsiveness */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 md:gap-6">
-              <div className="min-w-0 flex-1 space-y-0.5 sm:space-y-1">
-                <h2 className="text-base sm:text-lg md:text-xl font-semibold text-foreground break-words">
+            {/* Heading and View Toggle */}
+            <div className="space-y-2 sm:space-y-3">
+              {/* Heading and Description */}
+              <div className="space-y-0.5">
+                <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-foreground">
                   Students
                 </h2>
-                <p className="text-xs sm:text-sm text-muted-foreground break-words leading-relaxed">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   Switch between different views to manage your students
                 </p>
               </div>
-              <div className="w-full sm:w-auto flex-shrink-0">
+              
+              {/* View Toggle */}
+              <div className="w-full sm:w-auto">
                 <ViewToggle
                   currentView={preferences.teacherStudentView}
                   onViewChange={setTeacherStudentView}

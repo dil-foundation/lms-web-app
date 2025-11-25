@@ -1664,7 +1664,7 @@ export default function MessagesPage() {
 
         {/* Chat View */}
         {showChat && (
-        <div className="flex-1 flex flex-col h-full min-h-0 lg:border-r border-border/50">
+        <div className="flex-1 flex flex-col h-full min-h-0 lg:border-r border-border/50 w-full max-w-full overflow-hidden">
           {selectedChat ? (
             <>
               {/* Enhanced Chat Header */}
@@ -1737,7 +1737,7 @@ export default function MessagesPage() {
                 </div>
               ) : (
                 <div 
-                  className={`flex-1 p-4 min-h-0 overflow-y-auto scrollbar-hide ${isTabletOrMobile ? 'pb-24 sm:pb-28' : 'pb-4'}`} 
+                  className={`flex-1 p-4 min-h-0 overflow-y-auto scrollbar-hide w-full max-w-full ${isTabletOrMobile ? 'pb-24 sm:pb-28' : 'pb-4'}`} 
                   ref={messagesContainerRef}
                   onScroll={handleScroll}
                 >
@@ -1828,11 +1828,11 @@ export default function MessagesPage() {
               )}
 
               {/* Enhanced Message Input */}
-              <div className={`${isTabletOrMobile ? 'fixed inset-x-0 bottom-0 z-30' : 'sticky bottom-0 z-10 lg:relative'} overflow-hidden shadow-lg ${isTabletOrMobile ? 'border-t border-border/50' : ''}`}>
+              <div className={`${isTabletOrMobile ? 'sticky bottom-0 left-0 right-0 z-30' : 'sticky bottom-0 z-10 lg:relative'} w-full max-w-full overflow-hidden shadow-lg ${isTabletOrMobile ? 'border-t border-border/50' : ''}`}>
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 dark:from-primary/10 dark:via-transparent dark:to-primary/10"></div>
-                <div className={`relative border-t border-border/50 flex-shrink-0 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/90 ${isTabletOrMobile ? 'p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]' : 'p-4 lg:p-6'}`}>
-                  <div className="flex gap-2 sm:gap-3 items-end">
-                    <div className="flex-1 relative">
+                <div className={`relative border-t border-border/50 flex-shrink-0 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/90 w-full max-w-full ${isTabletOrMobile ? 'p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]' : 'p-4 lg:p-6'}`}>
+                  <div className="flex gap-2 sm:gap-3 items-end w-full max-w-full">
+                    <div className="flex-1 relative min-w-0">
                   <Textarea
                     placeholder="Type a message..."
                     value={newMessage}
@@ -1843,7 +1843,7 @@ export default function MessagesPage() {
                         handleSendMessage();
                       }
                     }}
-                        className={`min-h-[50px] sm:min-h-[60px] max-h-[120px] resize-none bg-background/50 dark:bg-background/30 border-border/50 focus:border-primary/50 transition-all duration-300 rounded-xl ${isTabletOrMobile ? 'text-sm' : ''}`}
+                        className={`w-full min-h-[50px] sm:min-h-[60px] max-h-[120px] resize-none bg-background/50 dark:bg-background/30 border-border/50 focus:border-primary/50 transition-all duration-300 rounded-xl ${isTabletOrMobile ? 'text-sm' : ''}`}
                       />
                     </div>
                     <Button 

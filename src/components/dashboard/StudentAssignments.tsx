@@ -869,54 +869,54 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
   const AssignmentCard = ({ assignment }: { assignment: Assignment }) => {
 
     return (
-      <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-md bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-[380px] sm:h-96 flex flex-col overflow-hidden rounded-xl sm:rounded-2xl">
-        <CardHeader className="p-4 sm:p-6 pb-3 sm:pb-4">
-          <div className="flex items-start justify-between mb-3 sm:mb-4">
+      <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-md bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-[360px] sm:h-[380px] md:h-96 flex flex-col overflow-hidden rounded-xl sm:rounded-2xl">
+        <CardHeader className="p-3 sm:p-4 md:p-6 pb-2 sm:pb-3 md:pb-4">
+          <div className="flex items-start justify-between mb-2 sm:mb-3 md:mb-4">
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-base sm:text-lg line-clamp-1 group-hover:text-primary transition-colors mb-2 sm:mb-3">
+              <h3 className="font-semibold text-sm sm:text-base md:text-lg line-clamp-1 group-hover:text-primary transition-colors mb-1.5 sm:mb-2 md:mb-3">
                 {assignment.title}
               </h3>
-              <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3 flex-wrap">
-                <Badge variant="outline" className="text-xs sm:text-sm">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 md:mb-3 flex-wrap">
+                <Badge variant="outline" className="text-[10px] sm:text-xs md:text-sm px-1.5 sm:px-2 py-0.5">
                   {assignment.courseTitle}
                 </Badge>
                 {assignment.status === 'graded' && (
-                  <Badge variant="default" className="bg-gradient-to-r from-green-500 to-green-600 text-white text-xs sm:text-sm">
+                  <Badge variant="default" className="bg-gradient-to-r from-green-500 to-green-600 text-white text-[10px] sm:text-xs md:text-sm px-1.5 sm:px-2 py-0.5">
                     {assignment.score != null ? `${assignment.score}%` : 'N/A'}
                   </Badge>
                 )}
                 {isOverdue(assignment.dueDate, assignment.status) && (
-                  <Badge variant="destructive" className="text-xs sm:text-sm">Overdue</Badge>
+                  <Badge variant="destructive" className="text-[10px] sm:text-xs md:text-sm px-1.5 sm:px-2 py-0.5">Overdue</Badge>
                 )}
               </div>
-              <p className="text-xs sm:text-sm text-muted-foreground">
+              <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground">
                 {assignment.submissionType === 'link' ? 'URL Submission' : assignment.submissionType === 'file' ? 'File Upload' : 'Text Submission'}
               </p>
             </div>
           </div>
         </CardHeader>
         
-        <CardContent className="p-4 sm:p-6 pt-0 flex flex-col h-full overflow-hidden">
+        <CardContent className="p-3 sm:p-4 md:p-6 pt-0 flex flex-col h-full overflow-hidden">
           {/* Content Area - Fixed height to ensure button alignment */}
           <div className="flex-1 flex flex-col min-h-0">
             {/* Assignment Description */}
-            <div className="h-14 sm:h-16 mb-3 sm:mb-4">
-              <div className="text-xs sm:text-sm text-muted-foreground line-clamp-3 h-full">
+            <div className="h-12 sm:h-14 md:h-16 mb-2 sm:mb-3 md:mb-4">
+              <div className="text-[11px] sm:text-xs md:text-sm text-muted-foreground line-clamp-3 h-full">
                 <div dangerouslySetInnerHTML={{ __html: stripHtmlTags(assignment.description) }} />
               </div>
             </div>
 
             {/* Detailed Assignment Stats - Horizontal Layout */}
-            <div className="p-2.5 sm:p-3 bg-muted/30 rounded-lg mb-3 sm:mb-4">
-              <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground">
+            <div className="p-2 sm:p-2.5 md:p-3 bg-muted/30 rounded-lg mb-2 sm:mb-3 md:mb-4">
+              <div className="flex items-center justify-between text-[10px] sm:text-xs md:text-sm text-muted-foreground">
                 <div className="flex items-center gap-1 w-1/2">
-                  <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                  <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 flex-shrink-0" />
                   <span className="font-medium text-foreground truncate">
                     {formatDate(assignment.dueDate)}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 w-1/2 justify-end">
-                  <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                  <CheckCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 flex-shrink-0" />
                   <span className="font-medium text-foreground truncate">
                     {assignment.status === 'graded' ? `${assignment.score || 0}%` : assignment.status.charAt(0).toUpperCase() + assignment.status.slice(1)}
                   </span>
@@ -926,27 +926,27 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
           </div>
 
           {/* Action Buttons - Always at bottom with fixed positioning */}
-          <div className="mt-auto pt-4 sm:pt-6 pb-1 space-y-2">
+          <div className="mt-auto pt-3 sm:pt-4 md:pt-6 pb-1 space-y-1.5 sm:space-y-2">
             <Button
               size="sm"
-              className="w-full h-9 sm:h-10 text-xs sm:text-sm"
+              className="w-full h-8 sm:h-9 md:h-10 text-[11px] sm:text-xs md:text-sm font-medium"
               onClick={() => {
                 setSelectedAssignment(assignment);
                 setIsDetailModalOpen(true);
               }}
             >
-              <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
+              <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 mr-1.5 sm:mr-2" />
               View Details
             </Button>
             <Button
               size="sm"
-              className="w-full h-9 sm:h-10 text-xs sm:text-sm bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
+              className="w-full h-8 sm:h-9 md:h-10 text-[11px] sm:text-xs md:text-sm font-medium bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
               onClick={() => {
                 setSelectedAssignment(assignment);
                 setIsSubmissionModalOpen(true);
               }}
             >
-              <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
+              <Upload className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 mr-1.5 sm:mr-2" />
               Submit
             </Button>
           </div>
@@ -986,20 +986,20 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-4 md:p-8 rounded-3xl">
-          <div className="flex items-center justify-between mb-4 md:mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-                <ClipboardList className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-2xl sm:rounded-3xl"></div>
+        <div className="relative p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl">
+          <div className="flex items-center justify-between mb-4 sm:mb-5 md:mb-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg">
+                <ClipboardList className="w-5 h-5 sm:w-5.5 sm:h-5.5 md:w-6 md:h-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-2xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                <h1 className="text-xl sm:text-2xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
                   Assignments
                 </h1>
-                <p className="text-sm md:text-lg text-muted-foreground font-light">
+                <p className="text-xs sm:text-sm md:text-lg text-muted-foreground font-light">
                   View and submit your course assignments.
                 </p>
               </div>
@@ -1008,21 +1008,21 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center justify-between">
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full">
-          <div className="relative w-full sm:w-auto">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+      <div className="flex flex-col md:flex-row gap-3 sm:gap-4 items-stretch md:items-center justify-between">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full md:w-auto md:flex-1">
+          <div className="relative w-full sm:flex-1 md:max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by assignment or course name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-full sm:w-96 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg"
+              className="pl-10 h-10 sm:h-11 w-full text-sm bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-xl sm:rounded-2xl shadow-lg"
             />
           </div>
-          <div className="flex items-center gap-2 sm:w-auto">
-            <Filter className="h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as any)}>
-              <SelectTrigger className="w-full sm:w-32 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg">
+              <SelectTrigger className="h-10 sm:h-11 w-full sm:w-40 md:w-44 text-sm bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-xl sm:rounded-2xl shadow-lg">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
@@ -1035,59 +1035,59 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
           </div>
         </div>
         
-        <div className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+        <div className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap text-center md:text-right">
           {filteredAssignments.length} of {assignments.length} assignments
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
-            <CardTitle className="text-xs sm:text-sm font-medium">Total Assignments</CardTitle>
-            <ClipboardList className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:grid-cols-4">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card rounded-xl sm:rounded-2xl">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-5">
+            <CardTitle className="text-[11px] sm:text-xs md:text-sm font-medium">Total Assignments</CardTitle>
+            <ClipboardList className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
-            <div className="text-xl sm:text-2xl font-bold">{assignments.length}</div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 md:p-5 pt-0">
+            <div className="text-lg sm:text-xl md:text-2xl font-bold">{assignments.length}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
               {assignments.length === 1 ? 'Assignment available' : 'Assignments available'}
             </p>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
-            <CardTitle className="text-xs sm:text-sm font-medium">Pending</CardTitle>
-            <AlertCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card rounded-xl sm:rounded-2xl">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-5">
+            <CardTitle className="text-[11px] sm:text-xs md:text-sm font-medium">Pending</CardTitle>
+            <AlertCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
-            <div className="text-xl sm:text-2xl font-bold">{assignments.filter(a => a.status === 'pending').length}</div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 md:p-5 pt-0">
+            <div className="text-lg sm:text-xl md:text-2xl font-bold">{assignments.filter(a => a.status === 'pending').length}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
               Awaiting submission
             </p>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
-            <CardTitle className="text-xs sm:text-sm font-medium">Submitted</CardTitle>
-            <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card rounded-xl sm:rounded-2xl">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-5">
+            <CardTitle className="text-[11px] sm:text-xs md:text-sm font-medium">Submitted</CardTitle>
+            <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
-            <div className="text-xl sm:text-2xl font-bold">{assignments.filter(a => a.status === 'submitted').length}</div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 md:p-5 pt-0">
+            <div className="text-lg sm:text-xl md:text-2xl font-bold">{assignments.filter(a => a.status === 'submitted').length}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
               Awaiting grading
             </p>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
-            <CardTitle className="text-xs sm:text-sm font-medium">Graded</CardTitle>
-            <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card rounded-xl sm:rounded-2xl">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-5">
+            <CardTitle className="text-[11px] sm:text-xs md:text-sm font-medium">Graded</CardTitle>
+            <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
-            <div className="text-xl sm:text-2xl font-bold">{assignments.filter(a => a.status === 'graded').length}</div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-4 md:p-5 pt-0">
+            <div className="text-lg sm:text-xl md:text-2xl font-bold">{assignments.filter(a => a.status === 'graded').length}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
               Completed assignments
             </p>
           </CardContent>
@@ -1105,18 +1105,20 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4 sm:space-y-6">
+        <div className="space-y-4 sm:space-y-5 md:space-y-6">
           {/* View Toggle */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
             <div className="min-w-0 flex-1">
-              <h2 className="text-lg sm:text-xl font-semibold text-foreground">Assignments</h2>
-              <p className="text-xs sm:text-sm text-muted-foreground">Switch between different views to manage your assignments</p>
+              <h2 className="text-base sm:text-lg md:text-xl font-semibold text-foreground">Assignments</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Switch between different views to manage your assignments</p>
             </div>
-            <ViewToggle
-              currentView={preferences.assignmentView}
-              onViewChange={setAssignmentView}
-              availableViews={['card', 'tile', 'list']}
-            />
+            <div className="w-full sm:w-auto">
+              <ViewToggle
+                currentView={preferences.assignmentView}
+                onViewChange={setAssignmentView}
+                availableViews={['card', 'tile', 'list']}
+              />
+            </div>
           </div>
 
           {/* Assignment Display based on selected view */}
@@ -1127,7 +1129,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
           ) : (
             <>
               {preferences.assignmentView === 'card' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
                   {currentAssignments.map((assignment) => (
                     <AssignmentCard key={assignment.id} assignment={assignment} />
                   ))}
@@ -1217,25 +1219,27 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
       )}
       
       {totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-0 sm:space-x-2 mt-4 sm:mt-6">
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 mt-4 sm:mt-5 md:mt-6">
           <Button
             variant="outline"
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="w-full sm:w-auto h-9 sm:h-10 text-sm hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100"
+            className="w-full sm:w-auto min-w-[100px] sm:min-w-[110px] h-10 sm:h-11 text-sm font-medium rounded-xl hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100 transition-all"
           >
+            <ChevronLeft className="w-4 h-4 mr-1 sm:mr-1.5" />
             Previous
           </Button>
-          <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+          <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap px-3 sm:px-4 py-2 bg-muted/30 rounded-lg">
             Page {currentPage} of {totalPages}
           </span>
           <Button
             variant="outline"
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages || totalPages === 0}
-            className="w-full sm:w-auto h-9 sm:h-10 text-sm hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100"
+            className="w-full sm:w-auto min-w-[100px] sm:min-w-[110px] h-10 sm:h-11 text-sm font-medium rounded-xl hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100 transition-all"
           >
             Next
+            <ChevronRight className="w-4 h-4 ml-1 sm:ml-1.5" />
           </Button>
         </div>
       )}
