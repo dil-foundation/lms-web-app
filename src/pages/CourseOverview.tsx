@@ -706,11 +706,11 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
             </div>
 
             {/* Premium Video Player */}
-            <div className="mx-auto w-full sm:w-[95%] md:w-[90%]">
-              <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm shadow-xl rounded-2xl sm:rounded-3xl overflow-hidden">
+            <div className="mx-auto w-full sm:w-[95%] md:w-[90%] max-w-6xl px-2 sm:px-0">
+              <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm shadow-xl rounded-2xl sm:rounded-3xl overflow-hidden w-full">
                 <CardContent className="p-0">
                   {/* Enhanced Video/Image Preview */}
-                  <div className="relative aspect-video bg-gray-100 rounded-t-lg sm:rounded-t-xl overflow-hidden min-h-[180px] sm:min-h-[250px] md:min-h-[300px] lg:min-h-[450px]">
+                  <div className="relative w-full bg-gray-100 rounded-t-lg sm:rounded-t-xl overflow-hidden h-[200px] sm:h-[280px] md:h-[360px] lg:h-[480px]">
                     {course.hasValidVideo && course.videoUrl ? (
                       // Valid video available
                       isVideoPlaying ? (
@@ -749,9 +749,9 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                       />
                     ) : (
                       // No content available
-                      <div className="w-full h-full flex items-center justify-center bg-muted">
-                        <div className="text-center p-4 sm:p-6 md:p-8">
-                          <PlayCircle className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 text-muted-foreground mx-auto mb-3 sm:mb-4" />
+                      <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-muted">
+                        <div className="text-center p-4 sm:p-6 md:p-8 max-w-md mx-auto">
+                          <PlayCircle className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 text-muted-foreground mx-auto mb-3 sm:mb-4" />
                           <p className="text-muted-foreground text-sm sm:text-base md:text-lg font-medium">No preview available</p>
                           <p className="text-muted-foreground/60 text-xs sm:text-sm mt-1 sm:mt-2">Course content will be available soon</p>
                         </div>
@@ -789,36 +789,38 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                           <Button 
                             onClick={handleProceedToPayment}
                             disabled={isCheckingPayment}
-                            className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-3 sm:py-4 text-sm sm:text-base md:text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-2.5 sm:py-4 px-3 sm:px-6 text-xs sm:text-base md:text-lg font-medium sm:font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg sm:rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] sm:min-h-[52px]"
                             size="lg"
                           >
-                            <Lock className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
-                            <span className="hidden sm:inline">Purchase Course - {course.payment.priceFormatted}</span>
-                            <span className="sm:hidden">Purchase - {course.payment.priceFormatted}</span>
+                            <Lock className="w-3.5 h-3.5 sm:w-5 sm:h-5 flex-shrink-0" />
+                            <span className="hidden sm:inline truncate">Purchase Course - {course.payment.priceFormatted}</span>
+                            <span className="sm:hidden truncate">Purchase - {course.payment.priceFormatted}</span>
                           </Button>
                         ) : (
                           <Button 
                             onClick={handleStartLearning}
-                            className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-3 sm:py-4 text-sm sm:text-base md:text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+                            className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-2.5 sm:py-4 px-3 sm:px-6 text-xs sm:text-base md:text-lg font-medium sm:font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 rounded-lg sm:rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] sm:min-h-[52px]"
                             size="lg"
                           >
                             {isViewOnly ? (
                               <>
-                                <Eye className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
-                                <span className="hidden sm:inline">Preview Course</span>
-                                <span className="sm:hidden">Preview</span>
+                                <Eye className="w-3.5 h-3.5 sm:w-5 sm:h-5 flex-shrink-0" />
+                                <span className="hidden sm:inline whitespace-nowrap">Preview Course</span>
+                                <span className="sm:hidden whitespace-nowrap">Preview</span>
                               </>
                             ) : (
                               <>
                                 {course.progress.percentage > 0 ? (
                                   <>
-                                    <span className="hidden sm:inline">Continue Learning</span>
-                                    <span className="sm:hidden">Continue</span>
+                                    <Play className="w-3.5 h-3.5 sm:w-5 sm:h-5 flex-shrink-0" />
+                                    <span className="hidden sm:inline whitespace-nowrap">Continue</span>
+                                    <span className="sm:hidden whitespace-nowrap">Continue</span>
                                   </>
                                 ) : (
                                   <>
-                                    <span className="hidden sm:inline">Start Learning</span>
-                                    <span className="sm:hidden">Start</span>
+                                    <BookOpen className="w-3.5 h-3.5 sm:w-5 sm:h-5 flex-shrink-0" />
+                                    <span className="hidden sm:inline whitespace-nowrap">Start Learning</span>
+                                    <span className="sm:hidden whitespace-nowrap">Start</span>
                                   </>
                                 )}
                               </>
@@ -1101,26 +1103,28 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                     <Button 
                       onClick={handleProceedToPayment}
                       disabled={isCheckingPayment}
-                      className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-2.5 sm:py-3 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-2 sm:py-3 md:py-3.5 px-2 sm:px-4 text-[11px] sm:text-sm md:text-base font-medium sm:font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg sm:rounded-xl flex items-center justify-center gap-1 sm:gap-2 min-h-[40px] sm:min-h-[48px]"
                     >
-                      <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
-                      <span className="hidden sm:inline">Purchase - {course.payment.priceFormatted}</span>
-                      <span className="sm:hidden">Buy - {course.payment.priceFormatted}</span>
+                      <Lock className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                      <span className="hidden sm:inline truncate">Purchase - {course.payment.priceFormatted}</span>
+                      <span className="sm:hidden truncate">Buy - {course.payment.priceFormatted}</span>
                     </Button>
                   ) : (
                     <Button 
                       onClick={handleStartLearning}
-                      className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-2.5 sm:py-3 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                      className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-2 sm:py-3 md:py-3.5 px-2 sm:px-4 text-[11px] sm:text-sm md:text-base font-medium sm:font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 rounded-lg sm:rounded-xl flex items-center justify-center gap-1 sm:gap-2 min-h-[40px] sm:min-h-[48px]"
                     >
                       {course.progress.percentage > 0 ? (
                         <>
-                          <span className="hidden sm:inline">Continue Learning</span>
-                          <span className="sm:hidden">Continue</span>
+                          <Play className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                          <span className="hidden sm:inline whitespace-nowrap">Continue Learning</span>
+                          <span className="sm:hidden whitespace-nowrap">Continue</span>
                         </>
                       ) : (
                         <>
-                          <span className="hidden sm:inline">Start Learning</span>
-                          <span className="sm:hidden">Start</span>
+                          <BookOpen className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                          <span className="hidden sm:inline whitespace-nowrap">Start Learning</span>
+                          <span className="sm:hidden whitespace-nowrap">Start</span>
                         </>
                       )}
                     </Button>

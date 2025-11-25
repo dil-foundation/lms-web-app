@@ -82,14 +82,14 @@ export const ClassListView: React.FC<ClassListViewProps> = ({
 
   return (
     <div className={className}>
-      <div className="space-y-2 sm:space-y-3">
+      <div className="space-y-3 sm:space-y-4 md:space-y-5">
         {classes.map((cls) => (
           <Card
             key={cls.id}
             className="group cursor-pointer hover:shadow-lg transition-all duration-200 hover:bg-muted/50 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 border-l-4 border-l-transparent hover:border-l-primary"
             onClick={() => onView(cls)}
           >
-            <CardContent className="p-3 sm:p-4 md:p-5">
+            <CardContent className="p-4 sm:p-5 md:p-6">
               <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                 {/* Class Icon */}
                 <div className="flex-shrink-0">
@@ -119,48 +119,24 @@ export const ClassListView: React.FC<ClassListViewProps> = ({
                     <span className="truncate">{cls.board}</span>
                   </div>
                   
-                  {/* Class Stats Grid */}
-                  <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-3 p-2 sm:p-2.5 bg-muted/30 dark:bg-muted/20 rounded-lg">
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                      <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-primary/10">
-                        <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-xs sm:text-sm font-bold text-foreground">
-                          {cls.students.length}/{cls.max_students || 30}
-                        </span>
-                        <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium">
-                          Students
-                        </span>
-                      </div>
+                  {/* Class Stats - Compact Inline */}
+                  <div className="flex items-center gap-3 sm:gap-4 mb-3 text-xs sm:text-sm text-muted-foreground flex-wrap">
+                    <div className="flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary flex-shrink-0" />
+                      <span className="font-semibold text-foreground">{cls.students.length}/{cls.max_students || 30}</span>
+                      <span>Students</span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                      <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-primary/10">
-                        <GraduationCap className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-xs sm:text-sm font-bold text-foreground">
-                          {cls.teachers.length}
-                        </span>
-                        <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium">
-                          Teachers
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-1.5">
+                      <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary flex-shrink-0" />
+                      <span className="font-semibold text-foreground">{cls.teachers.length}</span>
+                      <span>Teachers</span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                      <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-primary/10">
-                        <BookOpen className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-xs sm:text-sm font-bold text-foreground">
-                          {cls.courses?.length || 0}
-                        </span>
-                        <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium">
-                          Courses
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-1.5">
+                      <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary flex-shrink-0" />
+                      <span className="font-semibold text-foreground">{cls.courses?.length || 0}</span>
+                      <span>Courses</span>
                     </div>
                   </div>
 

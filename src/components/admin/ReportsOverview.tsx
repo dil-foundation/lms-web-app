@@ -105,7 +105,7 @@ export const ReportsOverview = () => {
   const [loading, setLoading] = useState(true);
   const [filterLoading, setFilterLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+  const [isMobile, setIsMobile] = useState(false);
 
   
   // State for dashboard data
@@ -119,6 +119,17 @@ export const ReportsOverview = () => {
   const [engagementMetricsData, setEngagementMetricsData] = useState<EngagementMetricsData[]>([]);
 
   const { user } = useAuth();
+
+  // Track screen size for responsive chart sizing
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   // Fetch dashboard stats
   const fetchDashboardStats = async () => {
@@ -738,26 +749,44 @@ export const ReportsOverview = () => {
               <CardTitle className="text-sm sm:text-base md:text-lg font-semibold">Top Performing Courses</CardTitle>
             </CardHeader>
             <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
-              <div className="w-full h-[320px] sm:h-[360px] md:h-[400px]">
+              <div className="w-full h-[360px] sm:h-[380px] md:h-[420px]">
                 <ChartContainer config={chartConfig} className="w-full h-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart 
                       data={coursePerformanceData} 
-                      margin={{ top: 10, right: 15, left: 0, bottom: 60 }}
+                      margin={{ 
+                        top: 10, 
+                        right: isMobile ? 10 : 15, 
+                        left: 0, 
+                        bottom: isMobile ? 85 : 70 
+                      }}
                     >
                       <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                       <XAxis 
                         dataKey="course_title" 
-                        angle={-45}
+                        angle={isMobile ? -50 : -45}
                         textAnchor="end"
                         height={60}
                         interval={0}
-                        tick={{ fontSize: 9 }}
+                        tick={{ fontSize: isMobile ? 7 : 9 }}
                         dy={8}
                       />
-                      <YAxis tick={{ fontSize: 11 }} width={35} />
+                      <YAxis tick={{ fontSize: isMobile ? 9 : 11 }} width={isMobile ? 30 : 35} />
                       <ChartTooltip content={<ChartTooltipContent />} />
-                      <Legend wrapperStyle={{ fontSize: '11px' }} />
+                      <Legend 
+                        wrapperStyle={{ 
+                          fontSize: isMobile ? '8px' : '10px',
+                          paddingTop: isMobile ? '20px' : '15px',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          gap: isMobile ? '8px' : '12px'
+                        }}
+                        iconSize={isMobile ? 8 : 10}
+                        iconType="rect"
+                        layout="horizontal"
+                        align="center"
+                        verticalAlign="bottom"
+                      />
                       <Bar dataKey="enrollments" fill="var(--color-enrollments)" name="Enrollments" radius={[4, 4, 0, 0]} />
                       <Bar dataKey="completion_rate" fill="var(--color-completionRate)" name="Completion %" radius={[4, 4, 0, 0]} />
                     </BarChart>

@@ -122,17 +122,17 @@ export const AssessmentCardView: React.FC<AssessmentCardViewProps> = ({
             </CardHeader>
             
             <CardContent className="p-4 sm:p-5 md:p-6 pt-0 flex flex-col flex-1 h-full">
-              {/* Content Area - Flexible */}
-              <div className="flex flex-col flex-1 space-y-3 sm:space-y-4">
+              {/* Content Area - Flexible, keep stats pinned to bottom */}
+              <div className="flex flex-col flex-1 justify-end space-y-3 sm:space-y-4">
                 {/* Stats Grid - Responsive */}
                 <div className="grid grid-cols-3 gap-2 sm:gap-3 p-3 sm:p-4 bg-muted/40 dark:bg-muted/20 rounded-xl border border-border/30">
                   <div className="flex flex-col items-center justify-center text-center space-y-1">
                     <Users className="w-4 h-4 sm:w-5 sm:h-5 text-primary/70 flex-shrink-0" />
                     <div className="flex flex-col">
-                      <span className="text-sm sm:text-base md:text-lg font-bold text-foreground">
+                      <span className="text-xs sm:text-sm md:text-base font-bold text-foreground">
                         {assessment.submissions_count}
                       </span>
-                      <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">
+                      <span className="text-[9px] sm:text-[11px] text-muted-foreground font-medium">
                         Submissions
                       </span>
                     </div>
@@ -141,10 +141,10 @@ export const AssessmentCardView: React.FC<AssessmentCardViewProps> = ({
                   <div className="flex flex-col items-center justify-center text-center space-y-1 border-x border-border/30">
                     <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-primary/70 flex-shrink-0" />
                     <div className="flex flex-col">
-                      <span className="text-sm sm:text-base md:text-lg font-bold text-foreground">
+                      <span className="text-xs sm:text-sm md:text-base font-bold text-foreground">
                         {assessment.graded_count}
                       </span>
-                      <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">
+                      <span className="text-[9px] sm:text-[11px] text-muted-foreground font-medium">
                         Graded
                       </span>
                     </div>
@@ -153,10 +153,10 @@ export const AssessmentCardView: React.FC<AssessmentCardViewProps> = ({
                   <div className="flex flex-col items-center justify-center text-center space-y-1">
                     <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary/70 flex-shrink-0" />
                     <div className="flex flex-col">
-                      <span className={`text-sm sm:text-base md:text-lg font-bold ${getScoreColor(assessment.average_score)}`}>
+                      <span className={`text-xs sm:text-sm md:text-base font-bold ${getScoreColor(assessment.average_score)}`}>
                         {assessment.average_score}%
                       </span>
-                      <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">
+                      <span className="text-[9px] sm:text-[11px] text-muted-foreground font-medium">
                         Average
                       </span>
                     </div>

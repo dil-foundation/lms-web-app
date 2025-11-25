@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ContentLoader } from '@/components/ContentLoader';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { 
   MessageCircle,
@@ -44,6 +44,16 @@ interface AITeacherDashboardProps {
 export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => {
   const [selectedFlag, setSelectedFlag] = useState<BehaviorFlag | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Debug: Log mount/unmount to verify single instance
+  console.log('🎯 [AITeacherDashboard] Component rendered');
+  
+  useEffect(() => {
+    console.log('✅ [AITeacherDashboard] Component MOUNTED');
+    return () => {
+      console.log('❌ [AITeacherDashboard] Component UNMOUNTED');
+    };
+  }, []);
   
   // Use the custom hook for dashboard data management
   const {
@@ -217,7 +227,7 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Star className="h-5 w-5" />
-            Top Used Practice Lessons
+            Top Used Practice Lessonsaaa
           </CardTitle>
         </CardHeader>
         <CardContent>

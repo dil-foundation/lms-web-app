@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -1402,8 +1401,8 @@ export const UsersManagement = () => {
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
         <div className="relative p-4 sm:p-6 md:p-8 rounded-3xl">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0 flex-1 w-full sm:w-auto">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center flex-shrink-0">
                 <Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               </div>
@@ -1417,14 +1416,17 @@ export const UsersManagement = () => {
               </div>
             </div>
             
-            <div className="flex gap-2 sm:gap-3 w-full sm:w-auto flex-shrink-0">
-              <Dialog open={isBulkUploadModalOpen} onOpenChange={setIsBulkUploadModalOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="h-9 sm:h-10 px-2 sm:px-3 md:px-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-shrink-0">
-                    <Upload className="sm:mr-2 h-4 w-4" />
-                    <span className="hidden sm:inline">Bulk Upload</span>
-                  </Button>
-                </DialogTrigger>
+            <div className="flex flex-col gap-2 w-full flex-shrink-0">
+              {/* Upload and Passwords buttons */}
+              <div className="flex flex-col xs:flex-row gap-2 sm:gap-3 w-full">
+                <Dialog open={isBulkUploadModalOpen} onOpenChange={setIsBulkUploadModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="h-9 sm:h-10 px-2 sm:px-3 md:px-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-1 sm:flex-none flex-shrink-0">
+                      <Upload className="mr-1.5 sm:mr-2 h-4 w-4" />
+                      <span className="hidden md:inline">Bulk Upload</span>
+                      <span className="md:hidden">Upload</span>
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col">
                   <DialogHeader>
                     <DialogTitle>Bulk Upload Users</DialogTitle>
@@ -1617,7 +1619,7 @@ export const UsersManagement = () => {
               <Dialog open={isBulkUploadWithPasswordsModalOpen} onOpenChange={setIsBulkUploadWithPasswordsModalOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="h-9 sm:h-10 px-2 sm:px-3 md:px-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-1 sm:flex-none flex-shrink-0">
-                    <Upload className="sm:mr-2 h-4 w-4" />
+                    <Upload className="mr-1.5 sm:mr-2 h-4 w-4" />
                     <span className="hidden md:inline">Bulk Upload with Passwords</span>
                     <span className="hidden sm:inline md:hidden">Upload Passwords</span>
                     <span className="sm:hidden">Passwords</span>
@@ -1818,7 +1820,9 @@ export const UsersManagement = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+              </div>
 
+              {/* Create User button on separate row */}
               <Dialog open={isCreateModalOpen} onOpenChange={(isOpen) => {
                 setIsCreateModalOpen(isOpen);
                 if (!isOpen) {
@@ -1827,8 +1831,8 @@ export const UsersManagement = () => {
                 }
               }}>
                 <DialogTrigger asChild>
-                  <Button className="h-10 px-6 rounded-xl bg-gradient-to-r from-[#8DC63F] to-[#7AB82F] hover:from-[#7AB82F] hover:to-[#6AA325] text-white shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 font-semibold">
-                    <Plus className="mr-2 h-4 w-4" />
+                  <Button className="h-9 sm:h-10 px-4 sm:px-6 rounded-xl bg-gradient-to-r from-[#8DC63F] to-[#7AB82F] hover:from-[#7AB82F] hover:to-[#6AA325] text-white shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 font-semibold text-xs sm:text-sm w-full sm:w-auto">
+                    <Plus className="mr-1.5 sm:mr-2 h-4 w-4" />
                     Create User
                   </Button>
                 </DialogTrigger>
@@ -1975,7 +1979,7 @@ export const UsersManagement = () => {
       </div>
 
       {/* Metrics Cards */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -2094,102 +2098,96 @@ export const UsersManagement = () => {
             </Select>
           </div>
 
-          {/* Users Table */}
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden md:table-cell">Joined</TableHead>
-                  <TableHead className="hidden md:table-cell">Last Active</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={6}>
-                      <ContentLoader message="Loading users..." />
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage 
-                              src={user.avatar_url} 
-                              alt={user.name}
-                            />
-                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                              {user.firstName && user.lastName 
-                                ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
-                                : user.email ? user.email[0].toUpperCase() : 'U'
-                              }
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{user.name}</div>
-                            <div className="text-sm text-muted-foreground">{user.email}</div>
+          {/* Responsive list view */}
+          <div className="space-y-3">
+            {loading ? (
+              [...Array(3)].map((_, idx) => (
+                <Card key={idx} className="p-4">
+                  <Skeleton className="h-24 w-full" />
+                </Card>
+              ))
+            ) : users.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                <h3 className="mt-4 text-lg font-semibold">No users found</h3>
+                <p className="text-muted-foreground">
+                  Try adjusting your search or filter criteria.
+                </p>
+              </div>
+            ) : (
+              users.map((user) => (
+                <Card key={user.id} className="p-4 hover:bg-muted/40 transition-colors">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex flex-1 gap-3 min-w-0">
+                        <Avatar className="h-12 w-12 flex-shrink-0">
+                          <AvatarImage src={user.avatar_url} alt={user.name} />
+                          <AvatarFallback className="text-sm bg-primary/10 text-primary">
+                            {user.firstName && user.lastName
+                              ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+                              : user.email ? user.email[0].toUpperCase() : 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div className="min-w-0">
+                              <h3 className="font-semibold text-sm truncate">{user.name}</h3>
+                              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge variant={getRoleBadgeVariant(user.role)} className="text-xs">
+                                {formatRoleName(user.role)}
+                              </Badge>
+                              <Badge variant={getStatusBadgeVariant(user.status)} className="text-xs">
+                                {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getRoleBadgeVariant(user.role)}>
-                          {formatRoleName(user.role)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusBadgeVariant(user.status)}>
-                          {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground">
-                        {new Date(user.joinedDate).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground">
-                        {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : "Never"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setTimeout(() => setUserToEdit(user), 100)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              <span>Edit User</span>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setTimeout(() => setUserToEdit(user), 100)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            <span>Edit User</span>
+                          </DropdownMenuItem>
+                          {user.role !== 'super_user' && (
+                            <DropdownMenuItem onClick={() => handleResetPassword(user)}>
+                              Reset Password
                             </DropdownMenuItem>
-                            {/* Hide reset password option for super users */}
-                            {user.role !== 'super_user' && (
-                              <DropdownMenuItem onClick={() => handleResetPassword(user)}>
-                                Reset Password
-                              </DropdownMenuItem>
-                            )}
-                            {/* Hide delete user option for super users */}
-                            {user.role !== 'super_user' && (
-                              <DropdownMenuItem
-                                className="text-destructive"
-                                onClick={() => setTimeout(() => setUserToDelete(user), 100)}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                <span>Delete User</span>
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                          )}
+                          {user.role !== 'super_user' && (
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => setTimeout(() => setUserToDelete(user), 100)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Delete User</span>
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium">Joined:</span>
+                        <span>{new Date(user.joinedDate).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium">Last Active:</span>
+                        <span>{user.lastActive ? new Date(user.lastActive).toLocaleDateString() : "Never"}</span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
           </div>
 
           {!loading && totalPages > 1 && (

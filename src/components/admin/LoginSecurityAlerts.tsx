@@ -287,17 +287,17 @@ const LoginSecurityAlerts = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Security Overview */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-primary" />
-                Login Security Overview
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="min-w-0 flex-1">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+                <span>Login Security Overview</span>
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs sm:text-sm">
                 Last 24 hours security statistics and alerts
               </CardDescription>
             </div>
@@ -306,50 +306,50 @@ const LoginSecurityAlerts = () => {
               size="sm"
               onClick={loadSecurityData}
               disabled={loading}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm flex-shrink-0"
             >
               {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
               ) : (
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               )}
               {loading ? 'Refreshing...' : 'Refresh'}
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
           {securityStats && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-4 border rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-blue-500" />
-                  <span className="text-sm font-medium">Total Attempts</span>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="p-3 sm:p-4 border rounded-lg">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-500 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium">Total Attempts</span>
                 </div>
-                <p className="text-2xl font-bold mt-1">{securityStats.totalAttempts}</p>
+                <p className="text-xl sm:text-2xl font-bold mt-1">{securityStats.totalAttempts}</p>
               </div>
               
-              <div className="p-4 border rounded-lg">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-green-500" />
-                  <span className="text-sm font-medium">Successful</span>
+              <div className="p-3 sm:p-4 border rounded-lg">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium">Successful</span>
                 </div>
-                <p className="text-2xl font-bold mt-1 text-green-600">{securityStats.successfulAttempts}</p>
+                <p className="text-xl sm:text-2xl font-bold mt-1 text-green-600">{securityStats.successfulAttempts}</p>
               </div>
               
-              <div className="p-4 border rounded-lg">
-                <div className="flex items-center gap-2">
-                  <TrendingDown className="w-4 h-4 text-red-500" />
-                  <span className="text-sm font-medium">Failed</span>
+              <div className="p-3 sm:p-4 border rounded-lg">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <TrendingDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium">Failed</span>
                 </div>
-                <p className="text-2xl font-bold mt-1 text-red-600">{securityStats.failedAttempts}</p>
+                <p className="text-xl sm:text-2xl font-bold mt-1 text-red-600">{securityStats.failedAttempts}</p>
               </div>
               
-              <div className="p-4 border rounded-lg">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-orange-500" />
-                  <span className="text-sm font-medium">Blocked Users</span>
+              <div className="p-3 sm:p-4 border rounded-lg">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-500 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium">Blocked Users</span>
                 </div>
-                <p className="text-2xl font-bold mt-1 text-orange-600">{securityStats.blockedUsersCount}</p>
+                <p className="text-xl sm:text-2xl font-bold mt-1 text-orange-600">{securityStats.blockedUsersCount}</p>
               </div>
             </div>
           )}
@@ -358,121 +358,125 @@ const LoginSecurityAlerts = () => {
 
       {/* Blocked Users */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-orange-500" />
-                Currently Blocked Users
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="min-w-0 flex-1">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500 flex-shrink-0" />
+                <span>Currently Blocked Users</span>
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs sm:text-sm">
                 Users who have been temporarily blocked due to security violations
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleExportBlockedUsers}
                 disabled={exportingBlockedUsers || blockedUsersLoading}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm"
               >
                 {exportingBlockedUsers ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
                 ) : (
-                  <Download className="w-4 h-4" />
+                  <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 )}
-                {exportingBlockedUsers ? 'Exporting...' : 'Export'}
+                <span className="hidden sm:inline">{exportingBlockedUsers ? 'Exporting...' : 'Export'}</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => loadBlockedUsers(true)}
                 disabled={blockedUsersLoading}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm"
               >
                 {blockedUsersLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
                 ) : (
-                  <RefreshCw className="w-4 h-4" />
+                  <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 )}
-                {blockedUsersLoading ? 'Refreshing...' : 'Refresh'}
+                <span className="hidden sm:inline">{blockedUsersLoading ? 'Refreshing...' : 'Refresh'}</span>
               </Button>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
           <div 
             ref={blockedUsersRef}
-            className="max-h-96 overflow-y-auto space-y-3 pr-2"
+            className="max-h-96 overflow-y-auto"
           >
             {blockedUsers.length > 0 ? (
               <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Reason</TableHead>
-                      <TableHead>Blocked Until</TableHead>
-                      <TableHead>Attempts</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {blockedUsers.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.email}</TableCell>
-                        <TableCell>
-                          <Badge variant="destructive" className="text-xs">
-                            {user.blockReason}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-sm">
-                              {formatDistanceToNow(new Date(user.blockedUntil), { addSuffix: true })}
-                            </span>
+                <div className="space-y-3">
+                  {blockedUsers.map((user) => (
+                    <Card key={user.id} className="border hover:shadow-md transition-shadow">
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                          {/* User Info */}
+                          <div className="flex-1 min-w-0 space-y-2">
+                            <div className="font-medium text-sm sm:text-base truncate">
+                              {user.email}
+                            </div>
+                            
+                            {/* Badges and Info */}
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge variant="destructive" className="text-xs">
+                                {user.blockReason}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {user.attemptsCount} attempts
+                              </Badge>
+                            </div>
+                            
+                            {/* Time Info */}
+                            <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
+                              <Clock className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                              <span>
+                                Blocked until {formatDistanceToNow(new Date(user.blockedUntil), { addSuffix: true })}
+                              </span>
+                            </div>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{user.attemptsCount} attempts</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleUnblockUser(user.email)}
-                            disabled={unblocking === user.email}
-                            className="flex items-center gap-2"
-                          >
-                            {unblocking === user.email ? (
-                              <RefreshCw className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Unlock className="w-4 h-4" />
-                            )}
-                            {unblocking === user.email ? 'Unblocking...' : 'Unblock'}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                          
+                          {/* Action Button */}
+                          <div className="flex-shrink-0">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleUnblockUser(user.email)}
+                              disabled={unblocking === user.email}
+                              className="w-full sm:w-auto h-8 sm:h-9 text-xs sm:text-sm"
+                            >
+                              {unblocking === user.email ? (
+                                <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 animate-spin" />
+                              ) : (
+                                <Unlock className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" />
+                              )}
+                              {unblocking === user.email ? 'Unblocking...' : 'Unblock'}
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                
                 {blockedUsersLoading && (
                   <div className="flex items-center justify-center py-4">
                     <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                    <span className="ml-2 text-sm text-muted-foreground">Loading more blocked users...</span>
+                    <span className="ml-2 text-xs sm:text-sm text-muted-foreground">Loading more blocked users...</span>
                   </div>
                 )}
                 {!blockedUsersHasMore && blockedUsers.length > 0 && (
                   <div className="text-center py-4">
-                    <p className="text-sm text-muted-foreground">No more blocked users to load</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">No more blocked users to load</p>
                   </div>
                 )}
               </>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                No blocked users found
+              <div className="text-center py-8 px-4">
+                <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground text-sm">No blocked users found</p>
               </div>
             )}
           </div>
@@ -481,105 +485,117 @@ const LoginSecurityAlerts = () => {
 
       {/* Recent Login Attempts */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Eye className="w-5 h-5 text-blue-500" />
-                Recent Login Attempts
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="min-w-0 flex-1">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 flex-shrink-0" />
+                <span>Recent Login Attempts</span>
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs sm:text-sm">
                 Latest login attempts across the system
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleExportLoginAttempts}
                 disabled={exportingLoginAttempts || attemptsLoading}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm"
               >
                 {exportingLoginAttempts ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
                 ) : (
-                  <Download className="w-4 h-4" />
+                  <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 )}
-                {exportingLoginAttempts ? 'Exporting...' : 'Export'}
+                <span className="hidden sm:inline">{exportingLoginAttempts ? 'Exporting...' : 'Export'}</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => loadRecentAttempts(true)}
                 disabled={attemptsLoading}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm"
               >
                 {attemptsLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
                 ) : (
-                  <RefreshCw className="w-4 h-4" />
+                  <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 )}
-                {attemptsLoading ? 'Refreshing...' : 'Refresh'}
+                <span className="hidden sm:inline">{attemptsLoading ? 'Refreshing...' : 'Refresh'}</span>
               </Button>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
           <div 
             ref={attemptsRef}
-            className="max-h-96 overflow-y-auto space-y-3 pr-2"
+            className="max-h-96 overflow-y-auto"
           >
             {recentAttempts.length > 0 ? (
               <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Time</TableHead>
-                      <TableHead>Reason</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recentAttempts.map((attempt) => (
-                      <TableRow key={attempt.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
+                <div className="space-y-3">
+                  {recentAttempts.map((attempt) => (
+                    <Card key={attempt.id} className="border hover:shadow-md transition-shadow">
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
+                          {/* Status Indicator (hidden on mobile, visible on desktop) */}
+                          <div className="hidden sm:flex flex-shrink-0 mt-0.5">
                             {getAttemptStatusIcon(attempt.success)}
-                            <Badge 
-                              variant={attempt.success ? 'default' : 'destructive'}
-                              className="text-xs"
-                            >
-                              {attempt.success ? 'Success' : 'Failed'}
-                            </Badge>
                           </div>
-                        </TableCell>
-                        <TableCell className="font-medium">{attempt.email}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {formatDistanceToNow(new Date(attempt.attemptTime), { addSuffix: true })}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {attempt.failureReason || '-'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                          
+                          {/* Content */}
+                          <div className="flex-1 min-w-0 space-y-2">
+                            {/* Email and Status Badge */}
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-medium text-sm sm:text-base truncate">
+                                {attempt.email}
+                              </span>
+                              <Badge 
+                                variant={attempt.success ? 'default' : 'destructive'}
+                                className="text-xs flex-shrink-0"
+                              >
+                                <span className="sm:hidden mr-1">{getAttemptStatusIcon(attempt.success)}</span>
+                                {attempt.success ? 'Success' : 'Failed'}
+                              </Badge>
+                            </div>
+                            
+                            {/* Time */}
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Clock className="w-3 h-3 flex-shrink-0" />
+                              <span>{formatDistanceToNow(new Date(attempt.attemptTime), { addSuffix: true })}</span>
+                            </div>
+                            
+                            {/* Failure Reason (if any) */}
+                            {attempt.failureReason && (
+                              <div className="text-xs text-muted-foreground">
+                                <span className="font-medium">Reason:</span> {attempt.failureReason}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                
                 {attemptsLoading && (
                   <div className="flex items-center justify-center py-4">
                     <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                    <span className="ml-2 text-sm text-muted-foreground">Loading more attempts...</span>
+                    <span className="ml-2 text-xs sm:text-sm text-muted-foreground">Loading more attempts...</span>
                   </div>
                 )}
                 {!attemptsHasMore && recentAttempts.length > 0 && (
                   <div className="text-center py-4">
-                    <p className="text-sm text-muted-foreground">No more attempts to load</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">No more attempts to load</p>
                   </div>
                 )}
               </>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                No recent login attempts found
+              <div className="text-center py-8 px-4">
+                <Eye className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground text-sm">No recent login attempts found</p>
               </div>
             )}
           </div>
