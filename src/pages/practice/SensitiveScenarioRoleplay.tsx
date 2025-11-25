@@ -97,8 +97,8 @@ export default function SensitiveScenarioRoleplay() {
       try {
         const progressData = await getCurrentTopicProgress(user.id, 6, 2); // Stage 6, Exercise 2
         
-        if (progressData.success && progressData.current_topic_id) {
-          setLastCompletedScenarioId(progressData.current_topic_id);
+        if (progressData.success && progressData.data?.exercise_data?.current_topic_id) {
+          setLastCompletedScenarioId(progressData.data.exercise_data.current_topic_id);
         }
       } catch (error) {
         console.error('Error fetching progress:', error);

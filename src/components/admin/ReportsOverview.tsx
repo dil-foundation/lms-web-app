@@ -776,7 +776,7 @@ export const ReportsOverview = () => {
                       <Legend 
                         wrapperStyle={{ 
                           fontSize: isMobile ? '8px' : '10px',
-                          paddingTop: isMobile ? '20px' : '15px',
+                          paddingTop: isMobile ? '30px' : '25px',
                           display: 'flex',
                           justifyContent: 'center',
                           gap: isMobile ? '8px' : '12px'

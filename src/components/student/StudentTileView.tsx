@@ -179,7 +179,7 @@ export const StudentTileView: React.FC<StudentTileViewProps> = ({
         {students.map((student) => (
           <Card
             key={student.id}
-            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-auto sm:h-40 flex flex-col overflow-hidden"
+            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-auto flex flex-col"
             onClick={() => handleStudentClick(student)}
           >
             <CardContent className="p-2 sm:p-3 flex flex-col h-full">
@@ -197,22 +197,24 @@ export const StudentTileView: React.FC<StudentTileViewProps> = ({
                      title={`${student.status.charAt(0).toUpperCase() + student.status.slice(1)}`} />
               </div>
 
-              {/* Compact Student Info */}
-              <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 flex-1 min-w-0">
-                <Avatar className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0">
+              {/* Avatar - Centered */}
+              <div className="flex justify-center mb-1.5 sm:mb-2">
+                <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
                   <AvatarImage src={student.avatar_url || student.avatar} />
-                  <AvatarFallback className="bg-primary/20 text-primary font-semibold text-[10px] sm:text-xs">
+                  <AvatarFallback className="bg-primary/20 text-primary font-semibold text-xs sm:text-sm">
                     {student.firstName?.[0]}{student.lastName?.[0]}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-[10px] sm:text-xs leading-tight line-clamp-1 text-foreground group-hover:text-primary transition-colors">
-                    {student.name}
-                  </h3>
-                  <p className="text-[9px] sm:text-xs text-muted-foreground line-clamp-1">
-                    {student.email}
-                  </p>
-                </div>
+              </div>
+
+              {/* Name and Email - Centered */}
+              <div className="text-center mb-1.5 sm:mb-2">
+                <h3 className="font-medium text-[10px] sm:text-xs leading-tight text-foreground group-hover:text-primary transition-colors mb-0.5">
+                  {student.name}
+                </h3>
+                <p className="text-[9px] sm:text-[10px] text-muted-foreground break-words leading-tight px-1">
+                  {student.email}
+                </p>
               </div>
 
               {/* Compact Progress */}
