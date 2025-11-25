@@ -115,11 +115,11 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
   }
 
   return (
-    <div className={cn("flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4", className)}>
+    <div className={cn("flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 w-full overflow-x-auto", className)}>
       {/* Items per page selector and info */}
-      <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 w-full sm:w-auto">
+      <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 w-full sm:w-auto flex-shrink-0">
         {showItemsPerPage && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">Show</span>
             <Select
               value={itemsPerPage.toString()}
@@ -142,14 +142,14 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
         )}
 
         {showPageInfo && (
-          <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
+          <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left whitespace-nowrap">
             Showing {startItem} to {endItem} of {totalItems} results
           </div>
         )}
       </div>
 
       {/* Pagination controls */}
-      <div className="flex items-center gap-0.5 sm:gap-1">
+      <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
         {/* First page button - Hidden on mobile */}
         <Button
           variant="outline"

@@ -161,6 +161,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
   const [studentEngagementData, setStudentEngagementData] = useState<any[]>([]);
   const [coursePerformanceData, setCoursePerformanceData] = useState<any[]>([]);
   const [studentProgressData, setStudentProgressData] = useState<any[]>([]);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   // Reports tab state
   const [courseCompletionTrends, setCourseCompletionTrends] = useState<any[]>([]);
@@ -221,6 +222,16 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     grade: 'all',
     class: 'all',
   });
+
+  // Handle window resize for mobile detection
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Helper function to get date range based on timeRange
   const getDateRange = (range: string) => {
@@ -1182,21 +1193,24 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         <div className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl sm:rounded-2xl md:rounded-3xl"></div>
           <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <div className="space-y-3 sm:space-y-4">
+              {/* Header Title */}
+              <div className="flex items-center gap-2 sm:gap-3">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg sm:rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0">
                   <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                  <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
                     Teacher Dashboard
                   </h1>
-                  <p className="text-xs sm:text-sm md:text-base lg:text-lg text-muted-foreground mt-0.5 sm:mt-1 md:mt-2 leading-relaxed">
+                  <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-0.5 sm:mt-1">
                     Welcome back, {userProfile?.first_name || 'Teacher'}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
+              
+              {/* Filter Controls */}
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                 <Select value={timeRange} onValueChange={setTimeRange}>
                   <SelectTrigger className="w-full sm:w-32 md:w-40 h-8 sm:h-9 rounded-lg sm:rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 text-xs sm:text-sm">
                     <SelectValue placeholder="Time range" />
@@ -1581,30 +1595,56 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                     <CardTitle className="text-base sm:text-lg md:text-xl">Course Performance Overview</CardTitle>
                   </CardHeader>
                   <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
-                    <div className="h-[320px] sm:h-[360px] md:h-[400px] w-full">
+                    <div className="h-[320px] sm:h-[360px] md:h-[400px] w-full overflow-x-auto">
                       {coursePerformanceData.length > 0 ? (
-                      <ChartContainer config={chartConfig} className="w-full h-full">
+                      <ChartContainer config={chartConfig} className="w-full h-full" style={{ minWidth: coursePerformanceData.length > 5 ? `${coursePerformanceData.length * 80}px` : '100%' }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart 
                             data={coursePerformanceData} 
-                            margin={{ top: 10, right: 10, left: -10, bottom: 60 }}
+                            margin={{ 
+                              top: isMobile ? 10 : 15, 
+                              right: isMobile ? 10 : 15, 
+                              left: isMobile ? 0 : 5, 
+                              bottom: isMobile ? 80 : 70 
+                            }}
                           >
                             <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                             <XAxis 
                               dataKey="course" 
-                              angle={-45}
+                              angle={isMobile ? -45 : -45}
                               textAnchor="end"
-                              height={60}
+                              height={isMobile ? 70 : 60}
                               interval={0}
-                              tick={{ fontSize: 9 }}
-                              dy={8}
+                              tick={{ fontSize: isMobile ? 8 : 9 }}
+                              dy={isMobile ? 8 : 8}
                             />
-                            <YAxis tick={{ fontSize: 11 }} width={35} />
+                            <YAxis 
+                              tick={{ fontSize: isMobile ? 9 : 11 }} 
+                              width={isMobile ? 35 : 40} 
+                            />
                             <ChartTooltip content={<ChartTooltipContent />} />
-                            <Bar dataKey="enrolled" fill="#3B82F6" name="Enrolled" radius={[4, 4, 0, 0]} />
-                            <Bar dataKey="completed" fill="#10B981" name="Completed" radius={[4, 4, 0, 0]} />
-                            <Bar dataKey="inProgress" fill="#F59E0B" name="In Progress" radius={[4, 4, 0, 0]} />
-                            <Legend wrapperStyle={{ fontSize: '11px' }} />
+                            <Bar 
+                              dataKey="enrolled" 
+                              fill="#3B82F6" 
+                              name="Enrolled" 
+                              radius={[4, 4, 0, 0]} 
+                              maxBarSize={60}
+                            />
+                            <Bar 
+                              dataKey="completed" 
+                              fill="#10B981" 
+                              name="Completed" 
+                              radius={[4, 4, 0, 0]} 
+                              maxBarSize={60}
+                            />
+                            <Bar 
+                              dataKey="inProgress" 
+                              fill="#F59E0B" 
+                              name="In Progress" 
+                              radius={[4, 4, 0, 0]} 
+                              maxBarSize={60}
+                            />
+                            <Legend wrapperStyle={{ fontSize: isMobile ? '10px' : '11px' }} />
                           </BarChart>
                         </ResponsiveContainer>
                       </ChartContainer>

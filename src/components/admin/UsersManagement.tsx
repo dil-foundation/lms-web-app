@@ -1417,14 +1417,17 @@ export const UsersManagement = () => {
               </div>
             </div>
             
-            <div className="flex gap-2 sm:gap-3 w-full sm:w-auto flex-shrink-0">
-              <Dialog open={isBulkUploadModalOpen} onOpenChange={setIsBulkUploadModalOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="h-9 sm:h-10 px-2 sm:px-3 md:px-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-shrink-0">
-                    <Upload className="sm:mr-2 h-4 w-4" />
-                    <span className="hidden sm:inline">Bulk Upload</span>
-                  </Button>
-                </DialogTrigger>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto flex-shrink-0">
+              {/* Upload and Passwords buttons - stay together */}
+              <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
+                <Dialog open={isBulkUploadModalOpen} onOpenChange={setIsBulkUploadModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="h-9 sm:h-10 px-2 sm:px-3 md:px-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-1 sm:flex-none flex-shrink-0">
+                      <Upload className="mr-1.5 sm:mr-2 h-4 w-4" />
+                      <span className="hidden md:inline">Bulk Upload</span>
+                      <span className="md:hidden">Upload</span>
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col">
                   <DialogHeader>
                     <DialogTitle>Bulk Upload Users</DialogTitle>
@@ -1617,7 +1620,7 @@ export const UsersManagement = () => {
               <Dialog open={isBulkUploadWithPasswordsModalOpen} onOpenChange={setIsBulkUploadWithPasswordsModalOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="h-9 sm:h-10 px-2 sm:px-3 md:px-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-1 sm:flex-none flex-shrink-0">
-                    <Upload className="sm:mr-2 h-4 w-4" />
+                    <Upload className="mr-1.5 sm:mr-2 h-4 w-4" />
                     <span className="hidden md:inline">Bulk Upload with Passwords</span>
                     <span className="hidden sm:inline md:hidden">Upload Passwords</span>
                     <span className="sm:hidden">Passwords</span>
@@ -1818,7 +1821,9 @@ export const UsersManagement = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+              </div>
 
+              {/* Create User button - below on mobile, inline on desktop */}
               <Dialog open={isCreateModalOpen} onOpenChange={(isOpen) => {
                 setIsCreateModalOpen(isOpen);
                 if (!isOpen) {
@@ -1827,8 +1832,8 @@ export const UsersManagement = () => {
                 }
               }}>
                 <DialogTrigger asChild>
-                  <Button className="h-10 px-6 rounded-xl bg-gradient-to-r from-[#8DC63F] to-[#7AB82F] hover:from-[#7AB82F] hover:to-[#6AA325] text-white shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 font-semibold">
-                    <Plus className="mr-2 h-4 w-4" />
+                  <Button className="h-9 sm:h-10 px-4 sm:px-6 rounded-xl bg-gradient-to-r from-[#8DC63F] to-[#7AB82F] hover:from-[#7AB82F] hover:to-[#6AA325] text-white shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 font-semibold text-xs sm:text-sm w-full sm:w-auto">
+                    <Plus className="mr-1.5 sm:mr-2 h-4 w-4" />
                     Create User
                   </Button>
                 </DialogTrigger>
@@ -2094,16 +2099,16 @@ export const UsersManagement = () => {
             </Select>
           </div>
 
-          {/* Users Table */}
-          <div className="rounded-md border">
+          {/* Desktop Table View - Hidden on mobile */}
+          <div className="hidden md:block rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="hidden md:table-cell">Joined</TableHead>
-                  <TableHead className="hidden md:table-cell">Last Active</TableHead>
+                  <TableHead>Joined</TableHead>
+                  <TableHead>Last Active</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -2147,10 +2152,10 @@ export const UsersManagement = () => {
                           {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground">
+                      <TableCell className="text-muted-foreground">
                         {new Date(user.joinedDate).toLocaleDateString()}
                       </TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground">
+                      <TableCell className="text-muted-foreground">
                         {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : "Never"}
                       </TableCell>
                       <TableCell className="text-right">
@@ -2190,6 +2195,102 @@ export const UsersManagement = () => {
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          {/* Mobile Card List View - Hidden on desktop */}
+          <div className="md:hidden space-y-3">
+            {loading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="p-4">
+                    <Skeleton className="h-20 w-full" />
+                  </Card>
+                ))}
+              </div>
+            ) : users.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                <h3 className="mt-4 text-lg font-semibold">No users found</h3>
+                <p className="text-muted-foreground">
+                  Try adjusting your search or filter criteria.
+                </p>
+              </div>
+            ) : (
+              users.map((user) => (
+                <Card key={user.id} className="p-4 hover:bg-muted/50 transition-colors">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <Avatar className="h-10 w-10 flex-shrink-0">
+                        <AvatarImage 
+                          src={user.avatar_url} 
+                          alt={user.name}
+                        />
+                        <AvatarFallback className="text-sm bg-primary/10 text-primary">
+                          {user.firstName && user.lastName 
+                            ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+                            : user.email ? user.email[0].toUpperCase() : 'U'
+                          }
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-sm truncate">{user.name}</h3>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate mb-2">{user.email}</p>
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <Badge variant={getRoleBadgeVariant(user.role)} className="text-xs">
+                            {formatRoleName(user.role)}
+                          </Badge>
+                          <Badge variant={getStatusBadgeVariant(user.status)} className="text-xs">
+                            {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                          </Badge>
+                        </div>
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <span className="font-medium">Joined:</span>
+                            <span>{new Date(user.joinedDate).toLocaleDateString()}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="font-medium">Last Active:</span>
+                            <span>{user.lastActive ? new Date(user.lastActive).toLocaleDateString() : "Never"}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0 flex-shrink-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setTimeout(() => setUserToEdit(user), 100)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          <span>Edit User</span>
+                        </DropdownMenuItem>
+                        {/* Hide reset password option for super users */}
+                        {user.role !== 'super_user' && (
+                          <DropdownMenuItem onClick={() => handleResetPassword(user)}>
+                            Reset Password
+                          </DropdownMenuItem>
+                        )}
+                        {/* Hide delete user option for super users */}
+                        {user.role !== 'super_user' && (
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => setTimeout(() => setUserToDelete(user), 100)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Delete User</span>
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </Card>
+              ))
+            )}
           </div>
 
           {!loading && totalPages > 1 && (

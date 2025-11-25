@@ -77,18 +77,27 @@ export const useReportsData = (
 
   // Fetch reports data
   const fetchData = useCallback(async (showRefreshIndicator = false, customTimeRange?: string) => {
-    if (!isMountedRef.current) return;
+    console.log('🚀 [useReportsData] fetchData called!', { showRefreshIndicator, customTimeRange, currentTimeRange: timeRange });
+    
+    if (!isMountedRef.current) {
+      console.log('⚠️ [useReportsData] Component not mounted, returning early');
+      return;
+    }
 
     try {
+      console.log('🔧 [useReportsData] Setting loading states...');
       if (showRefreshIndicator) {
         setRefreshing(true);
+        console.log('🔄 [useReportsData] Refreshing = true');
       } else {
         setLoading(true);
+        console.log('⏳ [useReportsData] Loading = true');
       }
       setError(null);
 
       const apiTimeRange = mapTimeRangeToApiValue(customTimeRange || timeRange);
-      console.log('🔄 [useReportsData] Fetching data with timeRange:', apiTimeRange);
+      console.log('🗺️ [useReportsData] Mapped timeRange:', { ui: customTimeRange || timeRange, api: apiTimeRange });
+      console.log('🔄 [useReportsData] About to fetch data with API timeRange:', apiTimeRange);
       
       // Small delay to prevent rapid successive calls
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -149,24 +158,37 @@ export const useReportsData = (
         setRefreshing(false);
       }
     }
-  }, [timeRange, mapTimeRangeToApiValue, error]);
+  }, [mapTimeRangeToApiValue, error]); // Removed timeRange from dependencies to prevent recreation
 
   // Handle time range change with debouncing
   const handleTimeRangeChange = useCallback((newTimeRange: string) => {
+    console.log('⏰ [useReportsData] handleTimeRangeChange called with:', newTimeRange);
+    console.log('🔍 [useReportsData] Current timeout ref:', debounceTimeoutRef.current);
+    
     setTimeRange(newTimeRange);
-    console.log('Time range changed to:', newTimeRange);
+    console.log('📝 [useReportsData] State updated, timeRange:', newTimeRange);
     
     // Clear existing timeout
     if (debounceTimeoutRef.current) {
+      console.log('🔄 [useReportsData] Clearing previous debounce timeout');
       clearTimeout(debounceTimeoutRef.current);
+      debounceTimeoutRef.current = null;
     }
     
     // Debounce the API call
-    debounceTimeoutRef.current = setTimeout(() => {
+    console.log('⏳ [useReportsData] Setting 300ms debounce timer...');
+    const timeoutId = setTimeout(() => {
+      console.log('✨ [useReportsData] Debounce timer fired! Calling fetchData...');
+      console.log('🔍 [useReportsData] isMountedRef.current:', isMountedRef.current);
       if (isMountedRef.current) {
         fetchData(true, newTimeRange);
+      } else {
+        console.log('⚠️ [useReportsData] Component unmounted, skipping fetch');
       }
     }, 300);
+    
+    debounceTimeoutRef.current = timeoutId;
+    console.log('💾 [useReportsData] Stored timeout ID:', timeoutId);
   }, [fetchData]);
 
   // Handle refresh
@@ -207,25 +229,18 @@ export const useReportsData = (
     }, autoRefreshInterval);
   }, [enableAutoRefresh, autoRefreshInterval, fetchData]);
 
-  // Initial data fetch and cleanup
+  // Mount/unmount effect - only runs once
   useEffect(() => {
-    // Small delay to prevent rapid requests on mount
-    const initialFetchTimeout = setTimeout(() => {
-      if (isMountedRef.current) {
-        fetchData();
-      }
-    }, 100);
-    
-    if (enableAutoRefresh) {
-      setupAutoRefresh();
-    }
+    console.log('🎬 [useReportsData] Component mounted');
+    isMountedRef.current = true;
     
     return () => {
+      console.log('🧹 [useReportsData] Component unmounting');
       isMountedRef.current = false;
       
-      // Clear all timeouts
-      clearTimeout(initialFetchTimeout);
+      // Clear all timeouts on unmount
       if (debounceTimeoutRef.current) {
+        console.log('🗑️ [useReportsData] Clearing debounce timeout on unmount');
         clearTimeout(debounceTimeoutRef.current);
       }
       if (autoRefreshTimeoutRef.current) {
@@ -236,7 +251,30 @@ export const useReportsData = (
       reportsService.cleanup?.();
       adminDashboardService.cleanup();
     };
-  }, [fetchData, setupAutoRefresh, enableAutoRefresh]);
+  }, []);
+
+  // Initial data fetch effect
+  useEffect(() => {
+    console.log('📡 [useReportsData] Initial data fetch effect');
+    const initialFetchTimeout = setTimeout(() => {
+      if (isMountedRef.current) {
+        console.log('🚀 [useReportsData] Triggering initial fetch');
+        fetchData();
+      }
+    }, 100);
+    
+    return () => {
+      clearTimeout(initialFetchTimeout);
+    };
+  }, [fetchData]);
+
+  // Auto-refresh setup effect
+  useEffect(() => {
+    if (enableAutoRefresh) {
+      console.log('⏰ [useReportsData] Setting up auto-refresh');
+      setupAutoRefresh();
+    }
+  }, [enableAutoRefresh, setupAutoRefresh]);
 
   return {
     data,

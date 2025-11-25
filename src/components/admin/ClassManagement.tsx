@@ -788,23 +788,50 @@ const ClassManagement: React.FC = () => {
           {classes.length > 0 ? (
             <div>
               {/* View Toggle Section - Improved Responsiveness */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 md:gap-6 p-4 sm:p-5 md:p-6 lg:p-7 border-b border-border/50 bg-gradient-to-r from-muted/30 via-transparent to-muted/30">
-                <div className="min-w-0 flex-1 space-y-1 sm:space-y-1.5">
-                  <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-foreground break-words">
-                    Classes
-                  </h2>
-                  <p className="text-xs sm:text-sm md:text-base text-muted-foreground break-words leading-relaxed">
-                    Switch between different views to manage your classes
-                  </p>
+              <div className="p-4 sm:p-5 md:p-6 lg:p-7 border-b border-border/50 bg-gradient-to-r from-muted/30 via-transparent to-muted/30">
+                {/* Mobile/Tablet Layout - Stacked */}
+                <div className="flex lg:hidden flex-col gap-2 sm:gap-3">
+                  {/* Heading and Description */}
+                  <div className="space-y-0.5">
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground">
+                      Classes
+                    </h2>
+                    <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
+                      Switch between different views to manage your classes
+                    </p>
+                  </div>
+                  
+                  {/* View Toggle */}
+                  <div className="w-full sm:w-auto">
+                    <ViewToggle
+                      currentView={preferences.teacherClassView}
+                      onViewChange={setTeacherClassView}
+                      availableViews={['card', 'tile', 'list']}
+                      showLabels={true}
+                      className="w-full sm:w-auto"
+                    />
+                  </div>
                 </div>
-                <div className="w-full sm:w-auto flex-shrink-0">
-                  <ViewToggle
-                    currentView={preferences.teacherClassView}
-                    onViewChange={setTeacherClassView}
-                    availableViews={['card', 'tile', 'list']}
-                    showLabels={true}
-                    className="w-full sm:w-auto"
-                  />
+
+                {/* Desktop Layout - Side by Side */}
+                <div className="hidden lg:flex items-center justify-between gap-4">
+                  <div className="min-w-0 flex-1 space-y-0.5">
+                    <h2 className="text-2xl font-bold text-foreground">
+                      Classes
+                    </h2>
+                    <p className="text-base text-muted-foreground">
+                      Switch between different views to manage your classes
+                    </p>
+                  </div>
+                  
+                  <div className="flex-shrink-0">
+                    <ViewToggle
+                      currentView={preferences.teacherClassView}
+                      onViewChange={setTeacherClassView}
+                      availableViews={['card', 'tile', 'list']}
+                      showLabels={true}
+                    />
+                  </div>
                 </div>
               </div>
 

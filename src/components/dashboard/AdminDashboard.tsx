@@ -194,6 +194,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
   const [engagementData, setEngagementData] = useState<EngagementData[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30days');
+  const [isMobile, setIsMobile] = useState(false);
 
   // Filter data states
   const [countries, setCountries] = useState<Country[]>([]);
@@ -240,6 +241,22 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     grade: 'all',
     class: 'all',
   });
+
+  // Track screen size for responsive chart sizing
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    // Check initial size
+    checkScreenSize();
+
+    // Add event listener
+    window.addEventListener('resize', checkScreenSize);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   // Helper function to get date range based on timeRange
   const getDateRange = (range: string) => {
@@ -1714,46 +1731,80 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
 
         <TabsContent value="courses" className="space-y-6">
           <Card>
-            <CardHeader>
+            <CardHeader className="p-3 sm:p-4 md:p-6">
               <CardTitle className="text-base sm:text-lg md:text-xl">Course Performance Analytics</CardTitle>
             </CardHeader>
-            <CardContent className="p-3 sm:p-4 md:p-6">
-              <div className="h-[320px] sm:h-[360px] md:h-[400px] w-full">
-                {hasCourseAnalyticsData ? (
-                <ChartContainer config={chartConfig} className="w-full h-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart 
-                      data={courseAnalyticsData} 
-                      margin={{ 
-                        top: 10, 
-                        right: 10, 
-                        left: -10, 
-                        bottom: 60 
-                      }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                      <XAxis 
-                        dataKey="course" 
-                        angle={-45}
-                        textAnchor="end"
-                        height={60}
-                        interval={0}
-                        tick={{ fontSize: 9 }}
-                        dy={8}
-                      />
-                      <YAxis tick={{ fontSize: 11 }} width={35} />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="enrolled" fill="#3B82F6" name="Enrolled" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="completed" fill="#10B981" name="Completed" radius={[4, 4, 0, 0]} />
-                      <Legend wrapperStyle={{ fontSize: '11px' }} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <p className="text-muted-foreground text-xs sm:text-sm">No course data to display.</p>
-                  </div>
-                )}
+            <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+              <div className="w-full overflow-x-auto overflow-y-hidden">
+                <div 
+                  className="h-[400px] sm:h-[420px] md:h-[450px]"
+                  style={{
+                    minWidth: hasCourseAnalyticsData 
+                      ? `${Math.max(courseAnalyticsData.length * (isMobile ? 60 : 80), 100)}%`
+                      : '100%'
+                  }}
+                >
+                  {hasCourseAnalyticsData ? (
+                  <ChartContainer config={chartConfig} className="w-full h-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart 
+                        data={courseAnalyticsData} 
+                        margin={{ 
+                          top: isMobile ? 15 : 20, 
+                          right: isMobile ? 10 : 15, 
+                          left: isMobile ? -5 : 0, 
+                          bottom: isMobile ? 90 : 80 
+                        }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                        <XAxis 
+                          dataKey="course" 
+                          angle={isMobile ? -50 : -45}
+                          textAnchor="end"
+                          height={isMobile ? 90 : 80}
+                          interval={0}
+                          tick={{ fontSize: isMobile ? 7 : 8 }}
+                          dy={isMobile ? 12 : 10}
+                          dx={isMobile ? -6 : -5}
+                        />
+                        <YAxis 
+                          tick={{ fontSize: isMobile ? 9 : 10 }} 
+                          width={isMobile ? 35 : 40}
+                        />
+                        <ChartTooltip 
+                          content={<ChartTooltipContent />}
+                          wrapperStyle={{ zIndex: 1000 }}
+                        />
+                        <Bar 
+                          dataKey="enrolled" 
+                          fill="#3B82F6" 
+                          name="Enrolled" 
+                          radius={[4, 4, 0, 0]}
+                          maxBarSize={isMobile ? 40 : 60}
+                        />
+                        <Bar 
+                          dataKey="completed" 
+                          fill="#10B981" 
+                          name="Completed" 
+                          radius={[4, 4, 0, 0]}
+                          maxBarSize={isMobile ? 40 : 60}
+                        />
+                        <Legend 
+                          wrapperStyle={{ 
+                            fontSize: isMobile ? '9px' : '10px',
+                            paddingTop: '10px'
+                          }}
+                          iconSize={isMobile ? 8 : 10}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-muted-foreground text-xs sm:text-sm">No course data to display.</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

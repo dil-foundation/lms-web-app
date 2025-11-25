@@ -54,6 +54,9 @@ export const ReportsAnalytics = () => {
     enableAutoRefresh: false // Disable auto-refresh for now
   });
 
+  // Debug logging for dropdown changes
+  console.log('📊 [ReportsAnalytics] Current dateRange:', dateRange);
+
   // Track screen size for responsive chart sizing
   const [isMobile, setIsMobile] = useState(false);
 
@@ -253,7 +256,13 @@ export const ReportsAnalytics = () => {
                 />
               )}
               
-              <Select value={dateRange} onValueChange={handleTimeRangeChange}>
+              <Select 
+                value={dateRange} 
+                onValueChange={(value) => {
+                  console.log('📅 [ReportsAnalytics] Date filter changed to:', value);
+                  handleTimeRangeChange(value);
+                }}
+              >
                 <SelectTrigger className="w-40 md:w-48 h-9 md:h-10 text-sm">
                   <SelectValue placeholder="Select time range" />
                 </SelectTrigger>
@@ -294,7 +303,13 @@ export const ReportsAnalytics = () => {
             </div>
             
             <div className="flex items-center gap-2 w-full">
-              <Select value={dateRange} onValueChange={handleTimeRangeChange}>
+              <Select 
+                value={dateRange} 
+                onValueChange={(value) => {
+                  console.log('📅 [ReportsAnalytics Mobile] Date filter changed to:', value);
+                  handleTimeRangeChange(value);
+                }}
+              >
                 <SelectTrigger className="flex-1 h-8 text-xs">
                   <SelectValue placeholder="Select time range" />
                 </SelectTrigger>
@@ -336,7 +351,6 @@ export const ReportsAnalytics = () => {
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load Reports</h3>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
-            onClick={handleRefresh}
             onClick={handleRefresh}
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
           >
