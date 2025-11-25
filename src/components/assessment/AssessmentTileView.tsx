@@ -84,7 +84,7 @@ export const AssessmentTileView: React.FC<AssessmentTileViewProps> = ({
           >
             {/* Card Header with Icon Banner */}
             <CardHeader className="p-0 relative flex-shrink-0">
-              <div className="w-full h-10 sm:h-12 flex items-center justify-center bg-primary/5">
+              <div className="w-full min-h-[55px] sm:min-h-[65px] flex items-center justify-center pt-3 sm:pt-4">
                 <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               </div>
               

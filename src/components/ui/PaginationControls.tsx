@@ -115,11 +115,11 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
   }
 
   return (
-    <div className={cn("flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 w-full overflow-x-auto", className)}>
+    <div className={cn("flex flex-wrap items-center justify-between gap-3 sm:gap-4 w-full", className)}>
       {/* Items per page selector and info */}
-      <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 w-full sm:w-auto flex-shrink-0">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-4 w-full sm:w-auto">
         {showItemsPerPage && (
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">Show</span>
             <Select
               value={itemsPerPage.toString()}
@@ -149,7 +149,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
       </div>
 
       {/* Pagination controls */}
-      <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+      <div className="flex flex-wrap items-center justify-center sm:justify-end gap-0.5 sm:gap-1 w-full sm:w-auto">
         {/* First page button - Hidden on mobile */}
         <Button
           variant="outline"
@@ -173,7 +173,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
         </Button>
 
         {/* Page numbers */}
-        <div className="flex items-center gap-0.5 sm:gap-1">
+        <div className="flex flex-wrap items-center justify-center gap-0.5 sm:gap-1">
           {getPageNumbers().map((page, index) => 
             page === '...' ? (
               <span key={index} className="px-1 sm:px-2 py-1 text-xs sm:text-sm text-muted-foreground">...</span>

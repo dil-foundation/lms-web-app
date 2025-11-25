@@ -511,7 +511,7 @@ export const GradeAssignments = () => {
             <>
               <div className="space-y-4 sm:space-y-6">
                 {/* View Toggle */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                     <h2 className="text-base sm:text-lg font-semibold truncate">Assessments ({assignments.length})</h2>
@@ -522,7 +522,7 @@ export const GradeAssignments = () => {
                       </div>
                     )}
                   </div>
-                  <div className="flex-shrink-0">
+                  <div className="flex-shrink-0 w-full lg:w-auto">
                     <ViewToggle
                       currentView={preferences.assignmentView}
                       onViewChange={setAssignmentView}

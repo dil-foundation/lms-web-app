@@ -43,7 +43,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
@@ -568,7 +567,7 @@ export default function ReportsPage() {
 
           {/* Main Content Tabs */}
           <Tabs defaultValue="overview" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-0 h-auto sm:h-10">
+            <TabsList className="!grid w-full grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-0 h-auto lg:h-10">
               <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-3 py-2">Overview</TabsTrigger>
               <TabsTrigger value="student-management" className="text-xs sm:text-sm px-2 sm:px-3 py-2">Student Management</TabsTrigger>
               <TabsTrigger value="courses" className="text-xs sm:text-sm px-2 sm:px-3 py-2">Course Performance</TabsTrigger>
@@ -807,8 +806,8 @@ export default function ReportsPage() {
                     </div>
                   </div>
 
-                  {/* Students Table */}
-                  <div className="rounded-md border">
+                  {/* Students List */}
+                  <div className="space-y-4">
                     {studentsLoading ? (
                       <div className="flex items-center justify-center py-8">
                         <ContentLoader message="Loading students..." />
@@ -851,80 +850,67 @@ export default function ReportsPage() {
                       </div>
                     ) : (
                       <>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Student</TableHead>
-                              <TableHead>Course</TableHead>
-                              <TableHead>Progress</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead>Last Active</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {studentsData.map((student) => (
-                              <TableRow key={student.id}>
-                                <TableCell className="font-medium">
-                                  <div className="flex items-center space-x-3">
-                                    <Avatar className="h-8 w-8">
-                                      <AvatarImage 
-                                        src={student.avatar_url} 
-                                        alt={student.name}
-                                      />
-                                      <AvatarFallback className="text-xs">
-                                        {student.avatar}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                      <div className="font-medium">{student.name}</div>
-                                      <div className="text-sm text-muted-foreground">{student.email}</div>
-                                    </div>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="text-sm">
-                                    <div className="font-medium">{student.course}</div>
-                                    <div className="text-muted-foreground">
-                                      Enrolled: {new Date(student.enrolledDate).toLocaleDateString()}
-                                    </div>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="space-y-1">
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-sm font-medium">{student.progress}%</span>
-                                    </div>
-                                    <div className="w-full bg-muted rounded-full h-2">
-                                      <div 
-                                        className="bg-primary h-2 rounded-full transition-all duration-300"
-                                        style={{ width: `${student.progress}%` }}
-                                      />
-                                    </div>
-                                    
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge
-                                    className={cn(
-                                      "capitalize",
-                                      student.status.replace('_', ' ') === 'Completed' && 'bg-green-100 text-green-800 border-green-200',
-                                      student.status.replace('_', ' ') === 'In Progress' && 'bg-blue-100 text-blue-800 border-blue-200',
-                                      student.status.replace('_', ' ') === 'Not Started' && 'bg-gray-100 text-gray-800 border-gray-200',
-                                      student.status.replace('_', ' ') === 'Behind' && 'bg-red-100 text-red-800 border-red-200'
-                                    )}
-                                  >
-                                    {student.status.replace('_', ' ').replace(/\b\w/g, char => char.toUpperCase())}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <span className="text-sm text-muted-foreground">
-                                    {student.lastActive}
-                                  </span>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                        <div className="space-y-3">
+                          {studentsData.map((student) => (
+                            <div
+                              key={student.id}
+                              className="p-4 rounded-xl border bg-card/40 backdrop-blur-sm flex flex-col gap-4 lg:grid lg:grid-cols-[1.5fr,1.3fr,1fr,0.9fr]"
+                            >
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-12 w-12">
+                                  <AvatarImage 
+                                    src={student.avatar_url} 
+                                    alt={student.name}
+                                  />
+                                  <AvatarFallback className="text-base">
+                                    {student.avatar}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="space-y-1">
+                                  <p className="font-semibold text-base">{student.name}</p>
+                                  <p className="text-xs sm:text-sm text-muted-foreground break-all">{student.email}</p>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-col gap-1 text-sm">
+                                <p className="text-muted-foreground text-xs uppercase tracking-wide">Course</p>
+                                <p className="font-medium leading-tight">{student.course}</p>
+                                <p className="text-muted-foreground text-xs sm:text-sm">
+                                  Enrolled: {new Date(student.enrolledDate).toLocaleDateString()}
+                                </p>
+                              </div>
+
+                              <div className="flex flex-col gap-2">
+                                <div className="flex items-center justify-between text-sm font-medium text-muted-foreground">
+                                  <span>Progress</span>
+                                  <span className="text-base text-foreground">{student.progress}%</span>
+                                </div>
+                                <div className="w-full bg-muted/40 rounded-full h-2 overflow-hidden">
+                                  <div
+                                    className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
+                                    style={{ width: `${student.progress}%` }}
+                                  />
+                                </div>
+                                <Badge
+                                  className={cn(
+                                    "w-fit capitalize",
+                                    student.status.replace('_', ' ') === 'Completed' && 'bg-green-100 text-green-800 border-green-200',
+                                    student.status.replace('_', ' ') === 'In Progress' && 'bg-blue-100 text-blue-800 border-blue-200',
+                                    student.status.replace('_', ' ') === 'Not Started' && 'bg-gray-100 text-gray-800 border-gray-200',
+                                    student.status.replace('_', ' ') === 'Behind' && 'bg-red-100 text-red-800 border-red-200'
+                                  )}
+                                >
+                                  {student.status.replace('_', ' ').replace(/\b\w/g, char => char.toUpperCase())}
+                                </Badge>
+                              </div>
+
+                              <div className="text-sm text-muted-foreground flex flex-col gap-1">
+                                <p className="text-xs uppercase tracking-wide">Last Active</p>
+                                <p className="text-base text-foreground">{student.lastActive}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                         
                         {/* Pagination */}
                         <PaginationControls
@@ -957,11 +943,13 @@ export default function ReportsPage() {
                   {reportsData.coursePerformance.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                       {reportsData.coursePerformance.map((course, index) => (
-                        <Card key={index} className="p-4 sm:p-6">
+                        <Card key={index} className="p-4 sm:p-6 overflow-hidden">
                           <div className="space-y-4">
                             <div>
-                              <h3 className="font-semibold text-lg">{course.courseTitle}</h3>
-                              <p className="text-sm text-muted-foreground">{course.courseDescription}</p>
+                              <h3 className="font-semibold text-lg break-words line-clamp-2">{course.courseTitle}</h3>
+                              <p className="text-sm text-muted-foreground break-words line-clamp-3">
+                                {course.courseDescription || 'No description provided.'}
+                              </p>
                             </div>
                             
                             <div className="grid grid-cols-2 gap-4">

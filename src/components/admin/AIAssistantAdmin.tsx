@@ -550,8 +550,8 @@ export const APEXAdmin = () => {
 
         {/* FAQs Tab */}
         <TabsContent value="faqs" className="space-y-4 sm:space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 flex-1 w-full sm:w-auto">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 lg:gap-4 w-full">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 flex-1 w-full">
               <div className="relative flex-1 sm:flex-none sm:w-64">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
@@ -583,7 +583,7 @@ export const APEXAdmin = () => {
                 });
                 resetFAQForm();
               }}
-              className="w-full sm:w-auto h-9 sm:h-10 text-sm sm:text-base"
+              className="w-full lg:w-auto h-9 sm:h-10 text-sm sm:text-base"
             >
               <Plus className="h-4 w-4 mr-2" />
               Add FAQ
@@ -1118,7 +1118,9 @@ export const APEXAdmin = () => {
                                 <span>{contact.phone}</span>
                               </div>
                             )}
-                            <Badge variant="outline" className="text-xs w-fit">{contact.availability}</Badge>
+                            <Badge variant="outline" className="text-xs w-fit whitespace-nowrap text-left px-2">
+                              {contact.availability.replace(/\s*\n\s*/g, ' ')}
+                            </Badge>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
