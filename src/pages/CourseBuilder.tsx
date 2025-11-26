@@ -946,21 +946,22 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
       case 'quiz':
         console.log('🎯 COURSEBUILDER: Rendering quiz content item:', item.id, 'with retry_settings:', item.retry_settings);
         return (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <div>
-              <Label htmlFor={`quiz-title-${item.id}`}>Quiz Title</Label>
+              <Label htmlFor={`quiz-title-${item.id}`} className="text-xs sm:text-sm">Quiz Title</Label>
               <Input
                 id={`quiz-title-${item.id}`}
                 value={item.title}
                 onChange={(e) => onUpdate(lessonId, item.id, { title: e.target.value })}
                 placeholder="Enter quiz title"
+                className="h-9 sm:h-10 text-sm"
               />
             </div>
             <div>
-              <Label htmlFor={`quiz-due-date-${item.id}`}>Due Date</Label>
-              <div className="grid grid-cols-2 gap-4">
+              <Label htmlFor={`quiz-due-date-${item.id}`} className="text-xs sm:text-sm">Due Date</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="relative">
-                  <Label htmlFor={`quiz-date-${item.id}`}>Date</Label>
+                  <Label htmlFor={`quiz-date-${item.id}`} className="text-xs">Date</Label>
                   <DatePicker
                     value={item.due_date ? new Date(item.due_date) : undefined}
                     onChange={(date) => {
@@ -977,7 +978,7 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
                   />
                 </div>
                 <div className="relative">
-                  <Label htmlFor={`quiz-time-${item.id}`}>Time</Label>
+                  <Label htmlFor={`quiz-time-${item.id}`} className="text-xs">Time</Label>
                   <TimePicker
                     value={item.due_date ? new Date(item.due_date).toTimeString().slice(0, 5) : ''}
                     onChange={(time) => {
@@ -994,7 +995,7 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
               </div>
             </div>
             <div>
-              <Label htmlFor={`quiz-builder-${item.id}`}>Quiz Questions</Label>
+              <Label htmlFor={`quiz-builder-${item.id}`} className="text-xs sm:text-sm">Quiz Questions</Label>
               <QuizBuilder
                 quiz={item.quiz || { id: '', questions: [] }}
                 onQuizChange={(quiz) => onUpdate(lessonId, item.id, { quiz })}
@@ -1002,7 +1003,7 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
             </div>
             
             {/* Quiz Retry Settings */}
-            <div className="mt-6">
+            <div className="mt-4 sm:mt-6">
               {(() => {
                 console.log('🎯 COURSEBUILDER: Rendering QuizRetrySettings for item:', item.id, 'with retry_settings:', item.retry_settings);
                 return null;
@@ -1046,41 +1047,41 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
   };
 
   return (
-    <div className={`w-full p-6 rounded-2xl border-2 transition-all duration-300 hover:shadow-xl ${getContentTypeColor(item.content_type)}`}>
-      <div className="flex items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-4 flex-1">
+    <div className={`w-full p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl border-2 transition-all duration-300 hover:shadow-xl ${getContentTypeColor(item.content_type)}`}>
+      <div className="flex items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6">
+        <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
           {canReorder && (
             <div 
               {...dragHandleProps}
-              className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/60 dark:bg-black/30 hover:bg-white/80 dark:hover:bg-black/50 cursor-grab active:cursor-grabbing transition-all duration-200 shadow-sm hover:shadow-md"
+              className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white/60 dark:bg-black/30 hover:bg-white/80 dark:hover:bg-black/50 cursor-grab active:cursor-grabbing transition-all duration-200 shadow-sm hover:shadow-md flex-shrink-0"
             >
-              <GripVertical className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <GripVertical className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-400" />
             </div>
           )}
-          <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-white/80 dark:bg-black/40 shadow-sm">
-            <span className="text-2xl">{getContentTypeIcon(item.content_type)}</span>
+          <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl sm:rounded-2xl bg-white/80 dark:bg-black/40 shadow-sm flex-shrink-0">
+            <span className="text-lg sm:text-xl md:text-2xl">{getContentTypeIcon(item.content_type)}</span>
           </div>
           <Input
             value={item.title}
             onChange={(e) => onUpdate(lessonId, item.id, { title: e.target.value })}
             placeholder={`${item.content_type.charAt(0).toUpperCase() + item.content_type.slice(1)} Title`}
-            className="font-semibold text-lg bg-white/60 dark:bg-black/30 border-0 focus-visible:ring-2 focus-visible:ring-current/30 rounded-xl px-4 py-3 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+            className="font-semibold text-sm sm:text-base md:text-lg bg-white/60 dark:bg-black/30 border-0 focus-visible:ring-2 focus-visible:ring-current/30 rounded-lg sm:rounded-xl px-3 py-2 sm:px-4 sm:py-3 placeholder:text-gray-500 dark:placeholder:text-gray-400"
           />
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           <Select
             value={item.content_type}
             onValueChange={handleTypeChangeRequest}
           >
-            <SelectTrigger className="w-[140px] h-10 rounded-xl bg-white/60 dark:bg-black/30 border-2 border-current/20 text-sm font-medium shadow-sm hover:shadow-md transition-all duration-300">
+            <SelectTrigger className="w-[100px] sm:w-[120px] md:w-[140px] h-8 sm:h-9 md:h-10 rounded-lg sm:rounded-xl bg-white/60 dark:bg-black/30 border-2 border-current/20 text-xs sm:text-sm font-medium shadow-sm hover:shadow-md transition-all duration-300">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
-              <SelectItem value="video" className="rounded-xl hover:bg-blue-50 hover:text-gray-900 dark:hover:bg-blue-900/20 dark:hover:text-white transition-colors">🎥 Video</SelectItem>
-              <SelectItem value="attachment" className="rounded-xl hover:bg-green-50 hover:text-gray-900 dark:hover:bg-green-900/20 dark:hover:text-white transition-colors">📎 Attachment</SelectItem>
-              <SelectItem value="assignment" className="rounded-xl hover:bg-orange-50 hover:text-gray-900 dark:hover:bg-orange-900/20 dark:hover:text-white transition-colors">📝 Assignment</SelectItem>
-              <SelectItem value="quiz" className="rounded-xl hover:bg-purple-50 hover:text-gray-900 dark:hover:bg-purple-900/20 dark:hover:text-white transition-colors">❓ Quiz</SelectItem>
-              <SelectItem value="lesson_plan" className="rounded-xl hover:bg-indigo-50 hover:text-gray-900 dark:hover:bg-indigo-900/20 dark:hover:text-white transition-colors">📋 Lesson Plan</SelectItem>
+            <SelectContent className="rounded-xl sm:rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
+              <SelectItem value="video" className="rounded-lg sm:rounded-xl hover:bg-blue-50 hover:text-gray-900 dark:hover:bg-blue-900/20 dark:hover:text-white transition-colors text-xs sm:text-sm">🎥 Video</SelectItem>
+              <SelectItem value="attachment" className="rounded-lg sm:rounded-xl hover:bg-green-50 hover:text-gray-900 dark:hover:bg-green-900/20 dark:hover:text-white transition-colors text-xs sm:text-sm">📎 Attachment</SelectItem>
+              <SelectItem value="assignment" className="rounded-lg sm:rounded-xl hover:bg-orange-50 hover:text-gray-900 dark:hover:bg-orange-900/20 dark:hover:text-white transition-colors text-xs sm:text-sm">📝 Assignment</SelectItem>
+              <SelectItem value="quiz" className="rounded-lg sm:rounded-xl hover:bg-purple-50 hover:text-gray-900 dark:hover:bg-purple-900/20 dark:hover:text-white transition-colors text-xs sm:text-sm">❓ Quiz</SelectItem>
+              <SelectItem value="lesson_plan" className="rounded-lg sm:rounded-xl hover:bg-indigo-50 hover:text-gray-900 dark:hover:bg-indigo-900/20 dark:hover:text-white transition-colors text-xs sm:text-sm">📋 Lesson Plan</SelectItem>
             </SelectContent>
           </Select>
           {isRemovable && (
@@ -1088,26 +1089,26 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
               variant="ghost"
               size="icon"
               onClick={() => onRemove(lessonId, item.id)}
-              className="h-10 w-10 text-current/60 hover:text-current hover:bg-white/40 dark:hover:bg-black/40 rounded-xl transition-all duration-300 hover:scale-110"
+              className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 text-current/60 hover:text-current hover:bg-white/40 dark:hover:bg-black/40 rounded-lg sm:rounded-xl transition-all duration-300"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
           )}
         </div>
       </div>
       
-      <div className="w-full bg-white/40 dark:bg-black/30 rounded-2xl p-6 border-2 border-current/10 shadow-sm relative">
+      <div className="w-full bg-white/40 dark:bg-black/30 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border-2 border-current/10 shadow-sm relative">
         {/* Show due date for assignments and quizzes */}
         {(item.content_type === 'assignment' || item.content_type === 'quiz') && item.due_date && (
-          <div className="mb-6 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl shadow-sm">
-            <div className="flex items-center gap-2 text-sm text-yellow-700 dark:text-yellow-300">
-              <CalendarIcon className="h-4 w-4 flex-shrink-0" />
+          <div className="mb-4 sm:mb-6 p-2 sm:p-3 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg sm:rounded-xl shadow-sm">
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-yellow-700 dark:text-yellow-300 flex-wrap">
+              <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
               <span className="font-medium">Due:</span>
-              <span className="font-semibold">{format(new Date(item.due_date), "PPP 'at' p")}</span>
+              <span className="font-semibold break-all">{format(new Date(item.due_date), "PPP 'at' p")}</span>
             </div>
           </div>
         )}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {renderContentEditor()}
         </div>
       </div>
@@ -1152,70 +1153,70 @@ interface LessonContainerProps {
 const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, dragHandleProps, onToggleCollapse, courseId, onUpdateContentItem, onRemoveContentItem, onShowContentTypeSelector, canReorderContent, currentUserRole, courseStatus }: LessonContainerProps) => {
   return (
     <>
-      <div className="p-6 rounded-2xl bg-gradient-to-br from-card to-card/50 dark:bg-card border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl space-y-6 transition-all duration-300 group">
+      <div className="p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl bg-gradient-to-br from-card to-card/50 dark:bg-card border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl space-y-4 sm:space-y-6 transition-all duration-300 group">
         {/* Lesson Header */}
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3 flex-1">
-            <div {...dragHandleProps} className="cursor-move pt-2.5 opacity-60 hover:opacity-100 transition-opacity hover:scale-110">
-              <GripVertical className="text-primary w-5 h-5" />
+        <div className="flex items-start justify-between gap-2 sm:gap-4">
+          <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+            <div {...dragHandleProps} className="cursor-move pt-2 sm:pt-2.5 opacity-60 hover:opacity-100 transition-opacity hover:scale-110 flex-shrink-0">
+              <GripVertical className="text-primary w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div className="flex-1 space-y-3">
+            <div className="flex-1 space-y-2 sm:space-y-3 min-w-0">
               <Input
                 value={lesson.title}
                 onChange={(e) => onUpdate(sectionId, lesson.id, { title: e.target.value })}
                 placeholder="Lesson Title"
-                className="font-semibold text-lg border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60 text-gray-900 dark:text-white"
+                className="font-semibold text-sm sm:text-base md:text-lg border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60 text-gray-900 dark:text-white"
               />
               <Textarea
                 value={lesson.overview || ''}
                 onChange={(e) => onUpdate(sectionId, lesson.id, { overview: e.target.value })}
                 placeholder="Lesson overview or summary (optional)"
                 rows={2}
-                className="text-sm resize-none border-0 bg-white/50 dark:bg-gray-800/50 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-primary/20 text-gray-700 dark:text-gray-300"
+                className="text-xs sm:text-sm resize-none border-0 bg-white/50 dark:bg-gray-800/50 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 focus-visible:ring-2 focus-visible:ring-primary/20 text-gray-700 dark:text-gray-300"
               />
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             {isRemovable && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => onRemove(sectionId, lesson.id)}
-                className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all duration-300 hover:scale-105"
+                className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg sm:rounded-xl transition-all duration-300"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
             )}
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={() => onToggleCollapse(sectionId, lesson.id)}
-              className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all duration-300 hover:scale-105"
+              className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg sm:rounded-xl transition-all duration-300"
             >
-              {lesson.isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+              {lesson.isCollapsed ? <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" /> : <ChevronUp className="w-3 h-3 sm:w-4 sm:h-4" />}
             </Button>
           </div>
         </div>
 
         {/* Content Management */}
         {!lesson.isCollapsed && (
-          <div className="space-y-6 ml-8">
+          <div className="space-y-4 sm:space-y-6 ml-0 sm:ml-6 md:ml-8">
             {/* Add Content Button */}
-            <div className="flex items-center justify-between p-6 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-2xl border-2 border-primary/20 hover:border-primary/30 transition-all duration-300 group">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/100 to-primary/200 dark:from-primary-900/30 dark:to-primary-800/30 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <Plus className="w-6 h-6 text-primary-700 dark:text-primary-300" />
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 md:p-6 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-xl sm:rounded-2xl border-2 border-primary/20 hover:border-primary/30 transition-all duration-300 group gap-3 sm:gap-4">
+              <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/100 to-primary/200 dark:from-primary-900/30 dark:to-primary-800/30 rounded-xl sm:rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                  <Plus className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-primary-700 dark:text-primary-300" />
                 </div>
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Add Content</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Enhance your lesson with videos, assignments, quizzes, or attachments</p>
+                <div className="min-w-0">
+                  <h4 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 dark:text-white">Add Content</h4>
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 hidden sm:block">Enhance your lesson with videos, assignments, quizzes, or attachments</p>
                 </div>
               </div>
                   <Button
                 onClick={() => onShowContentTypeSelector(lesson.id)}
-                className="h-11 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105"
+                className="h-9 sm:h-10 md:h-11 px-4 sm:px-5 md:px-6 rounded-lg sm:rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm w-full sm:w-auto"
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                 Add Content
                   </Button>
               </div>
@@ -1695,35 +1696,35 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
   };
   
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-4 sm:space-y-6">
       {/* PDF Import Section - Show when there are no questions */}
       {quiz.questions.length === 0 && (
         <Card className="border-2 border-dashed border-purple-300 dark:border-purple-600 bg-purple-50/30 dark:bg-purple-900/10">
-          <CardContent className="p-8 text-center">
-            <FileText className="w-16 h-16 mx-auto mb-4 text-purple-500" />
-            <h3 className="text-xl font-semibold mb-2 text-purple-700 dark:text-purple-300">
+          <CardContent className="p-4 sm:p-6 md:p-8 text-center">
+            <FileText className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-3 sm:mb-4 text-purple-500" />
+            <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-1 sm:mb-2 text-purple-700 dark:text-purple-300">
               Import Quiz from PDF
             </h3>
-            <p className="text-purple-600 dark:text-purple-400 mb-6">
+            <p className="text-xs sm:text-sm md:text-base text-purple-600 dark:text-purple-400 mb-4 sm:mb-6">
               Upload a PDF file and let our system extract quiz questions automatically
             </p>
-            <div className="flex justify-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4">
               <Dialog open={showPDFUploader} onOpenChange={setShowPDFUploader}>
                 <DialogTrigger asChild>
-                  <Button className="bg-purple-600 hover:bg-purple-700 text-white">
-                    <Upload className="w-4 h-4 mr-2" />
+                  <Button className="bg-purple-600 hover:bg-purple-700 text-white h-9 sm:h-10 text-xs sm:text-sm w-full sm:w-auto">
+                    <Upload className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                     Import from PDF
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+                <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-hidden">
                   <PDFQuizUploader 
                     onQuizExtracted={handlePDFQuizExtracted}
                     onClose={() => setShowPDFUploader(false)}
                   />
                 </DialogContent>
               </Dialog>
-              <Button variant="outline" onClick={addQuestion}>
-                <Plus className="w-4 h-4 mr-2" />
+              <Button variant="outline" onClick={addQuestion} className="h-9 sm:h-10 text-xs sm:text-sm w-full sm:w-auto">
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                 Create Manually
               </Button>
             </div>
@@ -1733,41 +1734,41 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
       
       {quiz.questions.map((question, qIndex) => (
         <Card key={question.id} className="overflow-hidden border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300">
-          <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100/50 dark:from-purple-900/10 dark:to-purple-800/10 border-b border-purple-200/50 dark:border-purple-700/30 p-6">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">
+          <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100/50 dark:from-purple-900/10 dark:to-purple-800/10 border-b border-purple-200/50 dark:border-purple-700/30 p-3 sm:p-4 md:p-6">
+            <div className="flex items-start sm:items-center gap-2 sm:gap-3">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-xs sm:text-sm font-semibold text-purple-700 dark:text-purple-300">
                   {qIndex + 1}
                 </span>
               </div>
-              <div className="flex-1 text-gray-900 dark:text-white">
+              <div className="flex-1 text-gray-900 dark:text-white min-w-0">
               <Input
                 value={question.question_text}
                 onChange={(e) => updateQuestion(qIndex, e.target.value)}
                 placeholder={`Question ${qIndex + 1}`}
-                className="w-full border border-purple-200 dark:border-purple-700 bg-white dark:bg-gray-800 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500 placeholder:text-gray-500 dark:placeholder:text-gray-400 text-gray-900 dark:text-white hover:border-purple-300 dark:hover:border-purple-600 transition-colors"
+                className="w-full border border-purple-200 dark:border-purple-700 bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl px-3 py-2 sm:px-4 sm:py-3 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500 placeholder:text-gray-500 dark:placeholder:text-gray-400 text-gray-900 dark:text-white hover:border-purple-300 dark:hover:border-purple-600 transition-colors text-sm sm:text-base"
               />
               </div>
               <Button 
                 variant="ghost" 
                 size="icon" 
                 onClick={() => removeQuestion(qIndex)}
-                className="h-10 w-10 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-xl transition-all duration-300 hover:scale-105"
+                className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-lg sm:rounded-xl transition-all duration-300 flex-shrink-0"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
             </div>
             
             {/* Question Type Selector */}
-            <div className="mt-4 flex items-center gap-4">
-              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+              <Label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                 Question Type:
               </Label>
               <Select
                 value={question.question_type}
                 onValueChange={(value: 'single_choice' | 'multiple_choice' | 'text_answer' | 'math_expression') => updateQuestionType(qIndex, value)}
               >
-                <SelectTrigger className="w-48 h-9 border-2 border-purple-200 dark:border-purple-700 rounded-lg bg-white/60 dark:bg-gray-800/60">
+                <SelectTrigger className="w-full sm:w-44 md:w-48 h-8 sm:h-9 border-2 border-purple-200 dark:border-purple-700 rounded-lg bg-white/60 dark:bg-gray-800/60 text-xs sm:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
@@ -1800,7 +1801,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
               
               {/* Points Input */}
               <div className="flex items-center gap-2">
-                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                <Label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                   Points:
                 </Label>
                 <Input
@@ -1809,11 +1810,11 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                   step="1"
                   value={question.points || 1}
                   onChange={(e) => updateQuestionPoints(qIndex, parseInt(e.target.value) || 1)}
-                  className="w-20 h-9 border-2 border-purple-200 dark:border-purple-700 rounded-lg bg-white/60 dark:bg-gray-800/60 text-center"
+                  className="w-16 sm:w-20 h-8 sm:h-9 border-2 border-purple-200 dark:border-purple-700 rounded-lg bg-white/60 dark:bg-gray-800/60 text-center text-sm"
                 />
               </div>
               
-              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+              <div className="hidden lg:flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                 {question.question_type === 'single_choice' ? (
                   <>
                     <div className="w-3 h-3 border-2 border-purple-500 rounded-full"></div>
@@ -1840,7 +1841,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
               {/* Question Type Badge */}
               <Badge 
                 variant={question.question_type === 'single_choice' ? 'secondary' : question.question_type === 'multiple_choice' ? 'default' : question.question_type === 'math_expression' ? 'secondary' : 'outline'}
-                className={`text-xs ${
+                className={`text-[10px] sm:text-xs hidden sm:inline-flex ${
                   question.question_type === 'single_choice' 
                     ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-700' 
                     : question.question_type === 'multiple_choice'
@@ -1899,37 +1900,37 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
               )}
             </div>
           </CardHeader>
-          <CardContent className="p-6 space-y-4">
+          <CardContent className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
             {question.question_type === 'text_answer' ? (
-              <div className="p-6 bg-gradient-to-r from-orange-50 to-orange-100/50 dark:from-orange-900/10 dark:to-orange-800/10 rounded-xl border border-orange-200/50 dark:border-orange-700/30">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-semibold text-orange-700 dark:text-orange-300">📝</span>
+              <div className="p-3 sm:p-4 md:p-6 bg-gradient-to-r from-orange-50 to-orange-100/50 dark:from-orange-900/10 dark:to-orange-800/10 rounded-lg sm:rounded-xl border border-orange-200/50 dark:border-orange-700/30">
+                <div className="flex items-start sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs sm:text-sm font-semibold text-orange-700 dark:text-orange-300">📝</span>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-orange-900 dark:text-orange-100">Text Answer Question</h4>
-                    <p className="text-sm text-orange-700 dark:text-orange-300">Students will provide written answers that require manual grading by teachers</p>
+                  <div className="min-w-0">
+                    <h4 className="font-semibold text-sm sm:text-base text-orange-900 dark:text-orange-100">Text Answer Question</h4>
+                    <p className="text-xs sm:text-sm text-orange-700 dark:text-orange-300">Students will provide written answers that require manual grading by teachers</p>
                   </div>
                 </div>
-                <div className="text-xs text-orange-600 dark:text-orange-400">
+                <div className="text-[10px] sm:text-xs text-orange-600 dark:text-orange-400">
                   This question will appear in the manual grading queue for teachers
                 </div>
               </div>
             ) : question.question_type === 'math_expression' ? (
-              <div className="p-6 bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-900/10 dark:to-green-800/10 rounded-xl border border-green-200/50 dark:border-green-700/30">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-semibold text-green-700 dark:text-green-300">🧮</span>
+              <div className="p-3 sm:p-4 md:p-6 bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-900/10 dark:to-green-800/10 rounded-lg sm:rounded-xl border border-green-200/50 dark:border-green-700/30">
+                <div className="flex items-start sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs sm:text-sm font-semibold text-green-700 dark:text-green-300">🧮</span>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-green-900 dark:text-green-100">Math Expression Question</h4>
-                    <p className="text-sm text-green-700 dark:text-green-300">Students will input mathematical expressions using LaTeX notation</p>
+                  <div className="min-w-0">
+                    <h4 className="font-semibold text-sm sm:text-base text-green-900 dark:text-green-100">Math Expression Question</h4>
+                    <p className="text-xs sm:text-sm text-green-700 dark:text-green-300">Students will input mathematical expressions using LaTeX notation</p>
                   </div>
                 </div>
                 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   <div>
-                    <Label htmlFor={`math-expression-${qIndex}`} className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <Label htmlFor={`math-expression-${qIndex}`} className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                       Expected Answer (LaTeX)
                     </Label>
                     <Input
@@ -1937,16 +1938,16 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                       value={question.math_expression || ''}
                       onChange={(e) => updateMathExpression(qIndex, e.target.value)}
                       placeholder="e.g., \\frac{x^2 + 1}{x - 1}"
-                      className="mt-1 font-mono"
+                      className="mt-1 font-mono text-xs sm:text-sm"
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Enter the correct mathematical expression in LaTeX format
                     </p>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <Label htmlFor={`math-tolerance-${qIndex}`} className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <Label htmlFor={`math-tolerance-${qIndex}`} className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                         Tolerance (0.01 = 1%)
                       </Label>
                       <Input
@@ -1957,7 +1958,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                         max="1"
                         value={question.math_tolerance || 0.01}
                         onChange={(e) => updateMathTolerance(qIndex, parseFloat(e.target.value) || 0.01)}
-                        className="mt-1"
+                        className="mt-1 text-sm"
                       />
                     </div>
                     <div className="flex items-center space-x-2">
@@ -1968,14 +1969,14 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                         onChange={(e) => updateMathAllowDrawing(qIndex, e.target.checked)}
                         className="rounded border-gray-300 text-green-600 focus:ring-green-500"
                       />
-                      <Label htmlFor={`math-allow-drawing-${qIndex}`} className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <Label htmlFor={`math-allow-drawing-${qIndex}`} className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                         Allow Drawing
                       </Label>
                     </div>
                   </div>
                   
                   <div>
-                    <Label htmlFor={`math-hint-${qIndex}`} className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <Label htmlFor={`math-hint-${qIndex}`} className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                       Hint (Optional)
                     </Label>
                     <Textarea
@@ -1983,33 +1984,34 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                       value={question.math_hint || ''}
                       onChange={(e) => updateMathHint(qIndex, e.target.value)}
                       placeholder="e.g., Remember to simplify fractions to their lowest terms"
-                      className="mt-1"
+                      className="mt-1 text-xs sm:text-sm"
                       rows={2}
                     />
                   </div>
                 </div>
                 
-                <div className="text-xs text-green-600 dark:text-green-400 mt-3">
+                <div className="text-[10px] sm:text-xs text-green-600 dark:text-green-400 mt-3">
                   This question will be automatically graded based on mathematical equivalence
                 </div>
               </div>
             ) : (
               <>
                 {question.options.map((option, oIndex) => (
-                  <div key={option.id} className="flex items-center gap-3 p-4 bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 rounded-xl border border-gray-200/50 dark:border-gray-600/30 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-300">
-                    <div className="flex-1 text-gray-900 dark:text-white">
+                  <div key={option.id} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 rounded-lg sm:rounded-xl border border-gray-200/50 dark:border-gray-600/30 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-300">
+                    <div className="flex-1 text-gray-900 dark:text-white min-w-0">
                     <Input
                       value={option.option_text}
                       onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
                       placeholder={`Option ${oIndex + 1}`}
-                      className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500 placeholder:text-gray-500 dark:placeholder:text-gray-400 text-gray-900 dark:text-white hover:border-gray-300 dark:hover:border-gray-500 transition-colors"
+                      className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl px-3 py-2 sm:px-4 sm:py-3 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500 placeholder:text-gray-500 dark:placeholder:text-gray-400 text-gray-900 dark:text-white hover:border-gray-300 dark:hover:border-gray-500 transition-colors text-sm"
                     />
                     </div>
+                    <div className="flex items-center gap-2 self-stretch sm:self-auto">
                     <Button
                       variant={option.is_correct ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setCorrectOption(qIndex, option.id)}
-                      className={`h-9 px-4 rounded-xl transition-all duration-300 hover:scale-105 ${
+                      className={`h-8 sm:h-9 px-3 sm:px-4 rounded-lg sm:rounded-xl transition-all duration-300 text-xs sm:text-sm flex-1 sm:flex-initial ${
                         option.is_correct 
                           ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg' 
                           : 'border-green-300 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
@@ -2021,19 +2023,20 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                       variant="ghost" 
                       size="icon" 
                       onClick={() => removeOption(qIndex, oIndex)}
-                      className="h-9 w-9 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-xl transition-all duration-300 hover:scale-105"
+                      className="h-8 w-8 sm:h-9 sm:w-9 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-lg sm:rounded-xl transition-all duration-300 flex-shrink-0"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3 h-3 sm:w-4 sm:h-4" />
                     </Button>
+                    </div>
                   </div>
                 ))}
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={() => addOption(qIndex)}
-                  className="w-full h-10 border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-xl text-purple-600 dark:text-purple-400 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-900/10 dark:hover:text-purple-300 hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 group hover:scale-105"
+                  className="w-full h-9 sm:h-10 border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-lg sm:rounded-xl text-purple-600 dark:text-purple-400 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-900/10 dark:hover:text-purple-300 hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 group text-xs sm:text-sm"
                 >
-                  <Plus className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
+                  <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
                   Add Option
                 </Button>
               </>
@@ -2043,25 +2046,25 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
       ))}
       {/* Add Question Section */}
       {quiz.questions.length > 0 ? (
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
       <Button 
         onClick={addQuestion}
-            className="flex-1 h-12 border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-2xl text-purple-600 dark:text-purple-400 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-900/10 dark:hover:text-purple-300 hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 group hover:scale-105"
+            className="flex-1 h-10 sm:h-11 md:h-12 border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-xl sm:rounded-2xl text-purple-600 dark:text-purple-400 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-900/10 dark:hover:text-purple-300 hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 group text-xs sm:text-sm"
       >
-        <Plus className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
+        <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
             Add Question Manually
       </Button>
           <Dialog open={showPDFUploader} onOpenChange={setShowPDFUploader}>
             <DialogTrigger asChild>
               <Button 
                 variant="outline"
-                className="flex-1 h-12 border-2 border-dashed border-blue-300 dark:border-blue-600 rounded-2xl text-blue-600 dark:text-blue-400 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/10 dark:hover:text-blue-300 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300 group hover:scale-105"
+                className="flex-1 h-10 sm:h-11 md:h-12 border-2 border-dashed border-blue-300 dark:border-blue-600 rounded-xl sm:rounded-2xl text-blue-600 dark:text-blue-400 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/10 dark:hover:text-blue-300 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300 group text-xs sm:text-sm"
               >
-                <Upload className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
+                <Upload className="w-4 h-4 sm:w-5 sm:h-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
                 Import More from PDF
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+            <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-hidden">
               <PDFQuizUploader 
                 onQuizExtracted={handlePDFQuizExtracted}
                 onClose={() => setShowPDFUploader(false)}
@@ -6175,46 +6178,46 @@ const CourseBuilder = () => {
       {/* Premium Header Section */}
       <div className="relative border-b bg-card">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5"></div>
-        <div className="relative flex items-center justify-between p-6 w-full">
-          <div className="flex items-center gap-4">
+        <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 md:p-6 w-full gap-3 sm:gap-4">
+          <div className="flex items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigate('/dashboard/courses')}
-                                      className="h-10 w-10 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5"
+              className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 flex-shrink-0"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
             </Button>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-primary" />
+            <div className="flex items-start sm:items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
+                <BookOpen className="w-4 h-4 sm:w-6 sm:h-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-base sm:text-xl md:text-2xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent truncate" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
                   {courseData.title || 'New Course'}
                 </h1>
-                <div className="flex items-center gap-3 mt-2">
+                <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-2 flex-wrap">
                   <Badge variant={
                     courseData.status === 'Published' ? 'default' :
                     courseData.status === 'Under Review' ? 'outline' :
                     courseData.status === 'Rejected' ? 'destructive' :
                     'blue'
-                  } className="text-xs">
+                  } className="text-[10px] sm:text-xs">
                     {courseData.status || 'Draft'}
                   </Badge>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-xs sm:text-sm text-muted-foreground hidden sm:inline">
                     Last saved: 2 minutes ago
                   </span>
                 </div>
                 {currentUserRole === 'teacher' && courseData.status === 'Draft' && (
-                    <div className="flex items-center gap-2 mt-2 text-sm text-blue-800 bg-blue-100 border border-blue-300 rounded-lg p-3 shadow-sm">
-                        <Info className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                    <div className="flex items-center gap-2 mt-2 text-xs sm:text-sm text-blue-800 bg-blue-100 border border-blue-300 rounded-lg p-2 sm:p-3 shadow-sm">
+                        <Info className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 flex-shrink-0" />
                         <span className="font-medium">You must submit this course for admin review and approval before it can be published.</span>
                     </div>
                 )}
                 {currentUserRole === 'content_creator' && courseData.status === 'Draft' && (
-                    <div className="flex items-center gap-2 mt-2 text-sm text-green-800 bg-green-100 border border-green-300 rounded-lg p-3 shadow-sm">
-                        <Info className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    <div className="flex items-center gap-2 mt-2 text-xs sm:text-sm text-green-800 bg-green-100 border border-green-300 rounded-lg p-2 sm:p-3 shadow-sm">
+                        <Info className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 flex-shrink-0" />
                         <span className="font-medium">You can publish this course directly when ready, or save it as a draft to continue editing later.</span>
                     </div>
                 )}
@@ -6222,14 +6225,14 @@ const CourseBuilder = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap">
             <Button
               variant="outline"
               onClick={() => setIsPreviewOpen(true)}
-              className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white"
+              className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white text-xs sm:text-sm"
             >
-              <Eye className="w-4 h-4 mr-2" />
-              Preview
+              <Eye className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Preview</span>
             </Button>
 
             {/* Teacher Buttons */}
@@ -6240,17 +6243,18 @@ const CourseBuilder = () => {
                     <Button 
                       onClick={handleSaveDraftClick} 
                       disabled={isSaving}
-                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                      className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm"
                     >
-                      <Save className="w-4 h-4 mr-2" />
-                      {saveAction === 'draft' ? 'Saving...' : (courseData.id ? 'Update Draft' : 'Save Draft')}
+                      <Save className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                      <span className="hidden sm:inline">{saveAction === 'draft' ? 'Saving...' : (courseData.id ? 'Update Draft' : 'Save Draft')}</span>
                     </Button>
                     <Button 
                       onClick={handleSubmitForReview} 
-                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-white" 
+                      className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-white text-xs sm:text-sm" 
                       disabled={isSaving || !isFormValid}
                     >
-                      {saveAction === 'review' ? 'Submitting...' : 'Submit for Review'}
+                      <span className="hidden sm:inline">{saveAction === 'review' ? 'Submitting...' : 'Submit for Review'}</span>
+                      <span className="sm:hidden">{saveAction === 'review' ? 'Submitting...' : 'Submit'}</span>
                     </Button>
                   </>
                 )}
@@ -6258,10 +6262,11 @@ const CourseBuilder = () => {
                    <Button 
                      onClick={handleSaveDraftClick} 
                      disabled={isSaving}
-                     className="h-9 px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                     className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm"
                    >
-                      <Save className="w-4 h-4 mr-2" />
-                      {saveAction === 'draft' ? 'Creating...' : 'Create New Draft'}
+                      <Save className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                      <span className="hidden sm:inline">{saveAction === 'draft' ? 'Creating...' : 'Create New Draft'}</span>
+                      <span className="sm:hidden">{saveAction === 'draft' ? 'Creating...' : 'New Draft'}</span>
                     </Button>
                 )}
               </>
@@ -6274,10 +6279,11 @@ const CourseBuilder = () => {
                    <Button 
                      onClick={handleSaveDraftClick} 
                      disabled={isSaving}
-                     className="h-9 px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                     className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm"
                    >
-                    <Save className="w-4 h-4 mr-2" />
-                    {saveAction === 'draft' ? 'Saving...' : (courseData.id ? 'Update Draft' : 'Save Draft')}
+                    <Save className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">{saveAction === 'draft' ? 'Saving...' : (courseData.id ? 'Update Draft' : 'Save Draft')}</span>
+                    <span className="sm:hidden">{saveAction === 'draft' ? 'Saving...' : 'Save'}</span>
                   </Button>
                 )}
                 {courseData.status === 'Published' ? (
@@ -6286,7 +6292,7 @@ const CourseBuilder = () => {
                     {courseData.authorId === user?.id && (
                       <Button 
                         onClick={handleUnpublishClick} 
-                        className="h-9 px-4 rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
+                        className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm" 
                         disabled={isSaving}
                       >
                         {saveAction === 'unpublish' ? 'Unpublishing...' : 'Unpublish'}
@@ -6297,7 +6303,7 @@ const CourseBuilder = () => {
                   (courseData.status === 'Draft' || courseData.status === 'Rejected') && (
                     <Button 
                       onClick={handlePublishClick} 
-                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
+                      className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm" 
                       disabled={isSaving || !isFormValid}
                     >
                       {saveAction === 'publish' ? 'Publishing...' : 'Publish'}
@@ -6314,17 +6320,18 @@ const CourseBuilder = () => {
                    <Button 
                      onClick={handleSaveDraftClick} 
                      disabled={isSaving}
-                     className="h-9 px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                     className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm"
                    >
-                    <Save className="w-4 h-4 mr-2" />
-                    {saveAction === 'draft' ? 'Saving...' : (courseData.id ? 'Update Draft' : 'Save Draft')}
+                    <Save className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">{saveAction === 'draft' ? 'Saving...' : (courseData.id ? 'Update Draft' : 'Save Draft')}</span>
+                    <span className="sm:hidden">{saveAction === 'draft' ? 'Saving...' : 'Save'}</span>
                   </Button>
                 )}
                 {courseData.status === 'Published' ? (
                   <>
                     <Button 
                       onClick={handleUnpublishClick} 
-                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
+                      className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm" 
                       disabled={isSaving}
                     >
                       {saveAction === 'unpublish' ? 'Unpublishing...' : 'Unpublish'}
@@ -6334,7 +6341,7 @@ const CourseBuilder = () => {
                   (courseData.status === 'Draft' || courseData.status === 'Rejected') && (
                     <Button 
                       onClick={handlePublishClick} 
-                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
+                      className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm" 
                       disabled={isSaving || !isFormValid}
                     >
                       {saveAction === 'publish' ? 'Publishing...' : 'Publish'}
@@ -6347,16 +6354,17 @@ const CourseBuilder = () => {
                       onClick={() => setIsRejectionDialogOpen(true)} 
                       variant="destructive" 
                       disabled={isSaving}
-                      className="h-9 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                      className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm"
                     >
                         {saveAction === 'reject' ? 'Rejecting...' : 'Reject'}
                     </Button>
                     <Button 
                       onClick={handleApproveSubmission} 
-                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
+                      className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm" 
                       disabled={isSaving}
                     >
-                      {saveAction === 'approve' ? 'Approving...' : 'Approve & Publish'}
+                      <span className="hidden sm:inline">{saveAction === 'approve' ? 'Approving...' : 'Approve & Publish'}</span>
+                      <span className="sm:hidden">{saveAction === 'approve' ? 'Approving...' : 'Approve'}</span>
                     </Button>
                   </>
                 )}
@@ -6368,7 +6376,7 @@ const CourseBuilder = () => {
                   variant="destructive" 
                   onClick={() => setIsDeleteDialogOpen(true)} 
                   disabled={isSaving}
-                  className="h-9 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                  className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm"
                 >
                     Delete
                 </Button>
@@ -6406,31 +6414,31 @@ const CourseBuilder = () => {
         )}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
           {/* Premium Tabs Section */}
-          <div className="relative border-b bg-card">
+          <div className="relative border-b bg-card overflow-x-auto">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/3 via-transparent to-primary/3"></div>
-            <div className="relative">
-              <TabsList className="w-full justify-start rounded-none h-14 bg-transparent p-0 border-none">
+            <div className="relative min-w-max">
+              <TabsList className="w-full justify-start rounded-none h-12 sm:h-14 bg-transparent p-0 border-none">
                 <TabsTrigger
                   value="details"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-primary/5 px-6 h-14 text-sm font-medium transition-all duration-300 hover:bg-primary/5 hover:border-primary/50 data-[state=active]:text-primary data-[state=active]:font-semibold"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-primary/5 px-3 sm:px-6 h-12 sm:h-14 text-xs sm:text-sm font-medium transition-all duration-300 hover:bg-primary/5 hover:border-primary/50 data-[state=active]:text-primary data-[state=active]:font-semibold whitespace-nowrap"
                 >
                   Course Details
                 </TabsTrigger>
                 <TabsTrigger
                   value="curriculum"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-primary/5 px-6 h-14 text-sm font-medium transition-all duration-300 hover:bg-primary/5 hover:border-primary/50 data-[state=active]:text-primary data-[state=active]:font-semibold"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-primary/5 px-3 sm:px-6 h-12 sm:h-14 text-xs sm:text-sm font-medium transition-all duration-300 hover:bg-primary/5 hover:border-primary/50 data-[state=active]:text-primary data-[state=active]:font-semibold whitespace-nowrap"
                 >
                   Curriculum
                 </TabsTrigger>
                 <TabsTrigger
                   value="landing"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-primary/5 px-6 h-14 text-sm font-medium transition-all duration-300 hover:bg-primary/5 hover:border-primary/50 data-[state=active]:text-primary data-[state=active]:font-semibold"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-primary/5 px-3 sm:px-6 h-12 sm:h-14 text-xs sm:text-sm font-medium transition-all duration-300 hover:bg-primary/5 hover:border-primary/50 data-[state=active]:text-primary data-[state=active]:font-semibold whitespace-nowrap"
                 >
                   Landing Page
                 </TabsTrigger>
                 <TabsTrigger
                   value="access"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-primary/5 px-6 h-14 text-sm font-medium transition-all duration-300 hover:bg-primary/5 hover:border-primary/50 data-[state=active]:text-primary data-[state=active]:font-semibold"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-primary/5 px-3 sm:px-6 h-12 sm:h-14 text-xs sm:text-sm font-medium transition-all duration-300 hover:bg-primary/5 hover:border-primary/50 data-[state=active]:text-primary data-[state=active]:font-semibold whitespace-nowrap"
                 >
                   Access
                 </TabsTrigger>
@@ -6438,29 +6446,29 @@ const CourseBuilder = () => {
             </div>
           </div>
 
-          <div className="p-6">
-            <TabsContent value="details" className="space-y-8">
+          <div className="p-3 sm:p-4 md:p-6">
+            <TabsContent value="details" className="space-y-4 sm:space-y-6 md:space-y-8">
               {/* Basic Information Card */}
               <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
-                <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                      <BookOpen className="w-6 h-6 text-primary-700 dark:text-primary-300" />
+                <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 p-4 sm:p-5 md:pb-6">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                      <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-primary-700 dark:text-primary-300" />
                     </div>
-                  <div>
-                      <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
+                  <div className="min-w-0">
+                      <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
                         Basic Information
                       </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
                         Set the foundation for your course with essential details
                       </p>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="p-8 space-y-6">
+                <CardContent className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
                   {/* Course Title */}
-                  <div className="space-y-3">
-                    <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                  <div className="space-y-2 sm:space-y-3">
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
                       Course Title
                       <span className="text-red-500 ml-1">*</span>
                     </label>
@@ -6470,7 +6478,7 @@ const CourseBuilder = () => {
                       onBlur={() => handleBlur('title')}
                       placeholder="Enter an engaging course title"
                       className={cn(
-                        "h-12 text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg",
+                        "h-10 sm:h-11 md:h-12 text-sm sm:text-base md:text-lg font-medium border-2 rounded-xl sm:rounded-2xl transition-all duration-300 focus:shadow-lg",
                         "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700",
                         "focus:border-primary focus:ring-4 focus:ring-primary/10",
                         "placeholder:text-gray-400 dark:placeholder:text-gray-500",
@@ -6479,7 +6487,7 @@ const CourseBuilder = () => {
                       )}
                     />
                     {validationErrors.title && (touchedFields.title || courseData.id) && (
-                      <div className="flex items-center gap-2 text-red-500 text-sm">
+                      <div className="flex items-center gap-2 text-red-500 text-xs sm:text-sm">
                         <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
                         {validationErrors.title}
                       </div>
@@ -6487,8 +6495,8 @@ const CourseBuilder = () => {
                   </div>
                   
                   {/* Course Subtitle */}
-                  <div className="space-y-3">
-                    <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                  <div className="space-y-2 sm:space-y-3">
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
                       Course Subtitle
                       <span className="text-red-500 ml-1">*</span>
                     </label>
@@ -6498,7 +6506,7 @@ const CourseBuilder = () => {
                       onBlur={() => handleBlur('subtitle')}
                       placeholder="Add a compelling subtitle to hook learners"
                       className={cn(
-                        "h-11 text-base font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg",
+                        "h-10 sm:h-11 text-sm sm:text-base font-medium border-2 rounded-xl sm:rounded-2xl transition-all duration-300 focus:shadow-lg",
                         "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700",
                         "focus:border-primary focus:ring-4 focus:ring-primary/10",
                         "placeholder:text-gray-400 dark:placeholder:text-gray-500",
@@ -6507,7 +6515,7 @@ const CourseBuilder = () => {
                       )}
                     />
                     {validationErrors.subtitle && (touchedFields.subtitle || courseData.id) && (
-                      <div className="flex items-center gap-2 text-red-500 text-sm">
+                      <div className="flex items-center gap-2 text-red-500 text-xs sm:text-sm">
                         <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
                         {validationErrors.subtitle}
                       </div>
@@ -6515,8 +6523,8 @@ const CourseBuilder = () => {
                   </div>
                   
                   {/* Course Description */}
-                  <div className="space-y-3">
-                    <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                  <div className="space-y-2 sm:space-y-3">
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
                       Course Description
                       <span className="text-red-500 ml-1">*</span>
                     </label>
@@ -6527,7 +6535,7 @@ const CourseBuilder = () => {
                       placeholder="Describe what students will learn and achieve in this course..."
                       rows={5}
                       className={cn(
-                        "text-base font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg resize-none",
+                        "text-sm sm:text-base font-medium border-2 rounded-xl sm:rounded-2xl transition-all duration-300 focus:shadow-lg resize-none",
                         "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700",
                         "focus:border-primary focus:ring-4 focus:ring-primary/10",
                         "placeholder:text-gray-400 dark:placeholder:text-gray-500",
@@ -7046,22 +7054,22 @@ const CourseBuilder = () => {
 
               {/* AI Thumbnail Generator */}
               <Card className="border-2 border-dashed border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 dark:from-primary/10 dark:via-transparent dark:to-primary/10">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center">
-                      <Sparkles className="w-6 h-6 text-primary" />
+                <CardHeader className="p-4 sm:p-5 md:p-6">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/20 to-primary/30 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
+                      <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-primary" />
                     </div>
-                    <div>
-                      <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+                    <div className="min-w-0">
+                      <CardTitle className="text-base sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
                         AI Thumbnail Generator
                       </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
                         Let AI create a professional thumbnail based on your course content
                       </p>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="p-8">
+                <CardContent className="p-4 sm:p-6 md:p-8">
                   <AIThumbnailGenerator
                     courseId={courseData.id || ''}
                     courseTitle={courseData.title}
@@ -7077,32 +7085,32 @@ const CourseBuilder = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="curriculum" className="space-y-8">
+            <TabsContent value="curriculum" className="space-y-4 sm:space-y-6 md:space-y-8">
               {/* Course Curriculum Card */}
               <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
-                <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                      <BookOpen className="w-6 h-6 text-primary" />
+                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 p-4 sm:p-5 md:pb-6 gap-3 sm:gap-4">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
+                      <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-primary" />
                     </div>
-                    <div>
-                      <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
+                    <div className="min-w-0">
+                      <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
                         Course Curriculum
                       </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
                         Structure your course with sections and lessons
                       </p>
                     </div>
                   </div>
                   <Button 
                     onClick={addSection}
-                    className="h-12 px-8 rounded-2xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105"
+                    className="h-9 sm:h-10 md:h-12 px-4 sm:px-6 md:px-8 rounded-xl sm:rounded-2xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm w-full sm:w-auto"
                   >
-                    <Plus className="w-5 h-5 mr-2" />
+                    <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                     Add Section
                   </Button>
                 </CardHeader>
-                <CardContent className="p-8 space-y-6">
+                <CardContent className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
                   <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}
@@ -7122,12 +7130,12 @@ const CourseBuilder = () => {
                         <SortableItem key={section.id} id={section.id} type="section">
                           {(dragHandleProps) => (
                             <Card className={`bg-gradient-to-br from-card to-card/50 dark:bg-card border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 ${activeId === section.id ? 'opacity-50 scale-95' : ''}`}>
-                              <CardHeader className="flex flex-row items-start justify-between p-6 gap-4 bg-gradient-to-r from-card/50 to-card/30 dark:bg-card/50 border-b border-gray-200/50 dark:border-gray-700/30">
-                                <div className="flex items-start gap-3 flex-1">
-                                  <div {...dragHandleProps} className="cursor-move pt-2.5 opacity-60 hover:opacity-100 transition-opacity hover:scale-110">
-                                    <GripVertical className="text-primary w-6 h-6" />
+                              <CardHeader className="flex flex-col sm:flex-row items-start justify-between p-3 sm:p-4 md:p-6 gap-3 sm:gap-4 bg-gradient-to-r from-card/50 to-card/30 dark:bg-card/50 border-b border-gray-200/50 dark:border-gray-700/30">
+                                <div className="flex items-start gap-2 sm:gap-3 flex-1 w-full">
+                                  <div {...dragHandleProps} className="cursor-move pt-2 sm:pt-2.5 opacity-60 hover:opacity-100 transition-opacity hover:scale-110 flex-shrink-0">
+                                    <GripVertical className="text-primary w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
                                   </div>
-                                  <div className="flex-1 space-y-3">
+                                  <div className="flex-1 space-y-2 sm:space-y-3 min-w-0">
                                     <Input
                                       value={section.title}
                                       onChange={(e) => {
@@ -7135,7 +7143,7 @@ const CourseBuilder = () => {
                                         newSections[sectionIndex].title = e.target.value;
                                         setCourseData(prev => ({ ...prev, sections: newSections }));
                                       }}
-                                      className="font-semibold text-xl border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60 text-gray-900 dark:text-white"
+                                      className="font-semibold text-base sm:text-lg md:text-xl border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60 text-gray-900 dark:text-white"
                                       placeholder="Section Title"
                                     />
                                     <Textarea
@@ -7147,17 +7155,17 @@ const CourseBuilder = () => {
                                       }}
                                       placeholder="Section overview or summary (optional)"
                                       rows={2}
-                                      className="text-sm resize-none border-0 bg-white/50 dark:bg-gray-800/50 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-primary/20 text-gray-700 dark:text-gray-300"
+                                      className="text-xs sm:text-sm resize-none border-0 bg-white/50 dark:bg-gray-800/50 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 focus-visible:ring-2 focus-visible:ring-primary/20 text-gray-700 dark:text-gray-300"
                                     />
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
                                   <Button 
                                     onClick={() => addLesson(section.id)} 
                                     variant="outline"
-                                    className="h-10 px-6 rounded-xl bg-white/80 dark:bg-gray-800/80 border-primary/20 text-primary hover:bg-primary hover:text-white transition-all duration-300 hover:scale-105 shadow-md"
+                                    className="h-8 sm:h-9 md:h-10 px-3 sm:px-4 md:px-6 rounded-lg sm:rounded-xl bg-white/80 dark:bg-gray-800/80 border-primary/20 text-primary hover:bg-primary hover:text-white transition-all duration-300 text-xs sm:text-sm flex-1 sm:flex-initial"
                                   >
-                                    <Plus className="w-4 h-4 mr-2" />
+                                    <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                                     Add Lesson
                                   </Button>
                                   {courseData.sections.length > 1 && (
@@ -7165,23 +7173,23 @@ const CourseBuilder = () => {
                                       variant="ghost"
                                       size="icon"
                                       onClick={() => removeSection(section.id)}
-                                      className="h-10 w-10 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-all duration-300 hover:scale-105"
+                                      className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 rounded-lg sm:rounded-xl hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-all duration-300 flex-shrink-0"
                                     >
-                                      <X className="w-5 h-5" />
+                                      <X className="w-4 h-4 sm:w-5 sm:h-5" />
                                     </Button>
                                   )}
                                   <Button 
                                     variant="ghost" 
                                     size="icon" 
                                     onClick={() => toggleSectionCollapse(section.id)}
-                                    className="h-10 w-10 rounded-xl hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:scale-105"
+                                    className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 rounded-lg sm:rounded-xl hover:bg-primary/10 hover:text-primary transition-all duration-300 flex-shrink-0"
                                   >
-                                    {section.isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+                                    {section.isCollapsed ? <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5" /> : <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5" />}
                                   </Button>
                                 </div>
                               </CardHeader>
                               {!section.isCollapsed && (
-                                <CardContent className="space-y-4 pl-16 pr-6 pb-6">
+                                <CardContent className="space-y-4 px-3 sm:px-4 md:px-6 pb-4 sm:pb-6">
                                   <SortableContext items={section.lessons.map(l => l.id)} strategy={verticalListSortingStrategy}>
                                     {section.lessons.map((lesson) => (
                                       <SortableItem key={lesson.id} id={lesson.id} type="lesson" sectionId={section.id}>

@@ -10,7 +10,7 @@ import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
-import { initializeUserProgress, getCurrentTopicProgress, updateCurrentProgress } from '@/utils/progressTracker';
+import { initializeUserProgress, getCurrentTopicProgress, updateCurrentProgress, updateCurrentTopic } from '@/utils/progressTracker';
 import { getAuthHeadersWithAccept, getAuthHeaders } from '@/utils/authUtils';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -677,7 +677,7 @@ export default function RoleplaySimulation() {
   const { playAudio, stopAudio } = useAudioPlayer();
   
   const [allScenarios, setAllScenarios] = useState<Scenario[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentScenarioIndex, setCurrentScenarioIndex] = useState(0); // Changed from currentPage to currentScenarioIndex
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
@@ -696,8 +696,6 @@ export default function RoleplaySimulation() {
   const [isCompleted, setIsCompleted] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const conversationContainerRef = useRef<HTMLDivElement>(null);
-
-  const itemsPerPage = 6;
 
   // Helper function to safely display values
   const safeDisplay = (value: any, fallback: string = ''): string => {
@@ -754,14 +752,13 @@ export default function RoleplaySimulation() {
             const { current_topic_id } = currentProgress.data;
             
             if (current_topic_id !== undefined && current_topic_id > 0) {
-              // For RoleplaySimulation, topic ID represents the page number directly
-              const totalPages = Math.ceil(allScenarios.length / itemsPerPage) || 1;
-              const resumePage = Math.min(Math.max(1, current_topic_id), totalPages);
-              console.log(`Resuming Stage 2 RoleplaySimulation from topic ${current_topic_id} (page ${resumePage})`);
-              setCurrentPage(resumePage);
+              // For RoleplaySimulation, topic ID represents the scenario index (0-based)
+              const resumeIndex = Math.min(Math.max(0, current_topic_id), allScenarios.length - 1);
+              console.log(`Resuming Stage 2 RoleplaySimulation from topic ${current_topic_id} (scenario index ${resumeIndex})`);
+              setCurrentScenarioIndex(resumeIndex);
             } else {
               console.log('No resume data for Stage 2 RoleplaySimulation, starting from beginning');
-              setCurrentPage(1);
+              setCurrentScenarioIndex(0);
             }
           } else {
             console.log('Could not get current progress, initializing new progress...');
@@ -779,14 +776,14 @@ export default function RoleplaySimulation() {
             }
             
             // Start from beginning
-            setCurrentPage(1);
+            setCurrentScenarioIndex(0);
           }
           
           setResumeDataLoaded(true);
         } catch (error) {
           console.error('Error loading progress:', error);
           // Start from beginning if error
-          setCurrentPage(1);
+          setCurrentScenarioIndex(0);
           setResumeDataLoaded(true);
         }
       }
@@ -799,16 +796,16 @@ export default function RoleplaySimulation() {
   }, [user?.id, progressInitialized, allScenarios.length, resumeDataLoaded]);
 
   // Save current progress to API
-  const saveProgress = async (pageNumber: number) => {
+  const saveProgress = async (scenarioIndex: number) => {
     if (user?.id && allScenarios.length > 0) {
       try {
-        const totalPages = Math.ceil(allScenarios.length / itemsPerPage);
-        await updateCurrentProgress(
+        await updateCurrentTopic(
           user.id,
           2, // Stage 2
-          3  // Exercise 3 (RoleplaySimulation)
+          3, // Exercise 3 (RoleplaySimulation)
+          scenarioIndex // Pass scenario index as topic_id
         );
-        console.log(`Progress saved: Stage 2, Exercise 3, Page ${pageNumber}/${totalPages}`);
+        console.log(`Progress saved: Stage 2, Exercise 3, Scenario ${scenarioIndex + 1}/${allScenarios.length}`);
       } catch (error) {
         console.warn('Failed to save progress:', error);
         // Don't show error to user, just log it
@@ -835,7 +832,7 @@ export default function RoleplaySimulation() {
 
   // Restart the exercise (redo functionality)
   const handleRedo = () => {
-    setCurrentPage(1);
+    setCurrentScenarioIndex(0);
     setSelectedScenario(null);
     setCurrentStep(0);
     setUserInput('');
@@ -851,30 +848,35 @@ export default function RoleplaySimulation() {
     resetRecording();
     // Save progress for restart
     if (user?.id) {
-      saveProgress(1);
+      saveProgress(0);
     }
   };
 
-  // Calculate pagination values
-  const totalPages = Math.ceil(allScenarios.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentScenarios = allScenarios.slice(startIndex, endIndex);
+  // Get current scenario
+  const currentScenario = allScenarios[currentScenarioIndex];
+  const totalScenarios = allScenarios.length;
+  const scenarioNumber = currentScenarioIndex + 1; // 1-based for display
 
-  const handlePageChange = (newPage: number) => {
-    if (newPage < 1 || newPage > totalPages || newPage === currentPage) {
-      return;
+  const handleNavigateScenario = (direction: 'prev' | 'next') => {
+    let newIndex = currentScenarioIndex;
+    
+    if (direction === 'prev' && currentScenarioIndex > 0) {
+      newIndex = currentScenarioIndex - 1;
+    } else if (direction === 'next' && currentScenarioIndex < allScenarios.length - 1) {
+      newIndex = currentScenarioIndex + 1;
+    } else {
+      return; // No change
     }
     
-    // Check if user is going to the last page and mark as completed
-    if (newPage === totalPages) {
+    setCurrentScenarioIndex(newIndex);
+    saveProgress(newIndex); // Save progress when navigating scenarios
+    
+    // Check if user has reached the last scenario and mark as completed
+    if (newIndex === allScenarios.length - 1 && !isCompleted) {
       setIsCompleted(true);
       setShowCompletionDialog(true);
       markExerciseCompleted();
     }
-    
-    setCurrentPage(newPage);
-    saveProgress(newPage); // Save progress when navigating pages
   };
 
   const handleRetry = () => {
@@ -894,7 +896,7 @@ export default function RoleplaySimulation() {
       try {
         const fetchedScenarios = await fetchRoleplayScenarios(user.id);
         setAllScenarios(fetchedScenarios);
-        setCurrentPage(1); // Reset to first page
+        setCurrentScenarioIndex(0); // Reset to first scenario
       } catch (err: any) {
         console.error('Failed to load scenarios from API, using fallback:', err);
         // Use fallback scenarios if API fails
@@ -911,12 +913,15 @@ export default function RoleplaySimulation() {
   const handleStartScenario = async (scenario: Scenario) => {
     setLoadingScenario(true);
     
-    // Check if user is starting a scenario on the last page and hasn't completed yet
-    if (currentPage === totalPages && !isCompleted) {
+    // Check if user is starting the last scenario and hasn't completed yet
+    if (currentScenarioIndex === allScenarios.length - 1 && !isCompleted) {
       setIsCompleted(true);
       setShowCompletionDialog(true);
       markExerciseCompleted();
     }
+    
+    // Save progress when starting a scenario
+    saveProgress(currentScenarioIndex);
     
     try {
       // First, fetch detailed scenario data from API
@@ -1351,105 +1356,123 @@ export default function RoleplaySimulation() {
         <div className="flex-1 px-4 pb-4">
           <div className="max-w-md mx-auto">
             <h2 className="text-xl sm:text-2xl font-bold text-center mb-2">Choose a Scenario</h2>
-            <p className="text-center text-muted-foreground mb-6 sm:mb-8">
+            <p className="text-center text-muted-foreground mb-2">
               Practice English through realistic conversations
             </p>
+            
+            {/* Progress Indicator */}
+            {allScenarios.length > 0 && (
+              <div className="text-center mb-6 sm:mb-8">
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 text-base px-4 py-1.5">
+                  Scenario {scenarioNumber} of {totalScenarios}
+                </Badge>
+              </div>
+            )}
 
-            {/* Scenario Cards */}
-            <div className="space-y-4 px-2 sm:px-6 lg:px-8">
-              {currentScenarios.map((scenario, index) => {
-                const IconComponent = getIconComponent(scenario.icon_type, scenario.scenario_type);
-                return (
-                  <Card
-                    key={scenario.id}
-                    className="cursor-pointer bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
-                  >
-                    <div className="p-6">
-                      <div className="w-12 h-12 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center mb-4 shadow-lg border border-primary/30 dark:border-primary/40">
-                        <IconComponent className="h-6 w-6 text-primary" />
-                      </div>
-                      <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
-                        {scenario.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mb-2" style={{ fontFamily: 'Noto Nastaliq Urdu, Arial, sans-serif' }}>
-                        {scenario.title_urdu || scenario.title}
-                      </p>
-                      <p className="text-sm text-foreground mb-3 line-clamp-3">
-                        {scenario.description}
-                      </p>
-                      <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: 'Noto Nastaliq Urdu, Arial, sans-serif' }}>
-                        {scenario.description_urdu || scenario.description}
-                      </p>
-                      
-                      {/* Keywords */}
-                      <div className="bg-gradient-to-r from-primary/10 via-primary/20 to-primary/30 dark:from-primary/20 dark:via-primary/30 dark:to-primary/40 border border-primary/30 dark:border-primary/40 rounded-2xl p-4 mb-4 shadow-md">
-                        <p className="text-sm font-medium text-primary dark:text-primary/90 mb-2">
-                          Keywords to Practice:
-                        </p>
-                        <p className="text-primary dark:text-primary/80 font-medium">
-                          {scenario.keywords && scenario.keywords.length > 0 
-                            ? scenario.keywords.join(', ')
-                            : 'Practice general conversation skills'
-                          }
-                        </p>
-                      </div>
-
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-2">
-                          <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
-                            {scenario.difficulty || 'Beginner'}
-                          </Badge>
-                          <Badge variant="outline" className="border-primary/30 text-primary/70">
-                            {scenario.duration || '5-10 min'}
+            {/* Current Scenario Card */}
+            {currentScenario && (
+              <div className="space-y-4 px-2 sm:px-6 lg:px-8">
+                {(() => {
+                  const IconComponent = getIconComponent(currentScenario.icon_type, currentScenario.scenario_type);
+                  return (
+                    <Card
+                      key={currentScenario.id}
+                      className="cursor-pointer bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
+                    >
+                      <div className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center shadow-lg border border-primary/30 dark:border-primary/40">
+                            <IconComponent className="h-6 w-6 text-primary" />
+                          </div>
+                          <Badge variant="outline" className="border-primary/30 text-primary/70 font-semibold">
+                            {scenarioNumber}/{totalScenarios}
                           </Badge>
                         </div>
+                        <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
+                          {currentScenario.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mb-2" style={{ fontFamily: 'Noto Nastaliq Urdu, Arial, sans-serif' }}>
+                          {currentScenario.title_urdu || currentScenario.title}
+                        </p>
+                        <p className="text-sm text-foreground mb-3 line-clamp-3">
+                          {currentScenario.description}
+                        </p>
+                        <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: 'Noto Nastaliq Urdu, Arial, sans-serif' }}>
+                          {currentScenario.description_urdu || currentScenario.description}
+                        </p>
+                        
+                        {/* Keywords */}
+                        <div className="bg-gradient-to-r from-primary/10 via-primary/20 to-primary/30 dark:from-primary/20 dark:via-primary/30 dark:to-primary/40 border border-primary/30 dark:border-primary/40 rounded-2xl p-4 mb-4 shadow-md">
+                          <p className="text-sm font-medium text-primary dark:text-primary/90 mb-2">
+                            Keywords to Practice:
+                          </p>
+                          <p className="text-primary dark:text-primary/80 font-medium">
+                            {currentScenario.keywords && currentScenario.keywords.length > 0 
+                              ? currentScenario.keywords.join(', ')
+                              : 'Practice general conversation skills'
+                            }
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center space-x-2">
+                            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
+                              {currentScenario.difficulty || 'Beginner'}
+                            </Badge>
+                            <Badge variant="outline" className="border-primary/30 text-primary/70">
+                              {currentScenario.duration || '5-10 min'}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        {/* Start Button */}
+                        <Button 
+                          onClick={() => handleStartScenario(currentScenario)}
+                          disabled={loadingScenario}
+                          className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 rounded-2xl border-0"
+                        >
+                          {loadingScenario ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                              Loading...
+                            </>
+                          ) : (
+                            <>
+                              <Play className="w-4 h-4 mr-2" />
+                              Start Conversation
+                            </>
+                          )}
+                        </Button>
                       </div>
+                    </Card>
+                  );
+                })()}
+              </div>
+            )}
 
-                      {/* Start Button */}
-                      <Button 
-                        onClick={() => handleStartScenario(scenario)}
-                        disabled={loadingScenario}
-                        className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 rounded-2xl border-0"
-                      >
-                        {loadingScenario ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                            Loading...
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-4 h-4 mr-2" />
-                            Start Conversation
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center mt-8 space-x-2">
+            {/* Navigation Controls */}
+            {totalScenarios > 1 && (
+              <div className="flex justify-between items-center mt-8 px-2 sm:px-6 lg:px-8">
                 <Button
                   variant="outline"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="px-3 py-2 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
+                  onClick={() => handleNavigateScenario('prev')}
+                  disabled={currentScenarioIndex === 0}
+                  className="px-4 py-2 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-4 w-4 mr-2" />
+                  Previous
                 </Button>
-                <span className="text-sm text-muted-foreground px-4">
-                  Page {currentPage} of {totalPages}
+                <span className="text-sm text-muted-foreground font-medium">
+                  {scenarioNumber} / {totalScenarios}
                 </span>
                 <Button
                   variant="outline"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-2 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
+                  onClick={() => handleNavigateScenario('next')}
+                  disabled={currentScenarioIndex === totalScenarios - 1}
+                  className="px-4 py-2 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
             )}
@@ -1490,7 +1513,7 @@ export default function RoleplaySimulation() {
 
             {!loading && !error && allScenarios.length > 0 && (
               <div className="text-center mt-6 text-sm text-muted-foreground">
-                Showing {currentScenarios.length} of {allScenarios.length} total scenarios
+                {totalScenarios} total {totalScenarios === 1 ? 'scenario' : 'scenarios'} available
               </div>
             )}
           </div>
@@ -1865,10 +1888,13 @@ export default function RoleplaySimulation() {
             <div className="p-6">
               <div className="text-center space-y-4">
                 <p className="text-lg text-gray-700 dark:text-gray-300 font-medium">
-                  🎉 You've explored all {allScenarios.length} roleplay scenarios!
+                  🎉 You've reached scenario {scenarioNumber} of {totalScenarios}!
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Great job on practicing real conversations. You can restart to explore more scenarios or continue to other exercises.
+                  {currentScenarioIndex === totalScenarios - 1 
+                    ? "You've explored all roleplay scenarios! Great job on practicing real conversations." 
+                    : "Great progress! Continue exploring more scenarios or restart to practice again."
+                  }
                 </p>
                 
                 <div className="flex flex-col sm:flex-row gap-3 mt-6">

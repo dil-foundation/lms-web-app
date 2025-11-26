@@ -221,20 +221,23 @@ export const AIThumbnailGenerator: React.FC<AIThumbnailGeneratorProps> = ({
         <div className="space-y-2">
           <Label htmlFor="style-select">Thumbnail Style</Label>
           <Select value={selectedStyle} onValueChange={(value: any) => setSelectedStyle(value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a style" />
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a style">
+                <span className="capitalize">{selectedStyle}</span>
+              </SelectValue>
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
               {Object.entries(styleDescriptions).map(([key, description]) => (
-                <SelectItem key={key} value={key}>
-                  <div className="flex flex-col">
-                    <span className="capitalize font-medium">{key}</span>
-                    <span className="text-xs text-muted-foreground">{description}</span>
+                <SelectItem key={key} value={key} className="cursor-pointer">
+                  <div className="flex flex-col gap-0.5 py-1 min-w-0">
+                    <span className="capitalize font-medium text-sm">{key}</span>
+                    <span className="text-xs text-muted-foreground break-words whitespace-normal leading-tight">{description}</span>
                   </div>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          <p className="text-xs text-muted-foreground">{styleDescriptions[selectedStyle]}</p>
         </div>
 
         {/* Detected Course Information */}

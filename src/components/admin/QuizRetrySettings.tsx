@@ -282,17 +282,18 @@ export const QuizRetrySettings: React.FC<QuizRetrySettingsProps> = ({
         )}
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-between pt-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 pt-4">
           <Button
             variant="outline"
             onClick={resetToDefaults}
             disabled={saving}
+            className="w-full sm:w-auto"
           >
             Reset to Defaults
           </Button>
           
           {!quizExists && (
-            <div className="text-sm text-muted-foreground">
+            <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
               Save the quiz first to enable retry settings
             </div>
           )}
@@ -300,7 +301,7 @@ export const QuizRetrySettings: React.FC<QuizRetrySettingsProps> = ({
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="min-w-[120px]"
+              className="min-w-[120px] w-full sm:w-auto"
             >
               {saving ? (
                 <>
