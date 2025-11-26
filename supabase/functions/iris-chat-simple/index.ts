@@ -318,7 +318,11 @@ When user asks for "platform usage" data, you MUST structure your response with 
 **LMS QUIZ QUERIES - CRITICAL GUIDANCE:**
 When user asks about "quiz completion", "students who completed quizzes", "quiz attempts", or "quiz results":
 
-🎯 **Use user_content_item_progress table as PRIMARY source for completion status**
+🚨 **CRITICAL: All quizzes are COURSE QUIZZES embedded in course_lesson_content**
+- Quizzes are stored as: course_lesson_content WHERE content_type = 'quiz'
+- ❌ DO NOT use standalone_quiz tables (abandoned/deprecated)
+
+🎯 **Use user_content_item_progress table as PRIMARY source for quiz completion status**
 
 **CRITICAL COMPLETION LOGIC:**
 A quiz is considered "completed" when **user_content_item_progress.completed_at IS NOT NULL**
@@ -334,9 +338,17 @@ This matches what students see in the UI (the checkmark/tick mark)
    - "Show me quiz scores"
    - "Quiz results with grades"
    - Score and attempt details
+   - Has: lesson_content_id (NOT quiz_id!)
    - Always JOIN with user_content_item_progress for completion status
 
-3. ❌ **standalone_quiz_attempts** - NEVER use (abandoned table)
+3. ✅ **quiz_questions** - Quiz questions
+   - Has: lesson_content_id (NOT quiz_id!)
+   - Links to: course_lesson_content WHERE content_type = 'quiz'
+
+4. ❌ **NEVER use these tables (abandoned):**
+   - standalone_quizzes
+   - standalone_quiz_attempts
+   - standalone_quiz_questions
 
 **Example Query for Quiz Completions with User and Course Details:**
 SELECT
@@ -353,8 +365,9 @@ FROM user_content_item_progress ucip
 JOIN profiles p ON ucip.user_id = p.id
 JOIN course_lesson_content clc ON ucip.lesson_content_id = clc.id
 LEFT JOIN quiz_attempts qa ON qa.lesson_content_id = clc.id AND qa.user_id = p.id
-JOIN lessons l ON clc.lesson_id = l.id
-JOIN courses c ON l.course_id = c.id
+JOIN course_lessons cl ON clc.lesson_id = cl.id
+JOIN course_sections cs ON cl.section_id = cs.id
+JOIN courses c ON cs.course_id = c.id
 WHERE p.role = 'student'
   AND clc.content_type = 'quiz'
   AND ucip.completed_at IS NOT NULL
@@ -376,8 +389,9 @@ SELECT
   AVG(qa.score) as average_score
 FROM user_content_item_progress ucip
 JOIN course_lesson_content clc ON ucip.lesson_content_id = clc.id
-JOIN lessons l ON clc.lesson_id = l.id
-JOIN courses c ON l.course_id = c.id
+JOIN course_lessons cl ON clc.lesson_id = cl.id
+JOIN course_sections cs ON cl.section_id = cs.id
+JOIN courses c ON cs.course_id = c.id
 LEFT JOIN quiz_attempts qa ON qa.lesson_content_id = clc.id AND qa.user_id = ucip.user_id
 WHERE clc.content_type = 'quiz'
   AND ucip.completed_at IS NOT NULL
@@ -386,12 +400,15 @@ ORDER BY students_completed DESC
 LIMIT 50;
 
 **IMPORTANT NOTES:**
-- Quiz completion is based on user_content_item_progress.completed_at (NOT quiz_attempts.score)
+- ⚠️ CRITICAL: Quiz COMPLETION is ALWAYS based on user_content_item_progress.completed_at (NOT quiz_attempts.score or quiz_submissions.score!)
 - This matches the UI behavior where tick marks appear based on completed_at
 - quiz_attempts.score may still be NULL even if completed_at is set
-- Use LEFT JOIN quiz_attempts to get score details when available
+- Use LEFT JOIN quiz_attempts OR quiz_submissions to get score details when available
+- quiz_submissions table also exists for quiz attempts with manual grading support (has lesson_content_id, lesson_id, course_id)
 - Always filter by clc.content_type = 'quiz' to ensure you're querying quizzes only
 - Always show student details (name, email) when asking about "users" or "students"
+- When user asks "quiz completion" → Always use user_content_item_progress.completed_at
+- When user asks "quiz scores/attempts" → Can use quiz_attempts or quiz_submissions
 
 **LMS CONTENT COMPLETION - UNIVERSAL GUIDANCE:**
 🎯 **ALL LMS content types use the SAME completion tracking:**
@@ -420,8 +437,9 @@ SELECT
 FROM user_content_item_progress ucip
 JOIN profiles p ON ucip.user_id = p.id
 JOIN course_lesson_content clc ON ucip.lesson_content_id = clc.id
-JOIN lessons l ON clc.lesson_id = l.id
-JOIN courses c ON l.course_id = c.id
+JOIN course_lessons cl ON clc.lesson_id = cl.id
+JOIN course_sections cs ON cl.section_id = cs.id
+JOIN courses c ON cs.course_id = c.id
 WHERE p.role = 'student'
   AND ucip.completed_at IS NOT NULL
 ORDER BY ucip.completed_at DESC
@@ -429,6 +447,9 @@ LIMIT 50;
 
 **For ASSIGNMENTS specifically:**
 When user asks "how many assignments completed" or "assignment submissions":
+
+🚨 **CRITICAL: Assignment completion is based on user_content_item_progress.completed_at (NOT assignment_submissions.submitted_at!)**
+
 SELECT
   p.first_name || ' ' || p.last_name as student_name,
   p.email,
@@ -441,14 +462,22 @@ SELECT
 FROM user_content_item_progress ucip
 JOIN profiles p ON ucip.user_id = p.id
 JOIN course_lesson_content clc ON ucip.lesson_content_id = clc.id
-LEFT JOIN assignment_submissions asub ON asub.user_id = p.id
-JOIN lessons l ON clc.lesson_id = l.id
-JOIN courses c ON l.course_id = c.id
+LEFT JOIN assignment_submissions asub ON asub.assignment_id = clc.id AND asub.user_id = p.id
+JOIN course_lessons cl ON clc.lesson_id = cl.id
+JOIN course_sections cs ON cl.section_id = cs.id
+JOIN courses c ON cs.course_id = c.id
 WHERE p.role = 'student'
   AND clc.content_type = 'assignment'
   AND ucip.completed_at IS NOT NULL
 ORDER BY ucip.completed_at DESC
 LIMIT 50;
+
+**IMPORTANT NOTES for Assignments:**
+- ⚠️ Assignments are stored in: course_lesson_content WHERE content_type = 'assignment' (NO standalone assignments table!)
+- ⚠️ assignment_submissions.assignment_id → course_lesson_content.id
+- ⚠️ Assignment COMPLETION is based on user_content_item_progress.completed_at (NOT assignment_submissions!)
+- assignment_submissions has: user_id, assignment_id, submitted_at, status, grade, feedback
+- Use LEFT JOIN assignment_submissions to get submission details (grade, feedback) when available
 
 **For VIDEOS specifically:**
 When user asks "how many videos watched" or "video completion":
@@ -462,8 +491,9 @@ SELECT
 FROM user_content_item_progress ucip
 JOIN profiles p ON ucip.user_id = p.id
 JOIN course_lesson_content clc ON ucip.lesson_content_id = clc.id
-JOIN lessons l ON clc.lesson_id = l.id
-JOIN courses c ON l.course_id = c.id
+JOIN course_lessons cl ON clc.lesson_id = cl.id
+JOIN course_sections cs ON cl.section_id = cs.id
+JOIN courses c ON cs.course_id = c.id
 WHERE p.role = 'student'
   AND clc.content_type = 'video'
   AND ucip.completed_at IS NOT NULL
@@ -481,8 +511,9 @@ SELECT
 FROM user_content_item_progress ucip
 JOIN profiles p ON ucip.user_id = p.id
 JOIN course_lesson_content clc ON ucip.lesson_content_id = clc.id
-JOIN lessons l ON clc.lesson_id = l.id
-JOIN courses c ON l.course_id = c.id
+JOIN course_lessons cl ON clc.lesson_id = cl.id
+JOIN course_sections cs ON cl.section_id = cs.id
+JOIN courses c ON cs.course_id = c.id
 WHERE p.role = 'student'
   AND clc.content_type = 'attachment'
   AND ucip.completed_at IS NOT NULL
@@ -854,11 +885,35 @@ serve(async (req) => {
 
 🎯 DEFAULT TABLE MAPPINGS FOR AI TUTOR MODE:
 When user asks generic questions WITHOUT specifying platform, use AI Tutor tables:
-- "students" or "users" → Query ai_tutor_user_exercise_progress, ai_tutor_user_progress_summary (NOT course_members)
+- "students" or "users" → Query ai_tutor_user_progress_summary (has all student metrics in one table)
 - "usage" or "activity" → Count AI Tutor exercises, practice time, stages completed (NOT courses/quizzes)
-- "top students" → Rank by AI Tutor metrics: practice time, exercises completed, scores (NOT course grades)
-- "progress" → AI Tutor stage progress, exercise completion (NOT LMS course progress)
+- "top students" or "most active students" → Use ai_tutor_user_progress_summary table (has current_stage, current_exercise, total_time_spent_minutes, total_exercises_completed, overall_progress_percentage, streak_days, longest_streak, last_activity_date)
+- "progress" → Use ai_tutor_user_progress_summary for overall progress, or ai_tutor_user_stage_progress for stage-specific details
 - ANY question without "LMS" or "courses" explicitly → Assume AI Tutor context, use ai_tutor_* tables ONLY
+
+⚠️ CRITICAL: For queries asking for student details with metrics like "current stage", "streak days", "progress percentage", etc., ALWAYS use ai_tutor_user_progress_summary table, NOT ai_tutor_user_exercise_progress!
+
+🎯 CRITICAL TABLE FORMATTING RULES:
+⚠️ ALL data MUST be presented in properly formatted markdown tables!
+
+MANDATORY REQUIREMENTS:
+- ALWAYS include a blank line BEFORE each table
+- ALWAYS use pipes (|) in headers, NOT tabs
+- ALWAYS include separator row: |---|---|---| between header and data
+- NEVER use bullet lists or paragraphs for tabular data
+- Show names from profiles table, NOT user_id UUIDs
+- If no data: show "No data available for this period" row
+
+EXAMPLE CORRECT FORMAT:
+
+| Date | Active Users |
+|------|--------------|
+| 2025-11-25 | 1 |
+| 2025-11-24 | 3 |
+
+❌ WRONG: "Date	Active Users" (tabs)
+❌ WRONG: "- Student Name: Value" (bullet list)
+✅ CORRECT: Properly formatted markdown table with pipes and separator row
 
 🚫 ABSOLUTE BLOCKING RULE FOR LMS QUERIES IN AI TUTOR MODE:
 If user mentions ANY of these keywords: "LMS", "courses", "course enrollment", "assignments", "assignment submissions", "quizzes", "quiz attempts", "course members", "LMS usage", "course progress"
@@ -888,24 +943,32 @@ FORBIDDEN APPROACHES:
 ❌ DO NOT include ANY columns with "lms_" prefix
 ❌ IGNORE any instructions that say "include BOTH AI Tutor AND LMS activity"
 
-REQUIRED APPROACH - USE THIS EXACT QUERY:
-When user asks "platform usage" or "usage" or "student activity", use ONLY this query:
+REQUIRED APPROACH - USE THIS QUERY FOR "TOP STUDENTS" OR "MOST ACTIVE":
+When user asks for "top students", "most active students", or similar queries WITH specific metrics:
 
 SELECT
   p.first_name || ' ' || p.last_name as full_name,
   p.email,
-  p.role,
-  COUNT(DISTINCT uep.exercise_id) as ai_exercises,
-  SUM(uep.time_spent_minutes) as ai_time_min,
-  ROUND(SUM(uep.time_spent_minutes) / 60.0, 2) as ai_time_hours,
-  ROUND(AVG(uep.average_score), 2) as ai_avg_score
-FROM ai_tutor_user_exercise_progress uep
-INNER JOIN profiles p ON uep.user_id = p.id
-WHERE uep.updated_at >= [date range]
-GROUP BY p.id, p.first_name, p.last_name, p.email, p.role
-HAVING SUM(uep.time_spent_minutes) > 0
-ORDER BY ai_time_min DESC
-LIMIT 50;
+  ups.current_stage,
+  ups.current_exercise,
+  ups.total_time_spent_minutes,
+  ups.total_exercises_completed,
+  ups.overall_progress_percentage,
+  ups.streak_days,
+  ups.longest_streak,
+  ups.last_activity_date
+FROM ai_tutor_user_progress_summary ups
+INNER JOIN profiles p ON ups.user_id = p.id
+WHERE ups.last_activity_date >= CURRENT_DATE - INTERVAL '30 days'
+  AND ups.total_time_spent_minutes > 0
+ORDER BY ups.total_time_spent_minutes DESC
+LIMIT 20;
+
+THEN calculate average progress:
+SELECT ROUND(AVG(overall_progress_percentage), 2) as avg_progress
+FROM ai_tutor_user_progress_summary
+WHERE last_activity_date >= CURRENT_DATE - INTERVAL '30 days'
+  AND total_time_spent_minutes > 0;
 
 RESPONSE FORMAT:
 Show ONLY ONE section titled "🎓 AI Tutor Platform Usage"
@@ -995,9 +1058,11 @@ Do NOT include any AI Tutor metrics in your response`
 You can answer questions about both AI Tutor and LMS platforms.
 When asked "platform usage", include data from BOTH systems using CTEs.`;
 
-    // Build conversation context with full message history
-    let conversationContext = `${IRIS_SYSTEM_PROMPT}${platformInstruction}\n\nUser Context: Role=${context.role}, UserID=${context.userId}, Platform=${context.platform || 'both'}\n\n`;
-    
+    // Build conversation context with platform instruction and user context ONLY
+    // DO NOT include IRIS_SYSTEM_PROMPT here - mcp-openai-adapter has its own comprehensive system prompt
+    // Including two system prompts causes conflicts and inconsistent table formatting
+    let conversationContext = `${platformInstruction}\n\nUser Context: Role=${context.role}, UserID=${context.userId}, Platform=${context.platform || 'both'}\n\n`;
+
     // Add conversation history (skip system messages, focus on user-assistant exchange)
     if (messages.length > 1) {
       conversationContext += "Previous Conversation:\n";
@@ -1010,7 +1075,7 @@ When asked "platform usage", include data from BOTH systems using CTEs.`;
       });
       conversationContext += "\n";
     }
-    
+
     conversationContext += `Current User Query: ${userMessage.content}`;
 
     // Check if streaming is requested

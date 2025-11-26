@@ -33,7 +33,6 @@ import {
   Settings,
   GraduationCap,
   Clock,
-  Award,
   Target,
   Brain,
   Mic,
@@ -75,79 +74,97 @@ export const IRISv2 = () => {
   // Platform-specific quick actions (AI Tutor tables)
   const aiTutorActions = [
     {
-      title: "Daily Learning Analytics",
-      description: "KPIs from daily analytics table",
-      icon: BarChart3,
-      prompt: "Show me daily learning analytics for AI Tutor platform"
-    },
-    {
-      title: "Learning Milestones",
-      description: "Achievements unlocked by users",
+      title: "Top Performers Analysis",
+      description: "Most active learners with detailed metrics",
       icon: Trophy,
-      prompt: "Give me a report on learning milestones and achievements"
+      prompt: "Show me the top 20 most active students in the AI Tutor platform. Include their name, email, current stage, current exercise, total time spent, exercises completed, progress percentage, streak days, longest streak, and last activity date. Only show students who were active in the last 30 days. Also calculate the average progress percentage across all top performers. CRITICAL: Use LIMIT 20 and include pagination message at the end."
     },
     {
-      title: "Learning Unlocks",
-      description: "Stages/topics users unlocked",
-      icon: Unlock,
-      prompt: "Show me learning unlocks and topic progression"
-    },
-    {
-      title: "Exercise Progress",
-      description: "Completion & accuracy by exercise",
-      icon: Target,
-      prompt: "Generate exercise progress and completion analytics"
-    },
-    {
-      title: "User Progress Summary",
-      description: "Overall learner progression",
+      title: "Learning Progress Dashboard",
+      description: "Comprehensive student progress overview",
       icon: TrendingUp,
-      prompt: "Give me a list of students and their progress"
+      prompt: "Generate a comprehensive AI Tutor progress report including: 1) Total number of active students, 2) Distribution of students across different stages (LIMIT 10 stages with pagination), 3) Average progress percentage per stage, 4) How many students have completed vs still in progress, 5) Average time spent per student, 6) Top 10 most challenging exercises (lowest scores) with LIMIT 10, and 7) Top 10 highest-performing students with their names using LIMIT 10. CRITICAL: Use LIMIT clauses for long lists and include pagination message at the end."
     },
     {
-      title: "Weekly Summary",
-      description: "Weekly learning highlights",
+      title: "Weekly Activity Report",
+      description: "Last 7 days learning trends",
       icon: Calendar,
-      prompt: "Give me this week's learning analytics summary"
+      prompt: "Create a detailed weekly activity report for the last 7 days showing: 1) Daily active user counts (LIMIT 7 days), 2) Exercises completed each day, 3) Average time spent per day, 4) New students who joined with names (LIMIT 20), 5) Comparison with the previous 7-day period, and 6) Engagement insights and trends. CRITICAL: Use LIMIT clauses and include pagination message for any list exceeding limits."
+    },
+    {
+      title: "Stage Completion Analysis",
+      description: "Progress across all learning stages",
+      icon: Target,
+      prompt: "Analyze AI Tutor stage completion: 1) Show all learning stages with their titles and difficulty levels (LIMIT 10 stages), 2) For each stage, show: total students enrolled, students who completed it, students currently in progress, average time spent, and average score. Display this in a table with columns: Stage Number, Stage Title, Total Students, Completed, In Progress, Avg Time (min), Avg Score, 3) Calculate drop-off rate by comparing student counts between consecutive stages, 4) Identify most and least popular stages by enrollment counts, and 5) Provide recommendations based on completion rates and average scores. CRITICAL: Use LIMIT 10 and include pagination message at the end."
+    },
+    {
+      title: "Exercise Performance Matrix",
+      description: "Detailed exercise-level analytics",
+      icon: BarChart3,
+      prompt: "Generate exercise performance analysis showing: 1) Exercise summary grouped by stage with their titles and types (LIMIT 50 exercises), 2) For each exercise: total students, average attempts, average score, and average time spent, 3) Top 10 most challenging exercises (lowest scores) with LIMIT 10, 4) Top 10 easiest exercises (highest scores) with LIMIT 10, 5) Exercises with most attempts (LIMIT 10 for highest engagement), 6) Exercises with completion rates below 50% (LIMIT 10), and 7) Suggestions for difficulty adjustments. CRITICAL: Use LIMIT clauses for all lists and include pagination message at the end."
+    },
+    {
+      title: "Student Engagement Insights",
+      description: "Identify at-risk & high-performing students",
+      icon: Users,
+      prompt: "Provide detailed student engagement insights including: 1) Students with declining activity (active 7-14 days ago but not recently) with LIMIT 20, 2) Students with consistent practice streaks of 7+ days with LIMIT 20, 3) Students who appear stuck on the same exercise for more than 3 days with LIMIT 20, 4) Students showing recent score improvements with LIMIT 20, 5) Inactive students (no activity for 14+ days) with days since last activity and LIMIT 20, and 6) Intervention recommendations for each segment. CRITICAL: Use LIMIT 20 for all student lists and include pagination message at the end."
+    },
+    {
+      title: "Monthly Performance Trends",
+      description: "30-day analytics with comparisons",
+      icon: TrendingUp,
+      prompt: "Generate comprehensive monthly performance report: 1) New user growth rate (last 30 days vs previous 30 days) showing new users with LIMIT 20, 2) Total time spent trend comparison between periods, 3) Average exercises completed per student, 4) Average time to transition between stages, 5) Score improvement trends (this month vs last month), 6) User retention (active in both periods) with LIMIT 20, 7) Peak activity days of the week (LIMIT 7 days), and 8) Actionable recommendations. CRITICAL: Use LIMIT clauses for user lists and include pagination message at the end."
     }
   ];
 
   const lmsActions = [
     {
-      title: "Course Management",
-      description: "Create & manage courses",
+      title: "Course Performance Dashboard",
+      description: "Comprehensive course analytics",
       icon: BookOpen,
-      prompt: "Give me a list of courses and their enrollment status"
+      prompt: "Generate a detailed course performance report showing: 1) All published courses with TITLES and CREATOR NAMES (LIMIT 50 courses, never show IDs), 2) Total enrolled students per course, 3) New enrollments in the last 14 days, 4) Average quiz scores per course, 5) Average assignment grades per course, 6) Overall enrollment rate, 7) Top 5 courses by enrollment with CREATOR NAMES using LIMIT 5, and 8) Courses with zero enrollments in the last 30 days (LIMIT 20) that may need promotion. CRITICAL: Always JOIN with profiles table to show creator full_name. Use LIMIT clauses and include pagination message at the end."
     },
     {
-      title: "Student Analytics",
-      description: "Track student engagement",
+      title: "Student Engagement Analytics",
+      description: "Detailed student activity tracking",
       icon: Users,
-      prompt: "Give me a list of students registered on the platform"
+      prompt: "Provide comprehensive student engagement analysis including: 1) Total number of students, 2) Course enrollments per student with FULL NAME and EMAIL (LIMIT 50, never show user IDs), 3) Top 20 most active students with FULL NAME and EMAIL using LIMIT 20, 4) At-risk students with FULL NAME and EMAIL enrolled but with no quiz or assignment activity in 14 days (LIMIT 20), 5) Average assignments submitted per student with FULL NAME (LIMIT 20), 6) Students with FULL NAME and EMAIL with pending assignments awaiting grades (LIMIT 20), 7) Enrollment growth by month for the last 3 months (LIMIT 3), and 8) Student distribution across courses with COURSE TITLES (LIMIT 30 courses, never show course IDs). CRITICAL: Always JOIN with profiles table to show full_name and email, and JOIN with courses table to show course titles. Use LIMIT clauses and include pagination message at the end."
     },
     {
-      title: "Teacher Overview",
-      description: "Review teacher activity",
-      icon: GraduationCap,
-      prompt: "Give me a list of teachers we have"
-    },
-    {
-      title: "Admin Users",
-      description: "View admin accounts",
-      icon: Shield,
-      prompt: "Show me a list of admin users"
-    },
-    {
-      title: "Learning Outcomes",
-      description: "Assess course effectiveness",
-      icon: Trophy,
-      prompt: "Generate learning outcomes and course effectiveness report"
-    },
-    {
-      title: "Content Management Analytics",
-      description: "Analyze course content & structure",
+      title: "Assignment Tracking Report",
+      description: "Assignment submissions & grading status",
       icon: FileText,
-      prompt: "Show me content management and course structure analytics"
+      prompt: "Create detailed assignment tracking report showing: 1) Total number of assignments, 2) Breakdown by status (submitted vs graded), 3) Completion rates per course with COURSE TITLES (LIMIT 30 courses), 4) Average grades per assignment with ASSIGNMENT TITLES (LIMIT 50 assignments), 5) STUDENT NAMES and EMAILS with ungraded assignments (LIMIT 20, never show user IDs), 6) Grading delays showing STUDENT NAMES with submissions older than 7 days without grades (LIMIT 20), 7) Difficult assignments (TITLES not IDs) with average grades below 60 (LIMIT 10), and 8) Recent submissions from the last 7 days showing STUDENT NAMES awaiting grades (LIMIT 20). CRITICAL: Always JOIN with profiles table for student names and courses table for course/assignment titles. Use LIMIT clauses and include pagination message at the end."
+    },
+    {
+      title: "Quiz Performance Analysis",
+      description: "Quiz attempts, scores & completion",
+      icon: Target,
+      prompt: "Generate comprehensive quiz performance analytics: 1) Total quizzes (show QUIZ TITLES not IDs, LIMIT 50 quizzes) and attempt counts, 2) Average score per quiz with QUIZ TITLES, 3) Retry rate (students taking quizzes multiple times), 4) STUDENT NAMES and EMAILS who took quizzes in the last 7 days with scores (LIMIT 20), 5) Difficult quizzes showing QUIZ TITLES and COURSE TITLES with average scores below 60 (LIMIT 10), 6) Quizzes (TITLES) with highest completion rates (LIMIT 10), 7) STUDENT NAMES with incomplete quiz attempts (LIMIT 20), and 8) Quiz performance trends over the last 30 days (LIMIT 30 days). CRITICAL: Always JOIN with profiles table for student names and courses/quiz_questions tables for quiz/course titles. Use LIMIT clauses and include pagination message at the end."
+    },
+    {
+      title: "Teacher Activity Overview",
+      description: "Teacher contributions & performance",
+      icon: GraduationCap,
+      prompt: "Provide detailed teacher activity analysis: 1) List all teachers with FULL NAMES and EMAILS (LIMIT 50 teachers, never show user IDs), 2) Courses created by each TEACHER NAME with COURSE TITLES (LIMIT 30 courses, never IDs), 3) Total students taught per TEACHER NAME, 4) Average grading time per TEACHER NAME (in days), 5) Most active TEACHER NAMES by course creation (LIMIT 10), 6) TEACHER NAMES with pending ungraded assignments (LIMIT 20), 7) Teacher workload showing TEACHER NAMES (students per teacher, LIMIT 50), and 8) New courses (TITLES) created in the last 30 days by TEACHER NAME (LIMIT 20). CRITICAL: Always JOIN with profiles table for teacher full_name and email, and courses table for course titles. Use LIMIT clauses and include pagination message at the end."
+    },
+    {
+      title: "Content Structure Analysis",
+      description: "Course structure & organization",
+      icon: Activity,
+      prompt: "Analyze course content structure and organization: 1) Total sections across all courses, 2) Total lessons per COURSE TITLE (LIMIT 50 courses, never show course IDs), 3) Content items per COURSE TITLE, 4) Average sections per course and lessons per section, 5) COURSE TITLES with most comprehensive content (highest lesson count) with CREATOR NAMES (LIMIT 10), 6) COURSE TITLES with minimal content (less than 5 lessons) needing development showing CREATOR NAMES (LIMIT 10), 7) Content distribution showing COURSE TITLES with sections and lessons counts (LIMIT 30), and 8) Recommendations for content gaps. CRITICAL: Always JOIN with courses table for titles and profiles table for creator names. Use LIMIT clauses and include pagination message at the end."
+    },
+    {
+      title: "Enrollment Trends Report",
+      description: "Course enrollments & growth patterns",
+      icon: TrendingUp,
+      prompt: "Generate enrollment trends and growth analysis: 1) Monthly enrollment growth (this month vs last month, LIMIT 6 months), 2) Most popular COURSE TITLES by enrollment count with CREATOR NAMES (LIMIT 10, never show IDs), 3) Enrollment growth per COURSE TITLE over last 30 days vs previous 30 days (LIMIT 30 courses), 4) STUDENT NAMES and EMAILS enrolled in multiple courses with course counts (LIMIT 20), 5) Inactive enrollments showing STUDENT NAMES and COURSE TITLES (no activity in 30 days, LIMIT 20), 6) Enrollment timeline by day for last 30 days (LIMIT 30), 7) Conversion rate (enrolled vs total students), and 8) Projected enrollments for next month by COURSE TITLE (LIMIT 10). CRITICAL: Always JOIN with profiles table for student/creator names and courses table for course titles. Use LIMIT clauses and include pagination message at the end."
+    },
+    {
+      title: "Platform Usage Statistics",
+      description: "Overall LMS activity & health metrics",
+      icon: BarChart3,
+      prompt: "Provide comprehensive platform usage statistics: 1) Total users by role (students, teachers, admins) with counts, 2) New users in last 30 days showing FULL NAMES and EMAILS for growth rate (LIMIT 20), 3) Total courses by status (Draft, Published, Under Review) with COURSE TITLES (LIMIT 50 courses), 4) Total lessons and content items, 5) Platform-wide metrics (total quiz attempts, assignment submissions, average scores and grades), 6) User growth trend over last 6 months (LIMIT 6 months), 7) Most active users showing FULL NAMES and EMAILS with activity details (LIMIT 20, never show user IDs), 8) Completion rates for assignments and quizzes, 9) Course creation trend by month showing COURSE TITLES and CREATOR NAMES (LIMIT 6 months, top 10 courses per month), and 10) Platform health score based on growth, content creation, and engagement rates. CRITICAL: Always JOIN with profiles table for all user names/emails and courses table for course titles. Use LIMIT clauses and include pagination message at the end."
     }
   ];
 
@@ -636,8 +653,29 @@ Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
 
   const formatMessage = (content: string): string => {
     let formatted = content;
-  
-    // Handle tables
+
+    // CRITICAL FIX: Handle inline tables that appear on a single line
+    // Pattern from IRIS output: "| Col1 | Col2 | |---|---| | Data1 | Data2 | | Data3 | Data4 |"
+    // Notice: rows are separated by " | |" pattern (space-pipe-space-pipe-space)
+
+    // Step 1: Find inline tables and convert them to multiline
+    formatted = formatted.replace(/(\|[^|\n]+\|(?:\s*\|[^|\n]*\|)+)/g, (tableMatch) => {
+      // Check if this contains a markdown table separator (dashes)
+      if (!tableMatch.includes('---')) {
+        return tableMatch; // Not a markdown table
+      }
+
+      // Split the inline table into rows by looking for the pattern " | " at the end/start of cells
+      // Replace " | |" with newline + "|" to create row breaks
+      let formatted = tableMatch.replace(/\|\s+\|/g, '|\n|');
+
+      return formatted;
+    });
+
+    // Step 2: Remove bullet points before tables
+    formatted = formatted.replace(/^[-•]\s+([^|]*)((\n)?\|)/gm, '$1\n\n|');
+
+    // Step 3: Handle tables with standard regex
     const tableRegex = /(\|[^\n]*\|\n)+/g;
     formatted = formatted.replace(tableRegex, (match) => {
       const rows = match.trim().split('\n');

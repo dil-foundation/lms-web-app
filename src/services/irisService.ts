@@ -586,6 +586,13 @@ I encountered an unexpected error while processing your request.
         return false;
       }
 
+      // Get real user context for health check
+      const userContext = await this.getUserContext();
+      if (!userContext) {
+        console.warn('No user context available for health check');
+        return false;
+      }
+
       // Simple health check with timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
@@ -597,14 +604,14 @@ I encountered an unexpected error while processing your request.
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          messages: [{ role: 'user', content: 'Hello' }],
-          context: { userId: 'health-check', role: 'admin', permissions: [] }
+          messages: [{ role: 'user', content: 'ping' }],
+          context: userContext
         }),
         signal: controller.signal
       });
 
       clearTimeout(timeoutId);
-      
+
       if (response.ok) {
         console.log('✅ IRIS service health check passed');
         return true;
