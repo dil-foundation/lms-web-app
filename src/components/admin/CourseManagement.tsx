@@ -928,26 +928,24 @@ const CourseManagement = () => {
             </div>
           ) : courses.length > 0 ? (
             <div className="space-y-4 sm:space-y-6">
-              {/* View Toggle - Improved Responsiveness */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 md:gap-6">
-                <div className="min-w-0 flex-1 space-y-0.5 sm:space-y-1">
-                  <h2 className="text-base sm:text-lg md:text-xl font-semibold text-foreground break-words">
-                    Courses
-                  </h2>
-                  <p className="text-xs sm:text-sm text-muted-foreground break-words leading-relaxed">
-                    Switch between different views to manage your courses
-                  </p>
-                </div>
-                <div className="w-full sm:w-auto flex-shrink-0">
-                  <ViewToggle
-                    currentView={preferences.teacherCourseView}
-                    onViewChange={setTeacherCourseView}
-                    availableViews={['card', 'tile', 'list']}
-                    showLabels={true}
-                    className="w-full sm:w-auto"
-                  />
-                </div>
+              {/* Heading and Description */}
+              <div className="min-w-0 space-y-0.5 sm:space-y-1">
+                <h2 className="text-base sm:text-lg md:text-xl font-semibold text-foreground break-words">
+                  Courses
+                </h2>
+                <p className="text-xs sm:text-sm text-muted-foreground break-words leading-relaxed">
+                  Switch between different views to manage your courses
+                </p>
               </div>
+              
+              {/* View Toggle - Improved Responsiveness */}
+              <ViewToggle
+                currentView={preferences.teacherCourseView}
+                onViewChange={setTeacherCourseView}
+                availableViews={['card', 'tile', 'list']}
+                showLabels={true}
+                className="w-full sm:w-auto"
+              />
 
               {/* Course Display based on selected view */}
               {preferences.teacherCourseView === 'card' && (

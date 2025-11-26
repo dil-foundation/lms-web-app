@@ -1416,17 +1416,15 @@ export const UsersManagement = () => {
               </div>
             </div>
             
-            <div className="flex flex-col gap-2 w-full flex-shrink-0">
-              {/* Upload and Passwords buttons */}
-              <div className="flex flex-col xs:flex-row gap-2 sm:gap-3 w-full">
-                <Dialog open={isBulkUploadModalOpen} onOpenChange={setIsBulkUploadModalOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" className="h-9 sm:h-10 px-2 sm:px-3 md:px-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-1 sm:flex-none flex-shrink-0">
-                      <Upload className="mr-1.5 sm:mr-2 h-4 w-4" />
-                      <span className="hidden md:inline">Bulk Upload</span>
-                      <span className="md:hidden">Upload</span>
-                    </Button>
-                  </DialogTrigger>
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-2 lg:gap-3 w-full lg:w-auto flex-shrink-0">
+              {/* Bulk Upload button */}
+              <Dialog open={isBulkUploadModalOpen} onOpenChange={setIsBulkUploadModalOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="h-9 sm:h-10 px-3 sm:px-3 md:px-4 lg:px-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm w-full sm:flex-1 lg:flex-initial lg:w-auto">
+                    <Upload className="mr-1.5 sm:mr-2 h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">Bulk Upload</span>
+                  </Button>
+                </DialogTrigger>
                 <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col">
                   <DialogHeader>
                     <DialogTitle>Bulk Upload Users</DialogTitle>
@@ -1616,13 +1614,12 @@ export const UsersManagement = () => {
                 </DialogContent>
               </Dialog>
 
+              {/* Bulk Upload with Passwords button */}
               <Dialog open={isBulkUploadWithPasswordsModalOpen} onOpenChange={setIsBulkUploadWithPasswordsModalOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="h-9 sm:h-10 px-2 sm:px-3 md:px-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-1 sm:flex-none flex-shrink-0">
-                    <Upload className="mr-1.5 sm:mr-2 h-4 w-4" />
-                    <span className="hidden md:inline">Bulk Upload with Passwords</span>
-                    <span className="hidden sm:inline md:hidden">Upload Passwords</span>
-                    <span className="sm:hidden">Passwords</span>
+                  <Button variant="outline" className="h-9 sm:h-10 px-3 sm:px-3 md:px-4 lg:px-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm w-full sm:flex-1 lg:flex-initial lg:w-auto">
+                    <Upload className="mr-1.5 sm:mr-2 h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">Bulk Upload with Passwords</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col">
@@ -1820,9 +1817,8 @@ export const UsersManagement = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-              </div>
 
-              {/* Create User button on separate row */}
+              {/* Create User button */}
               <Dialog open={isCreateModalOpen} onOpenChange={(isOpen) => {
                 setIsCreateModalOpen(isOpen);
                 if (!isOpen) {
@@ -1831,9 +1827,9 @@ export const UsersManagement = () => {
                 }
               }}>
                 <DialogTrigger asChild>
-                  <Button className="h-9 sm:h-10 px-4 sm:px-6 rounded-xl bg-gradient-to-r from-[#8DC63F] to-[#7AB82F] hover:from-[#7AB82F] hover:to-[#6AA325] text-white shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 font-semibold text-xs sm:text-sm w-full sm:w-auto">
-                    <Plus className="mr-1.5 sm:mr-2 h-4 w-4" />
-                    Create User
+                  <Button className="h-9 sm:h-10 px-4 sm:px-4 md:px-5 lg:px-6 rounded-xl bg-gradient-to-r from-[#8DC63F] to-[#7AB82F] hover:from-[#7AB82F] hover:to-[#6AA325] text-white shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 font-semibold text-xs sm:text-sm w-full sm:w-full lg:w-auto">
+                    <Plus className="mr-1.5 sm:mr-2 h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">Create User</span>
                   </Button>
                 </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">

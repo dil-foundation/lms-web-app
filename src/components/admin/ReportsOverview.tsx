@@ -510,7 +510,7 @@ export const ReportsOverview = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl"></div>
         <div className="relative p-3 sm:p-4 md:p-6 lg:p-8 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl">
           {/* Desktop Layout: Side by side */}
-          <div className="hidden sm:flex sm:items-center sm:justify-between gap-4">
+          <div className="hidden lg:flex lg:items-center lg:justify-between gap-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
                 <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-primary" />
@@ -524,59 +524,73 @@ export const ReportsOverview = () => {
                 </p>
               </div>
             </div>
-            {exportReportData && (
-              <ExportButton
-                reportData={exportReportData}
-                filename="admin-performance-analytics"
-                variant="outline"
-                className="shrink-0"
-              />
-            )}
             
-            <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger className="w-40 sm:w-48 flex-shrink-0">
-                <SelectValue placeholder="Select time range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7days">Last 7 days</SelectItem>
-                <SelectItem value="30days">Last 30 days</SelectItem>
-                <SelectItem value="3months">Last 3 months</SelectItem>
-                <SelectItem value="6months">Last 6 months</SelectItem>
-                <SelectItem value="1year">Last year</SelectItem>
-                <SelectItem value="alltime">All time</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              {exportReportData && (
+                <ExportButton
+                  reportData={exportReportData}
+                  filename="admin-performance-analytics"
+                  variant="outline"
+                  className="shrink-0"
+                />
+              )}
+              
+              <Select value={timeRange} onValueChange={setTimeRange}>
+                <SelectTrigger className="w-40 sm:w-48 flex-shrink-0">
+                  <SelectValue placeholder="Select time range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7days">Last 7 days</SelectItem>
+                  <SelectItem value="30days">Last 30 days</SelectItem>
+                  <SelectItem value="3months">Last 3 months</SelectItem>
+                  <SelectItem value="6months">Last 6 months</SelectItem>
+                  <SelectItem value="1year">Last year</SelectItem>
+                  <SelectItem value="alltime">All time</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {/* Mobile Layout: Stacked */}
-          <div className="flex flex-col gap-3 sm:hidden">
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                <BarChart3 className="w-4 h-4 text-primary" />
+          {/* Mobile & Tablet Layout: Stacked */}
+          <div className="flex flex-col gap-3 lg:hidden">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
                   Performance Analytics
                 </h1>
-                <p className="text-xs text-muted-foreground mt-0.5 leading-tight">
-                  Monitor performance & engagement
+                <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-0.5 sm:mt-1 leading-tight sm:leading-relaxed">
+                  Monitor platform performance and user engagement
                 </p>
               </div>
             </div>
             
-            <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select time range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7days">Last 7 days</SelectItem>
-                <SelectItem value="30days">Last 30 days</SelectItem>
-                <SelectItem value="3months">Last 3 months</SelectItem>
-                <SelectItem value="6months">Last 6 months</SelectItem>
-                <SelectItem value="1year">Last year</SelectItem>
-                <SelectItem value="alltime">All time</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2 sm:gap-3 w-full">
+              {exportReportData && (
+                <ExportButton
+                  reportData={exportReportData}
+                  filename="admin-performance-analytics"
+                  variant="outline"
+                  className="shrink-0"
+                />
+              )}
+              
+              <Select value={timeRange} onValueChange={setTimeRange}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select time range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7days">Last 7 days</SelectItem>
+                  <SelectItem value="30days">Last 30 days</SelectItem>
+                  <SelectItem value="3months">Last 3 months</SelectItem>
+                  <SelectItem value="6months">Last 6 months</SelectItem>
+                  <SelectItem value="1year">Last year</SelectItem>
+                  <SelectItem value="alltime">All time</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </div>

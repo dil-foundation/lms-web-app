@@ -60,6 +60,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { cn } from '@/lib/utils';
 import AccessLogService from '@/services/accessLogService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { getCourseDataLayer } from '@/services/courseDataLayer';
 import StripeService from '@/services/stripeService';
 
@@ -1838,13 +1839,13 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     switch (currentContentItem.content_type) {
       case 'video':
         return (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {currentContentItem.signedUrl ? (
-              <div className="relative aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl">
+              <div className="relative aspect-video bg-black rounded-xl sm:rounded-2xl md:rounded-3xl overflow-hidden shadow-xl sm:shadow-2xl">
                  <video 
                    ref={videoRef} 
                    controls 
-                   className="w-full h-full" 
+                   className="w-full h-full object-contain" 
                    key={currentContentItem.id} 
                    src={currentContentItem.signedUrl} 
                    onTimeUpdate={handleTimeUpdate} 
@@ -1855,8 +1856,9 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                      console.error('🎥 Video element:', e.target);
                    }}
                    preload="metadata"
+                   playsInline
                  >
-                   <p className="text-white p-4">
+                   <p className="text-white p-3 sm:p-4 text-xs sm:text-sm">
                      Your browser does not support the video tag or the video format.
                      <br />
                      <a href={currentContentItem.signedUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">
@@ -1866,27 +1868,27 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                  </video>
               </div>
             ) : (
-              <div className="relative aspect-video bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-3xl overflow-hidden shadow-xl">
-                <div className="text-center p-4">
-                  <PlayCircle className="w-12 h-12 sm:w-16 sm:h-16 text-muted-foreground mx-auto mb-3 sm:mb-4" />
-                  <p className="text-muted-foreground text-base sm:text-lg font-medium">
-                    No video content available
-                    {isOfflineMode && (
-                      <span className="block text-sm mt-2 text-red-500">
-                        DEBUG: Offline mode - signedUrl missing for item {currentContentItem.id}
-                      </span>
-                    )}
-                  </p>
-                  
-                  
+              <div className="relative aspect-video bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-xl sm:rounded-2xl md:rounded-3xl overflow-hidden shadow-xl">
+                <div className="flex items-center justify-center h-full text-center p-3 sm:p-4">
+                  <div>
+                    <PlayCircle className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 text-muted-foreground mx-auto mb-2 sm:mb-3 md:mb-4" />
+                    <p className="text-muted-foreground text-sm sm:text-base md:text-lg font-medium px-2">
+                      No video content available
+                      {isOfflineMode && (
+                        <span className="block text-xs sm:text-sm mt-2 text-red-500">
+                          DEBUG: Offline mode - signedUrl missing for item {currentContentItem.id}
+                        </span>
+                      )}
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
-            <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-gray-900 dark:text-gray-100">Overview</CardTitle>
+            <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-xl sm:rounded-2xl md:rounded-3xl shadow-lg">
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="text-base sm:text-lg text-gray-900 dark:text-gray-100">Overview</CardTitle>
               </CardHeader>
-              <CardContent className="text-gray-700 dark:text-gray-300">{currentLesson?.overview}</CardContent>
+              <CardContent className="text-sm sm:text-base text-gray-700 dark:text-gray-300 p-4 sm:p-6 pt-0">{currentLesson?.overview}</CardContent>
             </Card>
           </div>
         );
@@ -2517,43 +2519,55 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             markContentAsComplete(currentContentItem.id, currentLesson.id, actualCourseId); 
         };
         return (
-          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
-                <ClipboardList className="w-5 h-5 text-indigo-600" />
-                Lesson Plan
+          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-xl sm:rounded-2xl md:rounded-3xl shadow-lg">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg text-gray-900 dark:text-gray-100">
+                <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600 flex-shrink-0" />
+                <span>Lesson Plan</span>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6 pt-0">
               {currentContentItem.signedUrl ? (
-                <div className="flex items-center justify-between gap-4 p-4 border border-gray-200/50 dark:border-gray-600/50 rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-900/20 dark:to-indigo-800/20">
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-6 h-6 text-indigo-600" />
-                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50 rounded-xl sm:rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-900/20 dark:to-indigo-800/20">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                    <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600 flex-shrink-0" />
+                    <span className="font-medium text-sm sm:text-base text-gray-900 dark:text-gray-100 truncate" title={currentContentItem.content_path?.split('/').pop() || 'Lesson Plan Document'}>
                       {currentContentItem.content_path?.split('/').pop() || 'Lesson Plan Document'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button asChild variant="outline" className="hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 transition-all duration-300">
+                  <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+                    <Button asChild variant="outline" size="sm" className="flex-1 sm:flex-initial hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 transition-all duration-300 text-xs sm:text-sm h-9 sm:h-10">
                       <a href={currentContentItem.signedUrl} target="_blank" rel="noopener noreferrer" onClick={handleLessonPlanInteraction}>
                         View
                       </a>
                     </Button>
-                    <Button onClick={() => {
-                      handleLessonPlanInteraction();
-                      handleDownload(currentContentItem.signedUrl, currentContentItem.content_path?.split('/').pop() || 'lesson-plan');
-                    }} disabled={isDownloading} className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 shadow-lg hover:shadow-xl transition-all duration-300">
-                      {isDownloading ? 'Downloading...' : 'Download'}
+                    <Button 
+                      onClick={() => {
+                        handleLessonPlanInteraction();
+                        handleDownload(currentContentItem.signedUrl, currentContentItem.content_path?.split('/').pop() || 'lesson-plan');
+                      }} 
+                      disabled={isDownloading} 
+                      size="sm"
+                      className="flex-1 sm:flex-initial bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm h-9 sm:h-10"
+                    >
+                      {isDownloading ? (
+                        <>
+                          <span className="hidden sm:inline">Downloading...</span>
+                          <span className="sm:hidden">Loading...</span>
+                        </>
+                      ) : (
+                        'Download'
+                      )}
                     </Button>
                   </div>
                 </div>
               ) : (
-                <div className="text-center p-8">
-                  <ClipboardList className="w-12 h-12 sm:w-16 sm:h-16 text-muted-foreground mx-auto mb-3 sm:mb-4" />
-                  <p className="text-muted-foreground text-base sm:text-lg font-medium">
+                <div className="text-center p-6 sm:p-8">
+                  <ClipboardList className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 text-muted-foreground mx-auto mb-2 sm:mb-3 md:mb-4" />
+                  <p className="text-muted-foreground text-sm sm:text-base md:text-lg font-medium">
                     Lesson plan not available
                     {isOfflineMode && (
-                      <span className="block text-sm mt-2 text-red-500">
+                      <span className="block text-xs sm:text-sm mt-2 text-red-500">
                         DEBUG: Offline mode - signedUrl missing for item {currentContentItem.id}
                       </span>
                     )}
@@ -2606,6 +2620,240 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-2.5 sm:py-3">
           <div className="flex items-center justify-between gap-2 sm:gap-3 md:gap-4">
+            {/* Mobile Menu Button */}
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+              <SheetTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="lg:hidden flex-shrink-0 h-8 w-8 p-0"
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[280px] sm:w-[320px] p-0 overflow-y-auto">
+                <SheetHeader className="p-4 sm:p-6 pb-3">
+                  <SheetTitle className="text-left text-base sm:text-lg">Course Navigation</SheetTitle>
+                </SheetHeader>
+                <div className="px-4 sm:px-6 pb-6 space-y-4">
+                  {/* Course Overview in Mobile Sheet */}
+                  <Card className="bg-card border-border shadow-sm">
+                    <CardHeader className="pb-3 p-4">
+                      <CardTitle className="text-sm font-bold text-card-foreground leading-tight">
+                        {course?.title}
+                      </CardTitle>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Overall Progress</span>
+                        <span className="text-base font-bold text-primary">{course?.totalProgress}%</span>
+                      </div>
+                      <Progress value={course?.totalProgress} className="h-1.5" />
+                    </CardHeader>
+                  </Card>
+
+                  {/* Module Navigation in Mobile Sheet */}
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wide">
+                      Course Modules
+                    </h3>
+                    <div className="space-y-2">
+                      {course?.modules.map((module: any) => {
+                        const isCurrentModule = module.id === currentModule?.id;
+                        
+                        const totalVisibleItems = module.lessons.reduce((acc: number, lesson: any) => {
+                          return acc + lesson.contentItems.filter((item: any) => {
+                            if (isOfflineMode && (item.content_type === 'quiz' || item.content_type === 'assignment' || item.content_type === 'lesson_plan')) {
+                              return false;
+                            }
+                            if (item.content_type === 'lesson_plan' && (profile?.role === 'student' || !profile?.role)) {
+                              return false;
+                            }
+                            return true;
+                          }).length;
+                        }, 0);
+                        
+                        const completedVisibleItems = module.lessons.reduce((acc: number, lesson: any) => {
+                          return acc + lesson.contentItems.filter((item: any) => {
+                            if (isOfflineMode && (item.content_type === 'quiz' || item.content_type === 'assignment' || item.content_type === 'lesson_plan')) {
+                              return false;
+                            }
+                            if (item.content_type === 'lesson_plan' && (profile?.role === 'student' || !profile?.role)) {
+                              return false;
+                            }
+                            return item.completed;
+                          }).length;
+                        }, 0);
+                        
+                        const moduleProgress = totalVisibleItems > 0 ? Math.round((completedVisibleItems / totalVisibleItems) * 100) : 0;
+                        
+                        return (
+                          <div key={module.id} className="group">
+                            <button
+                              onClick={() => {
+                                let firstVisibleItem = null;
+                                for (const lesson of module.lessons) {
+                                  const visibleItems = lesson.contentItems.filter((item: any) => {
+                                    if (isOfflineMode && (item.content_type === 'quiz' || item.content_type === 'assignment' || item.content_type === 'lesson_plan')) {
+                                      return false;
+                                    }
+                                    if (item.content_type === 'lesson_plan' && (profile?.role === 'student' || !profile?.role)) {
+                                      return false;
+                                    }
+                                    return true;
+                                  });
+                                  if (visibleItems.length > 0) {
+                                    firstVisibleItem = visibleItems[0];
+                                    break;
+                                  }
+                                }
+                                if (firstVisibleItem) {
+                                  handleNavigation(firstVisibleItem);
+                                  setIsSheetOpen(false);
+                                }
+                              }}
+                              className={cn(
+                                "w-full text-left p-3 rounded-lg transition-all duration-200 border",
+                                "hover:bg-muted/50",
+                                isCurrentModule 
+                                  ? "bg-primary/10 border-primary/20 shadow-sm" 
+                                  : "bg-card border-border hover:border-primary/20"
+                              )}
+                            >
+                              <div className="flex items-center justify-between mb-2 gap-2">
+                                <div className="flex items-center space-x-2 min-w-0 flex-1">
+                                  <BookOpen className={cn(
+                                    "w-4 h-4 flex-shrink-0",
+                                    isCurrentModule ? "text-primary" : "text-muted-foreground"
+                                  )} />
+                                  <span className={cn(
+                                    "text-sm font-medium truncate",
+                                    isCurrentModule ? "text-primary" : "text-foreground"
+                                  )} title={module.title}>
+                                    {module.title}
+                                  </span>
+                                </div>
+                                <span className="text-xs text-muted-foreground flex-shrink-0">
+                                  {moduleProgress}%
+                                </span>
+                              </div>
+                              <Progress value={moduleProgress} className="h-1" />
+                            </button>
+                            
+                            {isCurrentModule && (
+                              <div className="mt-2 ml-6 space-y-1">
+                                {module.lessons.map((lesson: any) => {
+                                  const isCurrentLesson = lesson.id === currentLesson?.id;
+                                  return (
+                                    <div key={lesson.id} className="space-y-1">
+                                      <button
+                                        onClick={() => {
+                                          const visibleItems = lesson.contentItems.filter((item: any) => {
+                                            if (isOfflineMode && (item.content_type === 'quiz' || item.content_type === 'assignment' || item.content_type === 'lesson_plan')) {
+                                              return false;
+                                            }
+                                            if (item.content_type === 'lesson_plan' && (profile?.role === 'student' || !profile?.role)) {
+                                              return false;
+                                            }
+                                            return true;
+                                          });
+                                          const firstItem = visibleItems[0];
+                                          if (firstItem) {
+                                            handleNavigation(firstItem);
+                                            setIsSheetOpen(false);
+                                          }
+                                        }}
+                                        className={cn(
+                                          "w-full text-left p-2 rounded-md text-sm transition-all duration-200",
+                                          "hover:bg-muted/30",
+                                          isCurrentLesson 
+                                            ? "bg-primary/5 text-primary font-medium" 
+                                            : "text-muted-foreground hover:text-foreground"
+                                        )}
+                                      >
+                                        <div className="flex items-center justify-between gap-2">
+                                          <div className="flex items-center space-x-2 min-w-0 flex-1">
+                                            <ClipboardList className="w-3 h-3 flex-shrink-0" />
+                                            <span className="truncate" title={lesson.title}>{lesson.title}</span>
+                                          </div>
+                                          {isCurrentLesson && (() => {
+                                            const visibleItems = lesson.contentItems.filter((item: any) => {
+                                              if (isOfflineMode && (item.content_type === 'quiz' || item.content_type === 'assignment' || item.content_type === 'lesson_plan')) {
+                                                return false;
+                                              }
+                                              if (item.content_type === 'lesson_plan' && (profile?.role === 'student' || !profile?.role)) {
+                                                return false;
+                                              }
+                                              return true;
+                                            });
+                                            const completedCount = visibleItems.filter((item: any) => item.completed).length;
+                                            return (
+                                              <span className="text-xs text-muted-foreground flex-shrink-0">
+                                                {completedCount}/{visibleItems.length}
+                                              </span>
+                                            );
+                                          })()}
+                                        </div>
+                                      </button>
+                                      
+                                      {isCurrentLesson && (
+                                        <div className="ml-4 space-y-0.5">
+                                          {lesson.contentItems
+                                            .filter((item: any) => {
+                                              if (profileLoading) {
+                                                return true;
+                                              }
+                                              if (isOfflineMode && (item.content_type === 'quiz' || item.content_type === 'assignment' || item.content_type === 'lesson_plan')) {
+                                                return false;
+                                              }
+                                              if (item.content_type === 'lesson_plan' && (profile?.role === 'student' || !profile?.role)) {
+                                                return false;
+                                              }
+                                              return true;
+                                            })
+                                            .map((item: any) => {
+                                            const isActive = item.id === currentContentItemId;
+                                            const isCompleted = item.completed;
+                                            
+                                            return (
+                                              <button
+                                                key={item.id}
+                                                onClick={() => {
+                                                  handleNavigation(item);
+                                                  setIsSheetOpen(false);
+                                                }}
+                                                className={cn(
+                                                  "w-full text-left p-2 rounded-md transition-all duration-200 text-xs",
+                                                  "hover:bg-muted/30",
+                                                  isActive 
+                                                    ? "bg-primary/10 text-primary font-medium border border-primary/20" 
+                                                    : "text-muted-foreground hover:text-foreground"
+                                                )}
+                                              >
+                                                <div className="flex items-center gap-2">
+                                                  {getContentItemIcon(item, currentContentItemId)}
+                                                  <span className="flex-1 truncate">{item.title}</span>
+                                                  <Badge variant={getBadgeVariant(item.content_type)} className="text-[10px] px-1.5 py-0">
+                                                    {item.content_type}
+                                                  </Badge>
+                                                </div>
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+
             {/* Breadcrumb Navigation */}
             <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
               <Button 
@@ -2626,8 +2874,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 <span className="hidden sm:inline">{(profile?.role === 'admin' || profile?.role === 'super_user') ? 'Back to Course Builder' : 'Back to Course'}</span>
                 <span className="sm:hidden">Back</span>
               </Button>
-              <div className="h-4 sm:h-5 w-px bg-border flex-shrink-0" />
-              <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 text-xs sm:text-sm text-muted-foreground min-w-0 flex-1 overflow-hidden">
+              <div className="h-4 sm:h-5 w-px bg-border flex-shrink-0 hidden sm:block" />
+              <div className="hidden sm:flex items-center gap-1 sm:gap-1.5 md:gap-2 text-xs sm:text-sm text-muted-foreground min-w-0 flex-1 overflow-hidden">
                 <span className="font-medium truncate" title={currentModule?.title}>{currentModule?.title || 'New Section'}</span>
                 <span className="flex-shrink-0 text-muted-foreground/60">•</span>
                 <span className="truncate" title={currentLesson?.title}>{currentLesson?.title || 'New Lesson'}</span>
@@ -2644,7 +2892,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               </div>
               <div className="text-right sm:hidden">
                 <div className="text-xs font-semibold text-foreground leading-tight">
-                  {allContentItems.findIndex(item => item.id === currentContentItemId) + 1} of {allContentItems.length}
+                  {allContentItems.findIndex(item => item.id === currentContentItemId) + 1}/{allContentItems.length}
                 </div>
               </div>
               <div className="w-12 sm:w-16 md:w-20 h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden flex-shrink-0">
@@ -2953,47 +3201,48 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               
               {/* Content Header */}
               <Card className="bg-card border-border shadow-sm">
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                                          <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-primary rounded-full" />
-                          <span className="text-sm font-medium text-primary uppercase tracking-wide">
-                            {currentContentItem?.content_type}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            • {allContentItems.findIndex(item => item.id === currentContentItemId) + 1} of {allContentItems.length}
-                          </span>
-                        </div>
-                        <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold text-card-foreground leading-tight">
-                          {currentContentItem?.title}
-                        </CardTitle>
-                        <p className="text-muted-foreground">
-                          {currentLesson?.title} • {currentModule?.title}
-                        </p>
+                <CardHeader className="pb-4 p-3 sm:p-6">
+                  <div className="flex flex-col gap-3 sm:gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center flex-wrap gap-x-2 gap-y-1">
+                        <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+                        <span className="text-xs sm:text-sm font-medium text-primary uppercase tracking-wide">
+                          {currentContentItem?.content_type}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          • {allContentItems.findIndex(item => item.id === currentContentItemId) + 1} of {allContentItems.length}
+                        </span>
                       </div>
+                      <CardTitle className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-card-foreground leading-tight break-words">
+                        {currentContentItem?.title}
+                      </CardTitle>
+                      <p className="text-xs sm:text-sm text-muted-foreground break-words">
+                        {currentLesson?.title} • {currentModule?.title}
+                      </p>
+                    </div>
                     
                     {/* Content Actions */}
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2 sm:gap-2 flex-wrap">
                       {prevContentItem && (
                         <Button 
                           variant="outline" 
                           size="sm"
                           onClick={() => handleNavigation(prevContentItem)}
-                          className="hover:bg-muted"
+                          className="hover:bg-muted flex-1 sm:flex-initial min-w-[100px] text-xs sm:text-sm h-9"
                         >
-                          <ChevronLeft className="w-4 h-4 mr-1" />
-                          Previous
+                          <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                          <span className="hidden xs:inline">Previous</span>
+                          <span className="xs:hidden">Prev</span>
                         </Button>
                       )}
                       {nextContentItem && (
                         <Button 
                           size="sm"
                           onClick={() => handleNavigation(nextContentItem)}
-                          className="bg-primary hover:bg-primary/90"
+                          className="bg-primary hover:bg-primary/90 flex-1 sm:flex-initial min-w-[100px] text-xs sm:text-sm h-9"
                         >
                           Next
-                          <ChevronRight className="w-4 h-4 ml-1" />
+                          <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
                         </Button>
                       )}
                     </div>
