@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, X } from 'lucide-react';
-import { getCategorizedNavigation, type UserRole } from '@/config/roleNavigation';
+import { Menu, X, User, LogOut, ChevronUp } from 'lucide-react';
+import { getCategorizedNavigation, type UserRole, getRoleDisplayName } from '@/config/roleNavigation';
 import { UserProfileSection } from '@/components/sidebar/UserProfileSection';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Logo } from './header/Logo';
@@ -12,6 +12,9 @@ import { AuthButton } from './header/AuthButton';
 import { useAILMS } from '@/contexts/AILMSContext';
 import { AILMSToggle } from '@/components/ui/AILMSToggle';
 import { useZoomIntegration } from '@/hooks/useZoomIntegration';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
 
@@ -25,10 +28,38 @@ export const DashboardSidebar = ({
   userRole
 }: DashboardSidebarProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const { isAIMode } = useAILMS();
   const { isEnabled: isZoomEnabled } = useZoomIntegration();
   const navigationCategories = getCategorizedNavigation(userRole, isAIMode, isZoomEnabled);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const { profile } = useUserProfile();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      setIsMobileMenuOpen(false);
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  const handleProfileSettings = () => {
+    navigate('/dashboard/profile-settings');
+    setIsMobileMenuOpen(false);
+  };
+
+  const getInitials = () => {
+    if (profile?.first_name && profile?.last_name) {
+      return `${profile.first_name.charAt(0)}${profile.last_name.charAt(0)}`.toUpperCase();
+    }
+    if (profile?.email) {
+      return profile.email.charAt(0).toUpperCase();
+    }
+    return 'U';
+  };
 
   // Render navigation items component to avoid duplication
   const NavigationItems = () => (
@@ -102,7 +133,8 @@ export const DashboardSidebar = ({
       {/* Mobile Navigation Sheet */}
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
         <SheetContent side="left" className="p-0 w-80 flex flex-col [&>button]:hidden md:hidden">
-          <div className="flex items-center justify-between h-16 p-4 border-b border-border">
+          {/* Header */}
+          <div className="flex items-center justify-between h-16 p-4 border-b border-border flex-shrink-0">
             <div className="w-32">
               <Logo />
             </div>
@@ -114,17 +146,79 @@ export const DashboardSidebar = ({
               <X className="h-5 w-5" />
             </Button>
           </div>
-          <div className="flex-1 flex flex-col h-full">
-            <UserProfileSection />
-            <div className='flex-1 overflow-y-auto'>
-              <NavigationItems />
-            </div>
 
-            <div className="p-4 mt-auto border-t border-border">
-              <div className="flex items-center justify-between">
-                <ThemeToggle />
-                <AuthButton />
+          {/* User Profile Section */}
+          <div className="flex-shrink-0">
+            <UserProfileSection />
+          </div>
+
+          {/* Scrollable Navigation */}
+          <div className='flex-1 overflow-y-auto'>
+            <NavigationItems />
+          </div>
+
+          {/* Enhanced Profile Section at Bottom - Sticky */}
+          <div className="flex-shrink-0 border-t border-border bg-muted/30">
+            {/* Profile Dropdown Toggle */}
+            {isProfileDropdownOpen && user && (
+              <div className="p-3 space-y-2 border-b border-border bg-card">
+                <div className="px-3 py-2 rounded-lg bg-muted/50">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {user.email}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {getRoleDisplayName(profile?.role || 'student')}
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleProfileSettings}
+                  className="flex items-center w-full px-3 py-2 text-sm text-foreground hover:bg-primary/10 rounded-lg transition-colors"
+                >
+                  <User className="h-4 w-4 mr-3" />
+                  Profile Settings
+                </button>
+
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center w-full px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors"
+                >
+                  <LogOut className="h-4 w-4 mr-3" />
+                  Sign Out
+                </button>
               </div>
+            )}
+
+            {/* Bottom Bar with Theme Toggle and Profile Button */}
+            <div className="p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ThemeToggle />
+              </div>
+              
+              {user && (
+                <button
+                  onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors"
+                >
+                  <Avatar className="h-7 w-7">
+                    <AvatarImage src={profile?.avatar_url || undefined} alt={user.email || 'User'} />
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                      {getInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col items-start min-w-0">
+                    <span className="text-xs font-medium text-foreground truncate max-w-[120px]">
+                      {profile?.first_name && profile?.last_name 
+                        ? `${profile.first_name} ${profile.last_name}` 
+                        : user.email?.split('@')[0]}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {getRoleDisplayName(profile?.role || 'student')}
+                    </span>
+                  </div>
+                  <ChevronUp className={`h-4 w-4 text-muted-foreground transition-transform ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+              )}
             </div>
           </div>
         </SheetContent>
