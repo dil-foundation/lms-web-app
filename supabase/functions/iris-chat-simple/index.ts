@@ -13,6 +13,30 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
+// Helper function to log user queries
+async function logUserQuery(
+  userId: string,
+  question: string,
+  platform: 'lms' | 'ai_tutor' | null,
+  errorMessage?: string,
+  errorDetails?: any
+) {
+  try {
+    await supabase
+      .from('iris_query_logs')
+      .insert({
+        user_id: userId,
+        question: question,
+        platform: platform || null,
+        error_message: errorMessage || null,
+        error_details: errorDetails ? JSON.parse(JSON.stringify(errorDetails)) : null,
+      });
+    console.log('✅ Query logged successfully');
+  } catch (logError) {
+    console.warn('⚠️ Failed to log user query:', logError);
+  }
+}
+
 const streamHeaders = {
   ...corsHeaders,
   'Content-Type': 'text/event-stream',
@@ -873,6 +897,9 @@ serve(async (req) => {
     console.log(`💬 User query: "${userMessage.content}"`);
     console.log(`📝 Conversation history: ${messages.length} messages`);
 
+    // Log the user query (fire and forget - don't block the main request)
+    logUserQuery(context.userId, userMessage.content, context.platform || null);
+
     // Build platform-specific instruction
     const platformInstruction = context.platform === 'ai_tutor'
       ? `\n\n🚨🚨🚨 SYSTEM OVERRIDE - HIGHEST PRIORITY - IGNORE ALL PREVIOUS "PLATFORM USAGE" INSTRUCTIONS 🚨🚨🚨
@@ -1246,6 +1273,31 @@ When asked "platform usage", include data from BOTH systems using CTEs.`;
       timestamp: new Date().toISOString(),
       fullError: JSON.stringify(error, Object.getOwnPropertyNames(error))
     });
+
+    // Try to extract context and userMessage from the request body for error logging
+    try {
+      const requestBody = await req.clone().json();
+      const { messages, context } = requestBody;
+      if (context?.userId && messages?.length > 0) {
+        const userMessage = messages[messages.length - 1];
+        if (userMessage?.role === 'user') {
+          // Log the error with the user query
+          await logUserQuery(
+            context.userId,
+            userMessage.content,
+            context.platform || null,
+            error?.message || 'Unknown error',
+            {
+              errorName: error?.name,
+              errorStack: error?.stack,
+              timestamp: new Date().toISOString()
+            }
+          );
+        }
+      }
+    } catch (logError) {
+      console.warn('⚠️ Could not extract request context for error logging:', logError);
+    }
 
     // Check for token overflow error
     const errorMessage = error.message || '';
