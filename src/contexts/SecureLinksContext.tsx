@@ -197,13 +197,21 @@ export const SecureLinksProvider: React.FC<SecureLinksProviderProps> = ({ childr
     }
 
     try {
+      console.log('🔗 [DEBUG] Starting link creation...', { token: link.token, role: link.observerRole });
       const dbRecord = transformToDbRecord(link);
+      console.log('🔗 [DEBUG] Transformed to DB record:', dbRecord);
+      
       const createdLink = await SecureLinksService.createLink(dbRecord);
+      console.log('🔗 [DEBUG] Link created in database:', createdLink);
+      
       const transformedLink = transformDbRecord(createdLink);
+      console.log('🔗 [DEBUG] Transformed back to app format:', transformedLink);
       
       // Update local state
       setLinks(prev => [transformedLink, ...prev]);
+      console.log('✅ [DEBUG] Link creation successful!');
     } catch (err) {
+      console.error('❌ [DEBUG] Link creation failed:', err);
       let errorMessage = err instanceof Error ? err.message : 'Failed to create secure link';
       
       // Handle specific database table not found error
@@ -284,9 +292,12 @@ export const SecureLinksProvider: React.FC<SecureLinksProviderProps> = ({ childr
 
   const validateToken = async (token: string): Promise<SecureLink | null> => {
     try {
+      console.log('🔍 [DEBUG] Validating token...', { token });
       const dbLink = await SecureLinksService.getLinkByToken(token);
+      console.log('🔍 [DEBUG] Token validation result:', dbLink ? 'Found' : 'Not found', dbLink);
       return dbLink ? transformDbRecord(dbLink) : null;
     } catch (err) {
+      console.error('❌ [DEBUG] Token validation failed:', err);
       let errorMessage = err instanceof Error ? err.message : 'Failed to validate token';
       
       // Handle specific database table not found error
@@ -301,7 +312,10 @@ export const SecureLinksProvider: React.FC<SecureLinksProviderProps> = ({ childr
 
   const markAsUsed = async (token: string, usedBy: string): Promise<void> => {
     try {
+      console.log('🔖 [DEBUG] Marking link as used...', { token, usedBy });
       const updatedLink = await SecureLinksService.markLinkAsUsed(token, usedBy);
+      console.log('🔖 [DEBUG] Link marked as used in database:', updatedLink);
+      
       if (updatedLink) {
         const transformedLink = transformDbRecord(updatedLink);
         
@@ -313,8 +327,12 @@ export const SecureLinksProvider: React.FC<SecureLinksProviderProps> = ({ childr
               : link
           )
         );
+        console.log('✅ [DEBUG] Mark as used successful!');
+      } else {
+        console.warn('⚠️ [DEBUG] No link returned from markLinkAsUsed');
       }
     } catch (err) {
+      console.error('❌ [DEBUG] Mark as used failed:', err);
       let errorMessage = err instanceof Error ? err.message : 'Failed to mark link as used';
       
       // Handle specific database table not found error

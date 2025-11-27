@@ -112,15 +112,15 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
 
   return (
     <div className={className}>
-      <div className="space-y-2">
+      <div className="space-y-2 sm:space-y-3">
         {courses.map((course) => (
           <Card
             key={course.id}
-            className="group cursor-pointer hover:bg-muted/50 transition-colors border border-border/50 shadow-md bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-border dark:hover:border-border"
+            className="group cursor-pointer hover:bg-muted/50 transition-colors border border-border/50 shadow-md bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-border dark:hover:border-border overflow-hidden"
             onClick={() => handleCourseClick(course)}
           >
-            <CardContent className="p-3 sm:p-4">
-              {/* Mobile Layout - Stacked */}
+            <CardContent className="p-3 sm:p-3 md:p-4">
+              {/* Mobile Layout - Stacked (below 640px) */}
               <div className="flex flex-col gap-3 sm:hidden">
                 <div className="flex items-start gap-3">
                   {/* Course Image */}
@@ -237,14 +237,14 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
                 </Button>
               </div>
 
-              {/* Desktop Layout - Horizontal */}
-              <div className="hidden sm:flex items-center gap-4">
+              {/* Tablet Layout - Optimized for tablet (640px - 1024px) */}
+              <div className="hidden sm:flex md:hidden items-center gap-3">
                 {/* Course Image */}
                 <div className="relative flex-shrink-0">
                   <img 
                     src={course.imageUrl} 
                     alt={course.title} 
-                    className="w-16 h-12 object-cover rounded-lg"
+                    className="w-20 h-16 object-cover rounded-lg"
                   />
                   <Badge
                     variant={
@@ -253,7 +253,7 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
                       course.status === 'Under Review' ? 'warning' :
                       'blue'
                     }
-                    className="absolute -top-1 -right-1 text-xs"
+                    className="absolute -top-1 -right-1 text-[10px] px-1.5 py-0.5"
                   >
                     {course.status}
                   </Badge>
@@ -261,37 +261,41 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
 
                 {/* Course Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-sm group-hover:text-primary transition-colors truncate">
+                  <div className="mb-1.5">
+                    <h3 className="font-semibold text-sm group-hover:text-primary transition-colors line-clamp-1">
                       {course.title}
                     </h3>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    By {course.authorName} • {course.duration}
+                  <p className="text-xs text-muted-foreground mb-2 truncate">
+                    By {course.authorName}
                   </p>
                   
-                  {/* Course Stats */}
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  {/* Course Stats - Compact for tablet */}
+                  <div className="flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap">
                     <div className="flex items-center gap-1">
-                      <Users className="w-3 h-3 text-blue-600" />
-                      <span>{course.totalStudents} students</span>
+                      <Users className="w-3 h-3 text-blue-600 flex-shrink-0" />
+                      <span className="truncate">{course.totalStudents}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Users className="w-3 h-3 text-green-600" />
-                      <span>{course.totalTeachers} teachers</span>
+                      <Users className="w-3 h-3 text-green-600 flex-shrink-0" />
+                      <span className="truncate">{course.totalTeachers}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <BookOpen className="w-3 h-3" />
-                      <span>{course.totalLessons} lessons</span>
+                      <BookOpen className="w-3 h-3 flex-shrink-0" />
+                      <span className="truncate">{course.totalLessons}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 flex-shrink-0" />
+                      <span className="truncate">{course.duration}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-2 flex-shrink-0">
+                {/* Actions - Compact for tablet */}
+                <div className="flex items-center gap-1.5 flex-shrink-0">
                   <Button
                     size="sm"
-                    className={`h-8 text-xs ${
+                    className={`h-8 px-2.5 text-xs whitespace-nowrap ${
                       (isAdmin || isContentCreator) 
                         ? 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white' 
                         : 'bg-primary hover:bg-primary/90 text-primary-foreground'
@@ -302,7 +306,7 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
                     }}
                   >
                     <Play className="w-3 h-3 mr-1" />
-                    {(isAdmin || isContentCreator) ? 'Manage' : 'View Course'}
+                    <span className="hidden sm:inline">{(isAdmin || isContentCreator) ? 'Manage' : 'View'}</span>
                   </Button>
                   
                   {!isViewOnly && (
@@ -317,7 +321,121 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
                           <MoreHorizontal className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end" className="w-40">
+                        {(isAdmin || isContentCreator) ? (
+                          <DropdownMenuItem onClick={(e) => handleEdit(e, course)}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem onClick={(e) => handleView(e, course)} disabled className="opacity-50">
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Only
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem onClick={(e) => handleView(e, course)}>
+                          <Eye className="w-4 h-4 mr-2" />
+                          View
+                        </DropdownMenuItem>
+                        {canDelete(course) && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={(e) => handleDelete(e, course)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+              </div>
+
+              {/* Desktop Layout - Horizontal (1024px+) */}
+              <div className="hidden md:flex items-center gap-4">
+                {/* Course Image */}
+                <div className="relative flex-shrink-0">
+                  <img 
+                    src={course.imageUrl} 
+                    alt={course.title} 
+                    className="w-20 h-16 object-cover rounded-lg"
+                  />
+                  <Badge
+                    variant={
+                      course.status === 'Published' ? 'default' :
+                      course.status === 'Rejected' ? 'destructive' :
+                      course.status === 'Under Review' ? 'warning' :
+                      'blue'
+                    }
+                    className="absolute -top-1 -right-1 text-xs px-2 py-0.5"
+                  >
+                    {course.status}
+                  </Badge>
+                </div>
+
+                {/* Course Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-semibold text-sm lg:text-base group-hover:text-primary transition-colors truncate">
+                      {course.title}
+                    </h3>
+                  </div>
+                  <p className="text-xs lg:text-sm text-muted-foreground mb-2 truncate">
+                    By {course.authorName} • {course.duration}
+                  </p>
+                  
+                  {/* Course Stats */}
+                  <div className="flex items-center gap-4 lg:gap-6 text-xs lg:text-sm text-muted-foreground flex-wrap">
+                    <div className="flex items-center gap-1.5">
+                      <Users className="w-3 h-3 lg:w-3.5 lg:h-3.5 text-blue-600 flex-shrink-0" />
+                      <span className="whitespace-nowrap">{course.totalStudents} students</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Users className="w-3 h-3 lg:w-3.5 lg:h-3.5 text-green-600 flex-shrink-0" />
+                      <span className="whitespace-nowrap">{course.totalTeachers} teachers</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <BookOpen className="w-3 h-3 lg:w-3.5 lg:h-3.5 flex-shrink-0" />
+                      <span className="whitespace-nowrap">{course.totalLessons} lessons</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Button
+                    size="sm"
+                    className={`h-9 px-3 lg:px-4 text-xs lg:text-sm whitespace-nowrap ${
+                      (isAdmin || isContentCreator) 
+                        ? 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white' 
+                        : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCourseClick(course);
+                    }}
+                  >
+                    <Play className="w-3 h-3 lg:w-3.5 lg:h-3.5 mr-1.5" />
+                    {(isAdmin || isContentCreator) ? 'Manage' : 'View Course'}
+                  </Button>
+                  
+                  {!isViewOnly && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-9 w-9 p-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-44">
                         {(isAdmin || isContentCreator) ? (
                           <DropdownMenuItem onClick={(e) => handleEdit(e, course)}>
                             <Edit className="w-4 h-4 mr-2" />
