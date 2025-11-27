@@ -64,8 +64,10 @@ export function DatePicker({ value, onChange, placeholder = "Select date", class
           )}
           disabled={disabled}
         >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {value ? format(value, "PPP") : placeholder}
+          <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+          <span className="truncate">
+            {value ? format(value, "PPP") : placeholder}
+          </span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">

@@ -71,8 +71,10 @@ export function TimePicker({ value, onChange, placeholder = "Select time", class
           )}
           disabled={disabled}
         >
-          <Clock className="mr-2 h-4 w-4" />
-          {value ? formatTime(selectedHour, selectedMinute) : placeholder}
+          <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
+          <span className="truncate">
+            {value ? formatTime(selectedHour, selectedMinute) : placeholder}
+          </span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">

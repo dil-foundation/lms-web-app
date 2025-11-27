@@ -112,20 +112,20 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
 
   return (
     <div className={className}>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 w-full overflow-hidden">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4 w-full overflow-hidden">
         {courses.map((course) => (
           <Card
             key={course.id}
-            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-52 flex flex-col overflow-hidden"
+            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-[250px] sm:h-[260px] md:h-[270px] flex flex-col overflow-hidden"
             onClick={() => handleCourseClick(course)}
           >
-            <CardHeader className="p-0 relative">
+            <CardHeader className="p-0 relative flex-shrink-0">
               <img 
                 src={course.imageUrl} 
                 alt={course.title} 
-                className="w-full h-16 object-cover"
+                className="w-full h-20 sm:h-[72px] md:h-20 object-cover"
               />
-              <div className="absolute top-1 left-1 right-1 flex justify-between items-start">
+              <div className="absolute top-1 left-1 right-1 flex justify-between items-start gap-1">
                 <Badge
                   variant={
                     course.status === 'Published' ? 'default' :
@@ -133,7 +133,7 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
                     course.status === 'Under Review' ? 'warning' :
                     'blue'
                   }
-                  className="text-xs px-1.5 py-0.5"
+                  className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 max-w-[70%] truncate"
                 >
                   {course.status}
                 </Badge>
@@ -143,13 +143,13 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-5 w-5 p-0 hover:bg-white/20 text-white"
+                        className="h-5 w-5 sm:h-6 sm:w-6 p-0 hover:bg-white/20 text-white backdrop-blur-sm"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <MoreHorizontal className="w-3 h-3" />
+                        <MoreHorizontal className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="w-40">
                       {(isAdmin || isContentCreator) ? (
                         <DropdownMenuItem onClick={(e) => handleEdit(e, course)}>
                           <Edit className="w-4 h-4 mr-2" />
@@ -183,43 +183,45 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
               </div>
             </CardHeader>
             
-            <CardContent className="p-3 flex flex-col h-full overflow-hidden">
-              {/* Course Title */}
-              <div className="mb-2">
-                <h3 className="font-medium text-xs line-clamp-2 group-hover:text-primary transition-colors">
-                  {course.title}
-                </h3>
-              </div>
-
-              {/* Compact Course Stats - Horizontal Layout */}
-              <div className="space-y-1 text-xs text-muted-foreground mb-2 flex-1 min-h-0">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1">
-                    <Users className="w-2.5 h-2.5 text-blue-600" />
-                    <span>{course.totalStudents}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Users className="w-2.5 h-2.5 text-green-600" />
-                    <span>{course.totalTeachers}</span>
-                  </div>
+            <CardContent className="p-2 sm:p-2.5 md:p-3 flex flex-col justify-between h-full overflow-hidden">
+              <div className="flex-shrink-0">
+                {/* Course Title */}
+                <div className="mb-1.5 sm:mb-2">
+                  <h3 className="font-medium text-[11px] sm:text-xs md:text-sm line-clamp-2 group-hover:text-primary transition-colors leading-tight">
+                    {course.title}
+                  </h3>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1">
-                    <BookOpen className="w-2.5 h-2.5" />
-                    <span>{course.totalLessons}</span>
+
+                {/* Compact Course Stats - Horizontal Layout */}
+                <div className="space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs text-muted-foreground">
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center gap-0.5 sm:gap-1 min-w-0">
+                      <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-blue-600 flex-shrink-0" />
+                      <span className="truncate">{course.totalStudents}</span>
+                    </div>
+                    <div className="flex items-center gap-0.5 sm:gap-1 min-w-0">
+                      <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-green-600 flex-shrink-0" />
+                      <span className="truncate">{course.totalTeachers}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-2.5 h-2.5" />
-                    <span className="truncate">{course.duration}</span>
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center gap-0.5 sm:gap-1 min-w-0">
+                      <BookOpen className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
+                      <span className="truncate">{course.totalLessons}</span>
+                    </div>
+                    <div className="flex items-center gap-0.5 sm:gap-1 min-w-0">
+                      <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
+                      <span className="truncate text-[9px] sm:text-[10px] md:text-xs">{course.duration}</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Compact Action Button */}
-              <div className="mt-auto pt-2">
+              <div className="mt-2 flex-shrink-0">
                 <Button
                   size="sm"
-                  className={`w-full h-7 text-xs ${
+                  className={`w-full h-7 sm:h-8 text-[10px] sm:text-xs ${
                     (isAdmin || isContentCreator) 
                       ? 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white' 
                       : 'bg-primary hover:bg-primary/90 text-primary-foreground'
@@ -229,8 +231,8 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
                     handleCourseClick(course);
                   }}
                 >
-                  <Play className="w-3 h-3 mr-1" />
-                  {(isAdmin || isContentCreator) ? 'Manage' : 'View Course'}
+                  <Play className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
+                  <span className="truncate">{(isAdmin || isContentCreator) ? 'Manage' : 'View'}</span>
                 </Button>
               </div>
             </CardContent>

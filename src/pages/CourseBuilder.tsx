@@ -959,7 +959,7 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
             </div>
             <div>
               <Label htmlFor={`quiz-due-date-${item.id}`} className="text-xs sm:text-sm">Due Date</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3">
                 <div className="relative">
                   <Label htmlFor={`quiz-date-${item.id}`} className="text-xs">Date</Label>
                   <DatePicker
@@ -1003,7 +1003,7 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
             </div>
             
             {/* Quiz Retry Settings */}
-            <div className="mt-4 sm:mt-6">
+            <div className="mt-3 sm:mt-4">
               {(() => {
                 console.log('🎯 COURSEBUILDER: Rendering QuizRetrySettings for item:', item.id, 'with retry_settings:', item.retry_settings);
                 return null;
@@ -1047,33 +1047,33 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
   };
 
   return (
-    <div className={`w-full p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl border-2 transition-all duration-300 hover:shadow-xl ${getContentTypeColor(item.content_type)}`}>
-      <div className="flex items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6">
-        <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+    <div className={`w-full p-1.5 sm:p-2 md:p-3 lg:p-6 rounded-xl sm:rounded-2xl border-2 transition-all duration-300 hover:shadow-xl ${getContentTypeColor(item.content_type)}`}>
+      <div className="flex items-center justify-between gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 lg:mb-3">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
           {canReorder && (
             <div 
               {...dragHandleProps}
-              className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white/60 dark:bg-black/30 hover:bg-white/80 dark:hover:bg-black/50 cursor-grab active:cursor-grabbing transition-all duration-200 shadow-sm hover:shadow-md flex-shrink-0"
+              className="flex items-center justify-center w-7 h-7 sm:w-7 sm:h-7 rounded-lg bg-white/60 dark:bg-black/30 hover:bg-white/80 dark:hover:bg-black/50 cursor-grab active:cursor-grabbing transition-all duration-200 shadow-sm hover:shadow-md flex-shrink-0"
             >
-              <GripVertical className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-400" />
+              <GripVertical className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-600 dark:text-gray-400" />
             </div>
           )}
-          <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl sm:rounded-2xl bg-white/80 dark:bg-black/40 shadow-sm flex-shrink-0">
-            <span className="text-lg sm:text-xl md:text-2xl">{getContentTypeIcon(item.content_type)}</span>
+          <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 md:w-12 md:h-12 rounded-xl sm:rounded-2xl bg-white/80 dark:bg-black/40 shadow-sm flex-shrink-0">
+            <span className="text-lg sm:text-lg md:text-2xl">{getContentTypeIcon(item.content_type)}</span>
           </div>
           <Input
             value={item.title}
             onChange={(e) => onUpdate(lessonId, item.id, { title: e.target.value })}
             placeholder={`${item.content_type.charAt(0).toUpperCase() + item.content_type.slice(1)} Title`}
-            className="font-semibold text-sm sm:text-base md:text-lg bg-white/60 dark:bg-black/30 border-0 focus-visible:ring-2 focus-visible:ring-current/30 rounded-lg sm:rounded-xl px-3 py-2 sm:px-4 sm:py-3 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+            className="font-semibold text-sm sm:text-base md:text-lg bg-white/60 dark:bg-black/30 border-0 focus-visible:ring-2 focus-visible:ring-current/30 rounded-lg sm:rounded-xl px-3 py-2 sm:px-3 sm:py-2 placeholder:text-gray-500 dark:placeholder:text-gray-400"
           />
         </div>
-        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-2 flex-shrink-0">
           <Select
             value={item.content_type}
             onValueChange={handleTypeChangeRequest}
           >
-            <SelectTrigger className="w-[100px] sm:w-[120px] md:w-[140px] h-8 sm:h-9 md:h-10 rounded-lg sm:rounded-xl bg-white/60 dark:bg-black/30 border-2 border-current/20 text-xs sm:text-sm font-medium shadow-sm hover:shadow-md transition-all duration-300">
+            <SelectTrigger className="w-[100px] sm:w-[110px] md:w-[140px] h-8 sm:h-8 md:h-10 rounded-lg sm:rounded-xl bg-white/60 dark:bg-black/30 border-2 border-current/20 text-xs sm:text-sm font-medium shadow-sm hover:shadow-md transition-all duration-300">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="rounded-xl sm:rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
@@ -1089,26 +1089,26 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
               variant="ghost"
               size="icon"
               onClick={() => onRemove(lessonId, item.id)}
-              className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 text-current/60 hover:text-current hover:bg-white/40 dark:hover:bg-black/40 rounded-lg sm:rounded-xl transition-all duration-300"
+              className="h-8 w-8 sm:h-8 sm:w-8 md:h-10 md:w-10 text-current/60 hover:text-current hover:bg-white/40 dark:hover:bg-black/40 rounded-lg sm:rounded-xl transition-all duration-300"
             >
-              <X className="w-4 h-4 sm:w-5 sm:h-5" />
+              <X className="w-4 h-4 sm:w-4 sm:h-4" />
             </Button>
           )}
         </div>
       </div>
       
-      <div className="w-full bg-white/40 dark:bg-black/30 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border-2 border-current/10 shadow-sm relative">
+      <div className="w-full bg-white/40 dark:bg-black/30 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 md:p-3 lg:p-6 border-2 border-current/10 shadow-sm relative">
         {/* Show due date for assignments and quizzes */}
         {(item.content_type === 'assignment' || item.content_type === 'quiz') && item.due_date && (
-          <div className="mb-4 sm:mb-6 p-2 sm:p-3 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg sm:rounded-xl shadow-sm">
-            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-yellow-700 dark:text-yellow-300 flex-wrap">
-              <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+          <div className="mb-1.5 sm:mb-2 lg:mb-3 p-1.5 sm:p-2 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg sm:rounded-xl shadow-sm">
+            <div className="flex items-center gap-1.5 sm:gap-1.5 text-xs sm:text-xs text-yellow-700 dark:text-yellow-300 flex-wrap">
+              <CalendarIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
               <span className="font-medium">Due:</span>
               <span className="font-semibold break-all">{format(new Date(item.due_date), "PPP 'at' p")}</span>
             </div>
           </div>
         )}
-        <div className="space-y-4 sm:space-y-6">
+        <div className="space-y-3 sm:space-y-4">
           {renderContentEditor()}
         </div>
       </div>
@@ -1153,14 +1153,14 @@ interface LessonContainerProps {
 const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, dragHandleProps, onToggleCollapse, courseId, onUpdateContentItem, onRemoveContentItem, onShowContentTypeSelector, canReorderContent, currentUserRole, courseStatus }: LessonContainerProps) => {
   return (
     <>
-      <div className="p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl bg-gradient-to-br from-card to-card/50 dark:bg-card border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl space-y-4 sm:space-y-6 transition-all duration-300 group">
+      <div className="p-1.5 sm:p-2 md:p-3 lg:p-6 rounded-xl sm:rounded-2xl bg-gradient-to-br from-card to-card/50 dark:bg-card border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl space-y-2 sm:space-y-3 lg:space-y-4 transition-all duration-300 group">
         {/* Lesson Header */}
-        <div className="flex items-start justify-between gap-2 sm:gap-4">
-          <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
-            <div {...dragHandleProps} className="cursor-move pt-2 sm:pt-2.5 opacity-60 hover:opacity-100 transition-opacity hover:scale-110 flex-shrink-0">
-              <GripVertical className="text-primary w-4 h-4 sm:w-5 sm:h-5" />
+        <div className="flex items-start justify-between gap-1.5 sm:gap-2">
+          <div className="flex items-start gap-1.5 sm:gap-2 flex-1 min-w-0">
+            <div {...dragHandleProps} className="cursor-move pt-2 sm:pt-2 opacity-60 hover:opacity-100 transition-opacity hover:scale-110 flex-shrink-0">
+              <GripVertical className="text-primary w-4 h-4 sm:w-4 sm:h-4" />
             </div>
-            <div className="flex-1 space-y-2 sm:space-y-3 min-w-0">
+            <div className="flex-1 space-y-1.5 sm:space-y-2 min-w-0">
               <Input
                 value={lesson.title}
                 onChange={(e) => onUpdate(sectionId, lesson.id, { title: e.target.value })}
@@ -1172,7 +1172,7 @@ const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovab
                 onChange={(e) => onUpdate(sectionId, lesson.id, { overview: e.target.value })}
                 placeholder="Lesson overview or summary (optional)"
                 rows={2}
-                className="text-xs sm:text-sm resize-none border-0 bg-white/50 dark:bg-gray-800/50 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 focus-visible:ring-2 focus-visible:ring-primary/20 text-gray-700 dark:text-gray-300"
+                className="text-xs sm:text-sm resize-none border-0 bg-white/50 dark:bg-gray-800/50 rounded-lg sm:rounded-xl px-3 sm:px-3 py-2 sm:py-2 focus-visible:ring-2 focus-visible:ring-primary/20 text-gray-700 dark:text-gray-300"
               />
             </div>
           </div>
@@ -1200,38 +1200,38 @@ const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovab
 
         {/* Content Management */}
         {!lesson.isCollapsed && (
-          <div className="space-y-4 sm:space-y-6 ml-0 sm:ml-6 md:ml-8">
+          <div className="space-y-2 sm:space-y-3 ml-0 sm:ml-0 md:ml-0 lg:ml-4">
             {/* Add Content Button */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 md:p-6 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-xl sm:rounded-2xl border-2 border-primary/20 hover:border-primary/30 transition-all duration-300 group gap-3 sm:gap-4">
-              <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/100 to-primary/200 dark:from-primary-900/30 dark:to-primary-800/30 rounded-xl sm:rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
-                  <Plus className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-primary-700 dark:text-primary-300" />
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-1.5 sm:p-2 md:p-3 lg:p-6 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-xl sm:rounded-2xl border-2 border-primary/20 hover:border-primary/30 transition-all duration-300 group gap-2 sm:gap-2">
+              <div className="flex items-start sm:items-center gap-2 sm:gap-2 min-w-0 flex-1">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-primary/100 to-primary/200 dark:from-primary-900/30 dark:to-primary-800/30 rounded-xl sm:rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                  <Plus className="w-4 h-4 sm:w-4 sm:h-4 md:w-6 md:h-6 text-primary-700 dark:text-primary-300" />
                 </div>
                 <div className="min-w-0">
                   <h4 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 dark:text-white">Add Content</h4>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 hidden sm:block">Enhance your lesson with videos, assignments, quizzes, or attachments</p>
+                  <p className="text-xs sm:text-xs text-gray-600 dark:text-gray-300 hidden sm:block">Enhance your lesson with videos, assignments, quizzes, or attachments</p>
                 </div>
               </div>
                   <Button
                 onClick={() => onShowContentTypeSelector(lesson.id)}
-                className="h-9 sm:h-10 md:h-11 px-4 sm:px-5 md:px-6 rounded-lg sm:rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm w-full sm:w-auto"
+                className="h-9 sm:h-9 md:h-11 px-4 sm:px-4 md:px-6 rounded-lg sm:rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm w-full sm:w-auto"
               >
-                <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-1.5" />
                 Add Content
                   </Button>
               </div>
 
             {/* Existing Content Items */}
             {lesson.contentItems.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {canReorderContent && (
-                  <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                  <div className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1">
                     <GripVertical className="w-3 h-3" />
                     <span>Drag to reorder content items</span>
                   </div>
                 )}
                 {!canReorderContent && (currentUserRole === 'admin' || currentUserRole === 'super_user' || currentUserRole === 'teacher' || currentUserRole === 'content_creator') && courseStatus === 'Published' && (
-                  <div className="text-xs text-amber-600 dark:text-amber-400 mb-2 flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <div className="text-xs text-amber-600 dark:text-amber-400 mb-1.5 flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 px-2.5 sm:px-2.5 py-1.5 sm:py-1.5 rounded-lg border border-amber-200 dark:border-amber-800">
                     <Info className="w-3 h-3" />
                     <span>Content reordering is disabled for published courses. Unpublish the course to make changes.</span>
                   </div>
@@ -1734,8 +1734,8 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
       
       {quiz.questions.map((question, qIndex) => (
         <Card key={question.id} className="overflow-hidden border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300">
-          <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100/50 dark:from-purple-900/10 dark:to-purple-800/10 border-b border-purple-200/50 dark:border-purple-700/30 p-3 sm:p-4 md:p-6">
-            <div className="flex items-start sm:items-center gap-2 sm:gap-3">
+          <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100/50 dark:from-purple-900/10 dark:to-purple-800/10 border-b border-purple-200/50 dark:border-purple-700/30 p-2 sm:p-3 md:p-6">
+            <div className="flex items-start sm:items-center gap-2 sm:gap-2">
               <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-xs sm:text-sm font-semibold text-purple-700 dark:text-purple-300">
                   {qIndex + 1}
@@ -1760,7 +1760,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
             </div>
             
             {/* Question Type Selector */}
-            <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+            <div className="mt-2 sm:mt-3 flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-3">
               <Label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                 Question Type:
               </Label>
@@ -1900,9 +1900,9 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
               )}
             </div>
           </CardHeader>
-          <CardContent className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
+          <CardContent className="p-2 sm:p-3 md:p-6 space-y-3 sm:space-y-4">
             {question.question_type === 'text_answer' ? (
-              <div className="p-3 sm:p-4 md:p-6 bg-gradient-to-r from-orange-50 to-orange-100/50 dark:from-orange-900/10 dark:to-orange-800/10 rounded-lg sm:rounded-xl border border-orange-200/50 dark:border-orange-700/30">
+              <div className="p-2 sm:p-3 md:p-6 bg-gradient-to-r from-orange-50 to-orange-100/50 dark:from-orange-900/10 dark:to-orange-800/10 rounded-lg sm:rounded-xl border border-orange-200/50 dark:border-orange-700/30">
                 <div className="flex items-start sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                   <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center flex-shrink-0">
                     <span className="text-xs sm:text-sm font-semibold text-orange-700 dark:text-orange-300">📝</span>
@@ -1997,7 +1997,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
             ) : (
               <>
                 {question.options.map((option, oIndex) => (
-                  <div key={option.id} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 rounded-lg sm:rounded-xl border border-gray-200/50 dark:border-gray-600/30 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-300">
+                  <div key={option.id} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2 p-2 sm:p-3 bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 rounded-lg sm:rounded-xl border border-gray-200/50 dark:border-gray-600/30 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-300">
                     <div className="flex-1 text-gray-900 dark:text-white min-w-0">
                     <Input
                       value={option.option_text}
@@ -2046,10 +2046,10 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
       ))}
       {/* Add Question Section */}
       {quiz.questions.length > 0 ? (
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+        <div className="flex flex-col lg:flex-row gap-2 sm:gap-4">
       <Button 
         onClick={addQuestion}
-            className="flex-1 h-10 sm:h-11 md:h-12 border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-xl sm:rounded-2xl text-purple-600 dark:text-purple-400 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-900/10 dark:hover:text-purple-300 hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 group text-xs sm:text-sm"
+            className="w-full lg:flex-1 h-10 sm:h-11 md:h-12 border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-xl sm:rounded-2xl text-purple-600 dark:text-purple-400 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-900/10 dark:hover:text-purple-300 hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 group text-xs sm:text-sm"
       >
         <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
             Add Question Manually
@@ -2058,7 +2058,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
             <DialogTrigger asChild>
               <Button 
                 variant="outline"
-                className="flex-1 h-10 sm:h-11 md:h-12 border-2 border-dashed border-blue-300 dark:border-blue-600 rounded-xl sm:rounded-2xl text-blue-600 dark:text-blue-400 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/10 dark:hover:text-blue-300 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300 group text-xs sm:text-sm"
+                className="w-full lg:flex-1 h-10 sm:h-11 md:h-12 border-2 border-dashed border-blue-300 dark:border-blue-600 rounded-xl sm:rounded-2xl text-blue-600 dark:text-blue-400 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/10 dark:hover:text-blue-300 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300 group text-xs sm:text-sm"
               >
                 <Upload className="w-4 h-4 sm:w-5 sm:h-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
                 Import More from PDF
@@ -6178,8 +6178,8 @@ const CourseBuilder = () => {
       {/* Premium Header Section */}
       <div className="relative border-b bg-card">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5"></div>
-        <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 md:p-6 w-full gap-3 sm:gap-4">
-          <div className="flex items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+        <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between p-3 sm:p-4 md:p-6 w-full gap-3 sm:gap-4">
+          <div className="flex items-start gap-2 sm:gap-4 w-full lg:w-auto">
             <Button
               variant="ghost"
               size="icon"
@@ -6188,9 +6188,9 @@ const CourseBuilder = () => {
             >
               <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
             </Button>
-            <div className="flex items-start sm:items-center gap-2 sm:gap-3 min-w-0 flex-1">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
-                <BookOpen className="w-4 h-4 sm:w-6 sm:h-6 text-primary" />
+            <div className="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
+                <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-primary" />
               </div>
               <div className="min-w-0 flex-1">
                 <h1 className="text-base sm:text-xl md:text-2xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent truncate" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
@@ -6225,13 +6225,13 @@ const CourseBuilder = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap">
+          <div className="flex items-center gap-1.5 sm:gap-2 w-full lg:w-auto flex-wrap">
             <Button
               variant="outline"
               onClick={() => setIsPreviewOpen(true)}
-              className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white text-xs sm:text-sm"
+              className="h-8 sm:h-9 px-2.5 sm:px-3 md:px-4 rounded-lg sm:rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white text-xs sm:text-sm flex-shrink-0"
             >
-              <Eye className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+              <Eye className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1.5" />
               <span className="hidden sm:inline">Preview</span>
             </Button>
 
@@ -6243,18 +6243,19 @@ const CourseBuilder = () => {
                     <Button 
                       onClick={handleSaveDraftClick} 
                       disabled={isSaving}
-                      className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm"
+                      className="h-8 sm:h-9 px-2.5 sm:px-3 md:px-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-shrink-0 whitespace-nowrap"
                     >
-                      <Save className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-                      <span className="hidden sm:inline">{saveAction === 'draft' ? 'Saving...' : (courseData.id ? 'Update Draft' : 'Save Draft')}</span>
+                      <Save className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1.5" />
+                      <span className="hidden md:inline">{saveAction === 'draft' ? 'Saving...' : (courseData.id ? 'Update Draft' : 'Save Draft')}</span>
+                      <span className="md:hidden">{saveAction === 'draft' ? 'Saving...' : 'Save'}</span>
                     </Button>
                     <Button 
                       onClick={handleSubmitForReview} 
-                      className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-white text-xs sm:text-sm" 
+                      className="h-8 sm:h-9 px-2.5 sm:px-3 md:px-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-white text-xs sm:text-sm flex-shrink-0 whitespace-nowrap" 
                       disabled={isSaving || !isFormValid}
                     >
-                      <span className="hidden sm:inline">{saveAction === 'review' ? 'Submitting...' : 'Submit for Review'}</span>
-                      <span className="sm:hidden">{saveAction === 'review' ? 'Submitting...' : 'Submit'}</span>
+                      <span className="hidden md:inline">{saveAction === 'review' ? 'Submitting...' : 'Submit for Review'}</span>
+                      <span className="md:hidden">{saveAction === 'review' ? 'Submitting...' : 'Submit'}</span>
                     </Button>
                   </>
                 )}
@@ -6262,11 +6263,11 @@ const CourseBuilder = () => {
                    <Button 
                      onClick={handleSaveDraftClick} 
                      disabled={isSaving}
-                     className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm"
+                     className="h-8 sm:h-9 px-2.5 sm:px-3 md:px-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-shrink-0 whitespace-nowrap"
                    >
-                      <Save className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-                      <span className="hidden sm:inline">{saveAction === 'draft' ? 'Creating...' : 'Create New Draft'}</span>
-                      <span className="sm:hidden">{saveAction === 'draft' ? 'Creating...' : 'New Draft'}</span>
+                      <Save className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1.5" />
+                      <span className="hidden md:inline">{saveAction === 'draft' ? 'Creating...' : 'Create New Draft'}</span>
+                      <span className="md:hidden">{saveAction === 'draft' ? 'Creating...' : 'New Draft'}</span>
                     </Button>
                 )}
               </>
@@ -6279,11 +6280,11 @@ const CourseBuilder = () => {
                    <Button 
                      onClick={handleSaveDraftClick} 
                      disabled={isSaving}
-                     className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm"
+                     className="h-8 sm:h-9 px-2.5 sm:px-3 md:px-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-shrink-0 whitespace-nowrap"
                    >
-                    <Save className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-                    <span className="hidden sm:inline">{saveAction === 'draft' ? 'Saving...' : (courseData.id ? 'Update Draft' : 'Save Draft')}</span>
-                    <span className="sm:hidden">{saveAction === 'draft' ? 'Saving...' : 'Save'}</span>
+                    <Save className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1.5" />
+                    <span className="hidden md:inline">{saveAction === 'draft' ? 'Saving...' : (courseData.id ? 'Update Draft' : 'Save Draft')}</span>
+                    <span className="md:hidden">{saveAction === 'draft' ? 'Saving...' : 'Save'}</span>
                   </Button>
                 )}
                 {courseData.status === 'Published' ? (
@@ -6292,7 +6293,7 @@ const CourseBuilder = () => {
                     {courseData.authorId === user?.id && (
                       <Button 
                         onClick={handleUnpublishClick} 
-                        className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm" 
+                        className="h-8 sm:h-9 px-2.5 sm:px-3 md:px-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-shrink-0 whitespace-nowrap" 
                         disabled={isSaving}
                       >
                         {saveAction === 'unpublish' ? 'Unpublishing...' : 'Unpublish'}
@@ -6303,7 +6304,7 @@ const CourseBuilder = () => {
                   (courseData.status === 'Draft' || courseData.status === 'Rejected') && (
                     <Button 
                       onClick={handlePublishClick} 
-                      className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm" 
+                      className="h-8 sm:h-9 px-2.5 sm:px-3 md:px-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-shrink-0 whitespace-nowrap" 
                       disabled={isSaving || !isFormValid}
                     >
                       {saveAction === 'publish' ? 'Publishing...' : 'Publish'}
@@ -6320,18 +6321,18 @@ const CourseBuilder = () => {
                    <Button 
                      onClick={handleSaveDraftClick} 
                      disabled={isSaving}
-                     className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm"
+                     className="h-8 sm:h-9 px-2.5 sm:px-3 md:px-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-shrink-0 whitespace-nowrap"
                    >
-                    <Save className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-                    <span className="hidden sm:inline">{saveAction === 'draft' ? 'Saving...' : (courseData.id ? 'Update Draft' : 'Save Draft')}</span>
-                    <span className="sm:hidden">{saveAction === 'draft' ? 'Saving...' : 'Save'}</span>
+                    <Save className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1.5" />
+                    <span className="hidden md:inline">{saveAction === 'draft' ? 'Saving...' : (courseData.id ? 'Update Draft' : 'Save Draft')}</span>
+                    <span className="md:hidden">{saveAction === 'draft' ? 'Saving...' : 'Save'}</span>
                   </Button>
                 )}
                 {courseData.status === 'Published' ? (
                   <>
                     <Button 
                       onClick={handleUnpublishClick} 
-                      className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm" 
+                      className="h-8 sm:h-9 px-2.5 sm:px-3 md:px-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-shrink-0 whitespace-nowrap" 
                       disabled={isSaving}
                     >
                       {saveAction === 'unpublish' ? 'Unpublishing...' : 'Unpublish'}
@@ -6341,7 +6342,7 @@ const CourseBuilder = () => {
                   (courseData.status === 'Draft' || courseData.status === 'Rejected') && (
                     <Button 
                       onClick={handlePublishClick} 
-                      className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm" 
+                      className="h-8 sm:h-9 px-2.5 sm:px-3 md:px-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-shrink-0 whitespace-nowrap" 
                       disabled={isSaving || !isFormValid}
                     >
                       {saveAction === 'publish' ? 'Publishing...' : 'Publish'}
@@ -6354,17 +6355,17 @@ const CourseBuilder = () => {
                       onClick={() => setIsRejectionDialogOpen(true)} 
                       variant="destructive" 
                       disabled={isSaving}
-                      className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm"
+                      className="h-8 sm:h-9 px-2.5 sm:px-3 md:px-4 rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-shrink-0 whitespace-nowrap"
                     >
                         {saveAction === 'reject' ? 'Rejecting...' : 'Reject'}
                     </Button>
                     <Button 
                       onClick={handleApproveSubmission} 
-                      className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm" 
+                      className="h-8 sm:h-9 px-2.5 sm:px-3 md:px-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-shrink-0 whitespace-nowrap" 
                       disabled={isSaving}
                     >
-                      <span className="hidden sm:inline">{saveAction === 'approve' ? 'Approving...' : 'Approve & Publish'}</span>
-                      <span className="sm:hidden">{saveAction === 'approve' ? 'Approving...' : 'Approve'}</span>
+                      <span className="hidden md:inline">{saveAction === 'approve' ? 'Approving...' : 'Approve & Publish'}</span>
+                      <span className="md:hidden">{saveAction === 'approve' ? 'Approving...' : 'Approve'}</span>
                     </Button>
                   </>
                 )}
@@ -6376,7 +6377,7 @@ const CourseBuilder = () => {
                   variant="destructive" 
                   onClick={() => setIsDeleteDialogOpen(true)} 
                   disabled={isSaving}
-                  className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm"
+                  className="h-8 sm:h-9 px-2.5 sm:px-3 md:px-4 rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-xs sm:text-sm flex-shrink-0 whitespace-nowrap"
                 >
                     Delete
                 </Button>
@@ -6552,10 +6553,10 @@ const CourseBuilder = () => {
                   </div>
                   
                   {/* Course Metadata Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
                     {/* Category */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                    <div className="space-y-2 sm:space-y-3">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
                         Category
                         <span className="text-red-500 ml-1">*</span>
                       </label>
@@ -6567,21 +6568,21 @@ const CourseBuilder = () => {
                         }}
                       >
                         <SelectTrigger className={cn(
-                          "h-11 border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg",
+                          "h-10 sm:h-11 border-2 rounded-xl sm:rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg",
                           "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700",
                           "focus:border-primary focus:ring-4 focus:ring-primary/10",
-                          "text-base font-medium",
+                          "text-sm sm:text-base font-medium",
                           validationErrors.category && (touchedFields.category || courseData.id) && 
                           "border-red-500 focus:border-red-500 focus:ring-red-500/10"
                         )}>
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
-                        <SelectContent className="rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
+                        <SelectContent className="rounded-xl sm:rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
                           {categories.map((category) => (
                             <SelectItem 
                               key={category.id} 
                               value={category.name}
-                              className="rounded-xl hover:bg-primary/5 hover:text-gray-900 dark:hover:text-white focus:bg-primary/10 focus:text-gray-900 dark:focus:text-white transition-colors"
+                              className="rounded-lg sm:rounded-xl hover:bg-primary/5 hover:text-gray-900 dark:hover:text-white focus:bg-primary/10 focus:text-gray-900 dark:focus:text-white transition-colors text-sm sm:text-base"
                             >
                               {category.name}
                             </SelectItem>
@@ -6589,7 +6590,7 @@ const CourseBuilder = () => {
                         </SelectContent>
                       </Select>
                       {validationErrors.category && (touchedFields.category || courseData.id) && (
-                        <div className="flex items-center gap-2 text-red-500 text-sm">
+                        <div className="flex items-center gap-2 text-red-500 text-xs sm:text-sm">
                           <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
                           {validationErrors.category}
                         </div>
@@ -6597,8 +6598,8 @@ const CourseBuilder = () => {
                     </div>
                     
                     {/* Language */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                    <div className="space-y-2 sm:space-y-3">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
                         Language
                         <span className="text-red-500 ml-1">*</span>
                       </label>
@@ -6610,21 +6611,21 @@ const CourseBuilder = () => {
                         }}
                       >
                         <SelectTrigger className={cn(
-                          "h-11 border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg",
+                          "h-10 sm:h-11 border-2 rounded-xl sm:rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg",
                           "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700",
                           "focus:border-primary focus:ring-4 focus:ring-primary/10",
-                          "text-base font-medium",
+                          "text-sm sm:text-base font-medium",
                           validationErrors.language && (touchedFields.language || courseData.id) && 
                           "border-red-500 focus:border-red-500 focus:ring-red-500/10"
                         )}>
                           <SelectValue placeholder="Select language" />
                         </SelectTrigger>
-                        <SelectContent className="rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
+                        <SelectContent className="rounded-xl sm:rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
                           {languages.map((language) => (
                             <SelectItem 
                               key={language.id} 
                               value={language.name}
-                              className="rounded-xl hover:bg-primary/5 hover:text-gray-900 dark:hover:text-white focus:bg-primary/10 focus:text-gray-900 dark:focus:text-white transition-colors"
+                              className="rounded-lg sm:rounded-xl hover:bg-primary/5 hover:text-gray-900 dark:hover:text-white focus:bg-primary/10 focus:text-gray-900 dark:focus:text-white transition-colors text-sm sm:text-base"
                             >
                               {language.name}
                             </SelectItem>
@@ -6632,7 +6633,7 @@ const CourseBuilder = () => {
                         </SelectContent>
                       </Select>
                       {validationErrors.language && (touchedFields.language || courseData.id) && (
-                        <div className="flex items-center gap-2 text-red-500 text-sm">
+                        <div className="flex items-center gap-2 text-red-500 text-xs sm:text-sm">
                           <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
                           {validationErrors.language}
                         </div>
@@ -6640,8 +6641,8 @@ const CourseBuilder = () => {
                     </div>
                     
                     {/* Level */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                    <div className="space-y-2 sm:space-y-3">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
                         Level
                         <span className="text-red-500 ml-1">*</span>
                       </label>
@@ -6653,21 +6654,21 @@ const CourseBuilder = () => {
                         }}
                       >
                         <SelectTrigger className={cn(
-                          "h-11 border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg",
+                          "h-10 sm:h-11 border-2 rounded-xl sm:rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg",
                           "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700",
                           "focus:border-primary focus:ring-4 focus:ring-primary/10",
-                          "text-base font-medium",
+                          "text-sm sm:text-base font-medium",
                           validationErrors.level && (touchedFields.level || courseData.id) && 
                           "border-red-500 focus:border-red-500 focus:ring-red-500/10"
                         )}>
                           <SelectValue placeholder="Select level" />
                         </SelectTrigger>
-                        <SelectContent className="rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
+                        <SelectContent className="rounded-xl sm:rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
                           {levels.map((level) => (
                             <SelectItem 
                               key={level.id} 
                               value={level.name}
-                              className="rounded-xl hover:bg-primary/5 hover:text-gray-900 dark:hover:text-white focus:bg-primary/10 focus:text-gray-900 dark:focus:text-white transition-colors"
+                              className="rounded-lg sm:rounded-xl hover:bg-primary/5 hover:text-gray-900 dark:hover:text-white focus:bg-primary/10 focus:text-gray-900 dark:focus:text-white transition-colors text-sm sm:text-base"
                             >
                               {level.name}
                             </SelectItem>
@@ -6675,7 +6676,7 @@ const CourseBuilder = () => {
                         </SelectContent>
                       </Select>
                       {validationErrors.level && (touchedFields.level || courseData.id) && (
-                        <div className="flex items-center gap-2 text-red-500 text-sm">
+                        <div className="flex items-center gap-2 text-red-500 text-xs sm:text-sm">
                           <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
                           {validationErrors.level}
                         </div>
@@ -6684,10 +6685,10 @@ const CourseBuilder = () => {
                   </div>
 
                   {/* Location and Board Information Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 gap-4 sm:gap-5 md:gap-6">
                     {/* Country */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                    <div className="space-y-2 sm:space-y-3">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
                         Countries
                         <span className="text-red-500 ml-1">*</span>
                       </label>
@@ -6708,7 +6709,7 @@ const CourseBuilder = () => {
                         )}
                       />
                       {validationErrors.country_ids && (touchedFields.country_ids || courseData.id) && (
-                        <div className="flex items-center gap-2 text-red-500 text-sm">
+                        <div className="flex items-center gap-2 text-red-500 text-xs sm:text-sm">
                           <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
                           {validationErrors.country_ids}
                         </div>
@@ -6716,8 +6717,8 @@ const CourseBuilder = () => {
                     </div>
 
                     {/* Region */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                    <div className="space-y-2 sm:space-y-3">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
                         Regions
                         <span className="text-red-500 ml-1">*</span>
                       </label>
@@ -7085,13 +7086,13 @@ const CourseBuilder = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="curriculum" className="space-y-4 sm:space-y-6 md:space-y-8">
+            <TabsContent value="curriculum" className="space-y-2 sm:space-y-3 md:space-y-8">
               {/* Course Curriculum Card */}
               <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
-                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 p-4 sm:p-5 md:pb-6 gap-3 sm:gap-4">
-                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
-                      <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-primary" />
+                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 p-2 sm:p-2.5 lg:pb-6 gap-2 sm:gap-3">
+                  <div className="flex items-center gap-2 sm:gap-2 min-w-0 flex-1">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
+                      <BookOpen className="w-4 h-4 sm:w-4 sm:h-4 md:w-6 md:h-6 text-primary" />
                     </div>
                     <div className="min-w-0">
                       <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
@@ -7110,7 +7111,7 @@ const CourseBuilder = () => {
                     Add Section
                   </Button>
                 </CardHeader>
-                <CardContent className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
+                <CardContent className="p-1.5 sm:p-2 md:p-3 lg:p-8 space-y-3 sm:space-y-4">
                   <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}
@@ -7130,12 +7131,12 @@ const CourseBuilder = () => {
                         <SortableItem key={section.id} id={section.id} type="section">
                           {(dragHandleProps) => (
                             <Card className={`bg-gradient-to-br from-card to-card/50 dark:bg-card border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 ${activeId === section.id ? 'opacity-50 scale-95' : ''}`}>
-                              <CardHeader className="flex flex-col sm:flex-row items-start justify-between p-3 sm:p-4 md:p-6 gap-3 sm:gap-4 bg-gradient-to-r from-card/50 to-card/30 dark:bg-card/50 border-b border-gray-200/50 dark:border-gray-700/30">
-                                <div className="flex items-start gap-2 sm:gap-3 flex-1 w-full">
-                                  <div {...dragHandleProps} className="cursor-move pt-2 sm:pt-2.5 opacity-60 hover:opacity-100 transition-opacity hover:scale-110 flex-shrink-0">
-                                    <GripVertical className="text-primary w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                              <CardHeader className="flex flex-col sm:flex-row items-start justify-between p-2 sm:p-2 md:p-6 gap-2 sm:gap-3 bg-gradient-to-r from-card/50 to-card/30 dark:bg-card/50 border-b border-gray-200/50 dark:border-gray-700/30">
+                                <div className="flex items-start gap-2 sm:gap-2 flex-1 w-full">
+                                  <div {...dragHandleProps} className="cursor-move pt-2 sm:pt-2 opacity-60 hover:opacity-100 transition-opacity hover:scale-110 flex-shrink-0">
+                                    <GripVertical className="text-primary w-4 h-4 sm:w-4 sm:h-4 md:w-6 md:h-6" />
                                   </div>
-                                  <div className="flex-1 space-y-2 sm:space-y-3 min-w-0">
+                                  <div className="flex-1 space-y-1.5 sm:space-y-2 min-w-0">
                                     <Input
                                       value={section.title}
                                       onChange={(e) => {
@@ -7159,13 +7160,13 @@ const CourseBuilder = () => {
                                     />
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                                <div className="flex items-center gap-2 sm:gap-2 w-full sm:w-auto">
                                   <Button 
                                     onClick={() => addLesson(section.id)} 
                                     variant="outline"
-                                    className="h-8 sm:h-9 md:h-10 px-3 sm:px-4 md:px-6 rounded-lg sm:rounded-xl bg-white/80 dark:bg-gray-800/80 border-primary/20 text-primary hover:bg-primary hover:text-white transition-all duration-300 text-xs sm:text-sm flex-1 sm:flex-initial"
+                                    className="h-8 sm:h-9 md:h-10 px-3 sm:px-3 md:px-6 rounded-lg sm:rounded-xl bg-white/80 dark:bg-gray-800/80 border-primary/20 text-primary hover:bg-primary hover:text-white transition-all duration-300 text-xs sm:text-sm flex-1 sm:flex-initial"
                                   >
-                                    <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                                    <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
                                     Add Lesson
                                   </Button>
                                   {courseData.sections.length > 1 && (
@@ -7189,7 +7190,7 @@ const CourseBuilder = () => {
                                 </div>
                               </CardHeader>
                               {!section.isCollapsed && (
-                                <CardContent className="space-y-4 px-3 sm:px-4 md:px-6 pb-4 sm:pb-6">
+                                <CardContent className="space-y-2 px-2 sm:px-2 md:px-6 pb-2 sm:pb-4">
                                   <SortableContext items={section.lessons.map(l => l.id)} strategy={verticalListSortingStrategy}>
                                     {section.lessons.map((lesson) => (
                                       <SortableItem key={lesson.id} id={lesson.id} type="lesson" sectionId={section.id}>
