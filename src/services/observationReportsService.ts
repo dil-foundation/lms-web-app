@@ -67,17 +67,12 @@ class ObservationReportsService {
    */
   static async createReport(reportData: ObservationReportInsert): Promise<ObservationReport> {
     try {
-      const { data, error } = await supabase
-        .from(this.TABLE_NAME)
-        .insert({
-          ...reportData,
-          created_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('create_observation_report', {
+        report_data: reportData,
+      });
 
       if (error) {
-        console.error('Database error creating report:', error);
+        console.error('Database error creating report via RPC:', error);
         throw new Error(`Failed to create report: ${error.message}`);
       }
 
