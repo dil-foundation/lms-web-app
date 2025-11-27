@@ -66,10 +66,15 @@ export const IRISv2 = () => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [serviceHealth, setServiceHealth] = useState(true);
   const [rateLimitCountdown, setRateLimitCountdown] = useState<number | null>(null);
+  const [showLongConversationWarning, setShowLongConversationWarning] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef<boolean>(true);
+
+  // Conversation length thresholds
+  const WARNING_MESSAGE_COUNT = 15; // Show warning after 15 messages (7-8 exchanges)
+  const MAX_MESSAGE_COUNT = 20; // Strongly suggest reset after 20 messages (10 exchanges)
 
   // Platform-specific quick actions (AI Tutor tables)
   const aiTutorActions = [
@@ -95,13 +100,13 @@ export const IRISv2 = () => {
       title: "Stage Completion Analysis",
       description: "Progress across all learning stages",
       icon: Target,
-      prompt: "Analyze AI Tutor stage completion: 1) Show all learning stages with their titles and difficulty levels (LIMIT 10 stages), 2) For each stage, show: total students enrolled, students who completed it, students currently in progress, average time spent, and average score. Display this in a table with columns: Stage Number, Stage Title, Total Students, Completed, In Progress, Avg Time (min), Avg Score, 3) Calculate drop-off rate by comparing student counts between consecutive stages, 4) Identify most and least popular stages by enrollment counts, and 5) Provide recommendations based on completion rates and average scores. CRITICAL: Use LIMIT 10 and include pagination message at the end."
+      prompt: "Analyze AI Tutor stage completion. Show stage completion data for all learning stages with these columns: Stage Number, Stage Title, Difficulty Level, Total Students, Completed, In Progress, Avg Time (min), Avg Score. Calculate drop-off rates, identify most/least popular stages, and provide recommendations. LIMIT 10 with pagination message."
     },
     {
       title: "Exercise Performance Matrix",
       description: "Detailed exercise-level analytics",
       icon: BarChart3,
-      prompt: "Generate exercise performance analysis showing: 1) Exercise summary grouped by stage with their titles and types (LIMIT 50 exercises), 2) For each exercise: total students, average attempts, average score, and average time spent, 3) Top 10 most challenging exercises (lowest scores) with LIMIT 10, 4) Top 10 easiest exercises (highest scores) with LIMIT 10, 5) Exercises with most attempts (LIMIT 10 for highest engagement), 6) Exercises with completion rates below 50% (LIMIT 10), and 7) Suggestions for difficulty adjustments. CRITICAL: Use LIMIT clauses for all lists and include pagination message at the end."
+      prompt: "Generate exercise performance analysis. Show exercise summary with columns: Exercise Title, Stage, Type, Difficulty, Total Students, Avg Attempts, Avg Score, Avg Time. Then show: most challenging exercises (lowest scores), easiest exercises (highest scores), exercises with most attempts, and exercises with low completion rates. Include suggestions for difficulty adjustments and pagination message."
     },
     {
       title: "Student Engagement Insights",
@@ -208,13 +213,22 @@ export const IRISv2 = () => {
     }
   }, [messages]);
 
+  // Monitor conversation length and show warning
+  useEffect(() => {
+    if (messages.length >= WARNING_MESSAGE_COUNT) {
+      setShowLongConversationWarning(true);
+    } else {
+      setShowLongConversationWarning(false);
+    }
+  }, [messages.length, WARNING_MESSAGE_COUNT]);
+
   // Update suggestions when messages change
   useEffect(() => {
     if (messages.length > 0 && userContext) {
       const lastMessage = messages[messages.length - 1];
       if (lastMessage.role === 'assistant') {
         const newSuggestions = IRISService.generateSuggestions(
-          lastMessage.content, 
+          lastMessage.content,
           userContext.role
         );
         setSuggestions(newSuggestions);
@@ -260,16 +274,8 @@ export const IRISv2 = () => {
 
       console.log('👤 User context loaded:', context.role);
 
-      // Check service health (don't block on this)
-      IRISService.checkServiceHealth()
-        .then(health => {
-          setServiceHealth(health);
-          console.log(`🏥 Service health: ${health ? 'healthy' : 'degraded'}`);
-        })
-        .catch(error => {
-          console.warn('Health check failed:', error);
-          setServiceHealth(false);
-        });
+      // Start with healthy assumption - we'll detect issues during actual usage
+      setServiceHealth(true);
 
       // Set welcome message based on selected platform
       const platformName = selectedPlatform === 'ai_tutor' ? 'AI Tutor' : 'LMS';
@@ -406,6 +412,8 @@ Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
           if (data.tokensUsed) {
             console.log(`💰 Tokens used: ${data.tokensUsed}`);
           }
+          // Service worked successfully - mark as healthy
+          setServiceHealth(true);
           setIsLoading(false);
         },
         // onError - handle errors
@@ -523,6 +531,10 @@ Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
           } else {
             // Regular error handling
             console.log('🔍 [IRIS ERROR DEBUG] Non-rate-limit error - displaying to user');
+
+            // Mark service as unhealthy on non-rate-limit errors
+            setServiceHealth(false);
+
             setMessages(prev => {
               const updated = [...prev];
               const lastIndex = updated.length - 1;
@@ -556,6 +568,9 @@ Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
     } catch (error) {
       console.error('Error sending message:', error);
 
+      // Mark service as unhealthy on connection errors
+      setServiceHealth(false);
+
       const errorMessage: IRISMessage = {
         role: 'assistant',
         content: `I apologize, but I encountered an unexpected error. Please try again or contact support if the issue persists.\n\n**Error:** ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -584,8 +599,9 @@ Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
     setMessages([]);
     setInputValue('');
     setSuggestions([]);
+    setShowLongConversationWarning(false);
     initializeIRIS();
-    
+
     toast({
       title: "Chat Reset",
       description: "Starting a new conversation with IRIS"
@@ -742,37 +758,37 @@ Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
     });
   
     // Headings - consistent style with dividers
-formatted = formatted.replace(/^###### (.*$)/gm, '<h6 class="text-sm font-semibold text-foreground mt-3 mb-2 border-b border-border">$1</h6>');
-formatted = formatted.replace(/^##### (.*$)/gm, '<h5 class="text-base font-semibold text-foreground mt-3 mb-2 border-b border-border">$1</h5>');
-formatted = formatted.replace(/^#### (.*$)/gm, '<h4 class="text-lg font-semibold text-foreground mt-4 mb-2 border-b border-border">$1</h4>');
-formatted = formatted.replace(/^### (.*$)/gm, '<h3 class="text-xl font-semibold text-foreground mt-5 mb-3 border-b border-border">$1</h3>');
-formatted = formatted.replace(/^## (.*$)/gm, '<h2 class="text-2xl font-bold text-foreground mt-6 mb-4 border-b border-border">$1</h2>');
-formatted = formatted.replace(/^# (.*$)/gm, '<h1 class="text-3xl font-bold text-foreground mt-8 mb-5 border-b border-border">$1</h1>');
+formatted = formatted.replace(/^###### (.*$)/gm, '<h6 class="text-sm font-semibold mt-3 mb-2 border-b border-border">$1</h6>');
+formatted = formatted.replace(/^##### (.*$)/gm, '<h5 class="text-base font-semibold mt-3 mb-2 border-b border-border">$1</h5>');
+formatted = formatted.replace(/^#### (.*$)/gm, '<h4 class="text-lg font-semibold mt-4 mb-2 border-b border-border">$1</h4>');
+formatted = formatted.replace(/^### (.*$)/gm, '<h3 class="text-xl font-semibold mt-5 mb-3 border-b border-border">$1</h3>');
+formatted = formatted.replace(/^## (.*$)/gm, '<h2 class="text-2xl font-bold mt-6 mb-4 border-b border-border">$1</h2>');
+formatted = formatted.replace(/^# (.*$)/gm, '<h1 class="text-3xl font-bold mt-8 mb-5 border-b border-border">$1</h1>');
 
 // Bold / italic (keep consistent)
-formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>');
-formatted = formatted.replace(/\*(.*?)\*/g, '<em class="italic text-muted-foreground">$1</em>');
+formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>');
+formatted = formatted.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
 
 // Bullet point lists
 formatted = formatted.replace(/^- (.*$)/gm, '<li>$1</li>');
 formatted = formatted.replace(/^• (.*$)/gm, '<li>$1</li>');
 formatted = formatted.replace(/(<li>.*?<\/li>\s*)+/g,
-  match => `<ul class="list-disc list-inside space-y-2 text-sm md:text-base text-muted-foreground my-2">${match}</ul>`
+  match => `<ul class="list-disc list-inside space-y-2 text-sm md:text-base my-2">${match}</ul>`
 );
 
 // Numbered lists (for Recommendations, Steps, etc.)
 formatted = formatted.replace(/^\d+\.\s+(.*$)/gm, '<li>$1</li>');
 formatted = formatted.replace(/(<li>.*?<\/li>\s*)+/g,
-  match => `<ol class="list-decimal list-inside space-y-2 text-sm md:text-base text-muted-foreground my-2">${match}</ol>`
+  match => `<ol class="list-decimal list-inside space-y-2 text-sm md:text-base my-2">${match}</ol>`
 );
 
 // Key Insights & Recommendations
 formatted = formatted.replace(/📊 Key Insights:?|Key Insights:?/g,
-  '<div class="text-lg font-semibold text-foreground mt-5 mb-2 flex items-center gap-2">📊 Key Insights</div>'
+  '<div class="text-lg font-semibold mt-5 mb-2 flex items-center gap-2">📊 Key Insights</div>'
 );
 
 formatted = formatted.replace(/💡 Recommendations:?|Recommendations:?/g,
-  '<div class="text-lg font-semibold text-foreground mt-5 mb-2 flex items-center gap-2">💡 Recommendations</div>'
+  '<div class="text-lg font-semibold mt-5 mb-2 flex items-center gap-2">💡 Recommendations</div>'
 );
   
     return formatted;
@@ -851,6 +867,63 @@ formatted = formatted.replace(/💡 Recommendations:?|Recommendations:?/g,
         </div>
       )}
 
+      {/* Long Conversation Warning Banner */}
+      {showLongConversationWarning && (
+        <div className={`mb-6 p-4 rounded-xl shadow-lg border-2 ${
+          messages.length >= MAX_MESSAGE_COUNT
+            ? 'bg-red-100 dark:bg-red-950/40 border-red-500 dark:border-red-600'
+            : 'bg-blue-100 dark:bg-blue-950/40 border-blue-500 dark:border-blue-600'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <AlertCircle className={`h-8 w-8 ${
+                  messages.length >= MAX_MESSAGE_COUNT
+                    ? 'text-red-600 dark:text-red-400 animate-pulse'
+                    : 'text-blue-600 dark:text-blue-400'
+                }`} />
+                {messages.length >= MAX_MESSAGE_COUNT && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+                )}
+              </div>
+              <div className="flex-1">
+                <h3 className={`text-lg font-bold ${
+                  messages.length >= MAX_MESSAGE_COUNT
+                    ? 'text-red-900 dark:text-red-100'
+                    : 'text-blue-900 dark:text-blue-100'
+                }`}>
+                  {messages.length >= MAX_MESSAGE_COUNT
+                    ? 'Conversation Too Long - Reset Required'
+                    : 'Long Conversation Detected'}
+                </h3>
+                <p className={`text-sm ${
+                  messages.length >= MAX_MESSAGE_COUNT
+                    ? 'text-red-800 dark:text-red-200'
+                    : 'text-blue-800 dark:text-blue-200'
+                }`}>
+                  {messages.length >= MAX_MESSAGE_COUNT
+                    ? `You have ${messages.length} messages. Responses may fail or be incomplete. Please reset the chat to continue.`
+                    : `You have ${messages.length} messages. Consider resetting the chat for optimal performance.`}
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleResetChat}
+              className={`ml-4 flex-shrink-0 ${
+                messages.length >= MAX_MESSAGE_COUNT
+                  ? 'bg-red-50 dark:bg-red-950 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900'
+                  : 'bg-blue-50 dark:bg-blue-950 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900'
+              }`}
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Reset Chat
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Main IRIS Interface */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* IRIS Chat Interface - Takes up 2 columns */}
@@ -894,17 +967,18 @@ formatted = formatted.replace(/💡 Recommendations:?|Recommendations:?/g,
                           )}
                         </div>
                         <div className={`rounded-lg p-4 max-w-[85%] break-words ${
-                          message.role === 'user' 
-                            ? 'bg-primary text-primary-foreground ml-auto' 
-                            : 'bg-muted/50 border border-border/50'
+                          message.role === 'user'
+                            ? 'bg-primary text-primary-foreground ml-auto'
+                            : 'bg-muted/50 border border-border/50 text-foreground'
                         }`}>
-                          <div 
+                          <div
                             className={`prose prose-sm max-w-none leading-relaxed ${
                               message.role === 'user' ? 'prose-invert' : ''
                             }`}
-                            style={{ 
+                            style={{
                               wordBreak: 'break-word',
-                              overflowWrap: 'break-word'
+                              overflowWrap: 'break-word',
+                              color: 'inherit'
                             }}
                             dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }}
                           />
