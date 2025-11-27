@@ -298,7 +298,7 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
         {
           title: 'MAIN',
           items: [
-            { title: 'Overview', path: '/dashboard', icon: Bot },
+            { title: 'Overview', path: '/dashboard', icon: Home },
           ]
         },
         {
@@ -321,7 +321,7 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
         {
           title: 'MAIN',
           items: [
-            { title: 'Overview', path: '/dashboard', icon: Bot },
+            { title: 'Overview', path: '/dashboard', icon: Home },
           ]
         },
         {
@@ -339,7 +339,8 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
         {
           title: 'MAIN',
           items: [
-            { title: 'Overview', path: '/dashboard', icon: Bot },
+            { title: 'Overview', path: '/dashboard', icon: Home },
+            { title: 'IRIS', path: '/dashboard/ai-iris', icon: Bot },
           ]
         },
         {
@@ -369,7 +370,7 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
         {
           title: 'MAIN',
           items: [
-            { title: 'Overview', path: '/dashboard', icon: Bot },
+            { title: 'Overview', path: '/dashboard', icon: Home },
           ]
         },
         {
@@ -386,7 +387,8 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
         {
           title: 'MAIN',
           items: [
-            { title: 'Overview', path: '/dashboard', icon: Bot },
+            { title: 'Overview', path: '/dashboard', icon: Home },
+            { title: 'IRIS', path: '/dashboard/ai-iris', icon: Bot },
           ]
         },
         {
@@ -416,7 +418,7 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
         {
           title: 'MAIN',
           items: [
-            { title: 'Overview', path: '/dashboard', icon: Bot },
+            { title: 'Overview', path: '/dashboard', icon: Home },
           ]
         }
       ];

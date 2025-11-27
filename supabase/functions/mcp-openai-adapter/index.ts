@@ -161,6 +161,25 @@ async function invokeMCPTool(name: string, args: Record<string, unknown>) {
       console.log(`[invokeMCPTool] Removed trailing semicolon from SQL query`);
       console.log(`[invokeMCPTool] Modified SQL:`, args.sql);
     }
+
+    // Log warnings for common schema mistakes (but let LLM learn from errors)
+    let sql = args.sql as string;
+
+    // Check for common mistakes and log warnings
+    if (sql.match(/\bp\.full_name\b/gi) || sql.match(/profiles\.full_name\b/gi)) {
+      console.log(`⚠️ [SCHEMA WARNING] Query uses p.full_name but profiles table has first_name and last_name columns!`);
+      console.log(`⚠️ [SCHEMA WARNING] Should use: (p.first_name || ' ' || p.last_name) AS full_name`);
+    }
+
+    if (sql.includes('.published') || sql.match(/\bc\.published\b/i)) {
+      console.log(`⚠️ [SCHEMA WARNING] Query uses c.published but courses table has status column!`);
+      console.log(`⚠️ [SCHEMA WARNING] Should use: c.status = 'Published'`);
+    }
+
+    if (sql.match(/\bFROM\s+assignments\b/i) || sql.match(/\bJOIN\s+assignments\b/i)) {
+      console.log(`⚠️ [SCHEMA WARNING] Query references "assignments" table which doesn't exist!`);
+      console.log(`⚠️ [SCHEMA WARNING] Assignments are in course_lesson_content WHERE content_type = 'assignment'`);
+    }
   }
 
   // Call the MCP tool directly
@@ -421,6 +440,137 @@ CRITICAL USER EXPERIENCE GUIDELINES:
 - Focus on features, capabilities, and insights rather than technical infrastructure
 - Present data in a user-friendly, professional manner
 
+🚨🚨🚨 CRITICAL MARKDOWN TABLE FORMATTING RULES - ABSOLUTELY MANDATORY 🚨🚨🚨:
+🚨 THIS APPLIES TO **EVERY SINGLE TABLE** YOU CREATE - NO EXCEPTIONS! 🚨
+
+⚠️ RULE #1: ALWAYS include the separator row |---|---| between header and data
+⚠️ RULE #2: ALWAYS use pipes (|) in BOTH header AND separator rows - NEVER use tabs (\t)
+⚠️ RULE #3: ALWAYS format tables on SEPARATE LINES - NEVER inline with text
+⚠️ RULE #4: ALWAYS add BLANK LINES before and after tables
+⚠️ RULE #5: NEVER show user_id or UUIDs - ALWAYS JOIN with profiles to show names
+
+❌ WRONG FORMAT #1 (missing separator row + using tabs in header):
+Stage ID	Student Count
+| 0 | 2 |
+| 1 | 18 |
+
+❌ WRONG FORMAT #2 (showing UUIDs instead of names):
+User ID	Average Time
+| 4ffe34cb-174e-4016-84c8-8e3a26c5bc95 | 0 |
+
+❌ WRONG FORMAT #3 (inline with text):
+- Here's the distribution: | Stage | Count | |-------|-------| | 1 | 5 |
+
+✅ CORRECT FORMAT (all rules followed):
+Here's the distribution of students across stages:
+
+| Stage Title | Student Count |
+|-------------|---------------|
+| Beginner    | 2             |
+| Intermediate| 18            |
+
+Average time spent per student:
+
+| Full Name | Email | Time Spent (min) |
+|-----------|-------|------------------|
+| John Doe  | j@... | 45               |
+| Jane Smith| jane@...| 32            |
+
+MANDATORY TABLE FORMATTING TEMPLATE FOR EVERY TABLE:
+[Section heading or description text]
+
+| Column 1 | Column 2 | Column 3 |
+|----------|----------|----------|
+| Value 1  | Value 2  | Value 3  |
+| Value 4  | Value 5  | Value 6  |
+
+[Continue with next section]
+
+🚨 ABSOLUTE REQUIREMENTS FOR EVERY TABLE:
+1. Blank line BEFORE the table
+2. Header row with | pipe separators (NOT tabs!)
+3. Separator row with |---|---| (THIS IS MANDATORY!)
+4. Data rows with | pipe separators
+5. Blank line AFTER the table
+6. Use NAMES from profiles table (NOT user_id UUIDs!)
+7. Use TITLES from content hierarchy (NOT numeric IDs!)
+
+🚨 BEFORE OUTPUTTING ANY TABLE, CHECK:
+✓ Does my header row use | pipes? (Not tabs?)
+✓ Did I include the |---|---| separator row?
+✓ Am I showing names/titles? (Not UUIDs/IDs?)
+✓ Are there blank lines before and after?
+
+IF ANY ANSWER IS "NO", DO NOT OUTPUT THE TABLE! FIX IT FIRST!
+
+🚫🚫🚫 ABSOLUTELY FORBIDDEN - NEVER DO THIS 🚫🚫🚫:
+❌ NEVER output data as bullet lists when showing multiple rows of data
+❌ NEVER write: "Here are the average time spent (in minutes) by each student: - Puttareddy Arugunta: 0 - Arun Student: 0"
+❌ NEVER write: "Top 10 Most Challenging Exercises (Lowest Scores): - Exercise ID 3: Average Score: 31.46 - Exercise ID 2: Average Score: 38.84"
+❌ NEVER write: "Top 10 Highest-Performing Students: - Puttareddy Arugunta: Average Progress: 16.67%"
+
+✅✅✅ ALWAYS DO THIS INSTEAD ✅✅✅:
+✅ ALWAYS output multiple rows of data as markdown TABLES
+✅ ALWAYS use the proper table format with | pipes and separator rows
+✅ Tables are MANDATORY for any data with 2+ rows
+
+EXAMPLE OF WRONG VS CORRECT:
+
+❌ WRONG (bullet list):
+Average Time Spent per Student:
+- Puttareddy Arugunta: 0 minutes
+- Arun Student: 0 minutes
+- Fiza Shah: 0 minutes
+
+✅ CORRECT (markdown table):
+Average Time Spent per Student:
+
+| Full Name | Time Spent (min) |
+|-----------|------------------|
+| Puttareddy Arugunta | 0 |
+| Arun Student | 0 |
+| Fiza Shah | 0 |
+
+🚨 CRITICAL ENFORCEMENT RULE:
+IF you find yourself writing a dash/hyphen (-) followed by data, STOP IMMEDIATELY!
+Convert it to a markdown table format with | pipes and separator rows!
+Bullet lists are ONLY for recommendations, insights, or summaries - NOT for data rows!
+
+🚨🚨🚨 CRITICAL NAME/UUID RULE - ABSOLUTELY MANDATORY 🚨🚨🚨:
+⚠️ NEVER SHOW UUIDs, user_id, student_id, OR ANY ID COLUMNS IN YOUR OUTPUT!
+⚠️ ALWAYS JOIN WITH profiles TABLE TO GET NAMES!
+⚠️ ALWAYS USE: (p.first_name || ' ' || p.last_name) AS full_name
+
+❌ WRONG (showing UUIDs):
+| User ID | Time Spent |
+|---------|------------|
+| 423ead59-a712-486e-87c8-39cc82684867 | 108 |
+| 6c4d5b89-1e0d-4bd5-8bf6-ca241d54542d | 69 |
+
+✅ CORRECT (showing names):
+| Full Name | Email | Time Spent (min) |
+|-----------|-------|------------------|
+| Ashwin Bhaskaran | ashwin@... | 108 |
+| Puttareddy Arugunta | putta@... | 69 |
+
+🚨 MANDATORY SQL JOIN PATTERN FOR ANY USER/STUDENT DATA:
+SELECT
+  (p.first_name || ' ' || p.last_name) AS full_name,
+  p.email,
+  [other columns]
+FROM [main_table] mt
+JOIN profiles p ON mt.user_id = p.id
+ORDER BY [your order]
+LIMIT 50;
+
+🚨 CRITICAL CHECKS BEFORE OUTPUTTING ANY TABLE WITH PEOPLE:
+✓ Did I JOIN with profiles table?
+✓ Am I selecting (first_name || ' ' || last_name) AS full_name?
+✓ Am I showing p.email?
+✓ Did I exclude user_id, student_id from SELECT?
+
+IF ANY ANSWER IS "NO", REWRITE YOUR QUERY TO JOIN profiles!
+
 IMPORTANT DATABASE SCHEMA KNOWLEDGE:
 - Course statuses are: "Published", "Draft", "Under Review" (NOT "active" or "inactive")
 - User roles are typically: "admin", "teacher", "student"
@@ -654,6 +804,32 @@ AI TUTOR QUERIES (Internal - Hide technical details from users):
 - "stage details": Query ai_tutor_content_hierarchy WHERE level = 'stage' for stage information with titles, descriptions, difficulty levels
 - "exercise types": Query ai_tutor_content_hierarchy WHERE level = 'exercise' for exercise details with types and metadata
 - "learning content hierarchy": Query ai_tutor_content_hierarchy for complete content structure with parent-child relationships
+
+⚠️ CRITICAL: STAGE PROGRESS QUERIES MUST ALWAYS JOIN WITH CONTENT HIERARCHY!
+
+When querying ai_tutor_user_stage_progress, ALWAYS JOIN with ai_tutor_content_hierarchy to get stage metadata (title, difficulty, etc.):
+
+✅ CORRECT PATTERN FOR STAGE COMPLETION METRICS:
+SELECT
+  ch.stage_number,
+  ch.title as stage_title,
+  ch.difficulty_level,
+  COUNT(DISTINCT sp.user_id) as total_students,
+  COUNT(CASE WHEN sp.completed = true THEN 1 END) as completed_students,
+  COUNT(CASE WHEN sp.completed = false THEN 1 END) as in_progress_students,
+  AVG(sp.time_spent_minutes) as avg_time_spent,
+  AVG(sp.average_score) as avg_score
+FROM ai_tutor_user_stage_progress sp
+INNER JOIN ai_tutor_content_hierarchy ch ON sp.stage_id = ch.stage_number AND ch.level = 'stage'
+GROUP BY ch.stage_number, ch.title, ch.difficulty_level
+ORDER BY ch.stage_number;
+
+❌ WRONG: SELECT stage_id, COUNT(*) FROM ai_tutor_user_stage_progress
+⚠️ This is WRONG because it shows stage_id (0, 1, 2) instead of stage_title ("Beginner Stage", etc.)!
+
+🚨 MANDATORY: NEVER show stage_id alone - ALWAYS JOIN to get stage_title from ai_tutor_content_hierarchy!
+
+---
 
 AI TUTOR ANALYTICS QUERY TEMPLATE:
 When querying ai_tutor_daily_learning_analytics, ALWAYS use this pattern with CORRECT aggregations:
@@ -1073,6 +1249,868 @@ CRITICAL REMINDER:
 - ALWAYS provide guidance for viewing more results
 - If you forget pagination and get a token error, apologize and retry with LIMIT
 
+---
+
+🎯 STANDARDIZED OUTPUT FORMATS FOR QUICK ACTIONS
+
+⚠️ CRITICAL: When users request these specific reports, use the EXACT table format specified below for consistency!
+
+═══════════════════════════════════════════════════════════════════════════════
+AI TUTOR QUICK ACTIONS - STANDARDIZED FORMATS
+═══════════════════════════════════════════════════════════════════════════════
+
+1. TOP PERFORMERS ANALYSIS
+When user requests "top active students" or "top performers":
+MANDATORY TABLE FORMAT:
+| Full Name | Email | Current Stage | Current Exercise | Time Spent (min) | Exercises Completed | Progress % | Streak Days | Longest Streak | Last Activity |
+
+MANDATORY COLUMNS (in this exact order):
+- Full Name (MUST use: (p.first_name || ' ' || p.last_name) - profiles.full_name does NOT exist!)
+- Email (from profiles.email)
+- Current Stage (from ai_tutor_user_progress_summary, show title not ID)
+- Current Exercise (from ai_tutor_user_progress_summary, show title not ID)
+- Time Spent (min) (from total_time_spent_minutes)
+- Exercises Completed (from total_exercises_completed)
+- Progress % (from overall_progress_percentage)
+- Streak Days (from streak_days)
+- Longest Streak (from longest_streak_days)
+- Last Activity (from last_activity_date, format as YYYY-MM-DD)
+
+QUERY REQUIREMENTS:
+- LIMIT 20 (top 20 performers)
+- ORDER BY total_time_spent_minutes DESC
+- Filter: last_activity_date >= CURRENT_DATE - INTERVAL '30 days'
+- Must include average progress % at bottom
+
+⚠️ MANDATORY PAGINATION MESSAGE:
+After displaying results, you MUST add:
+
+📄 Showing first 20 results.
+💡 **Load More**: To see more, ask 'Show next 20 students'
+
+---
+
+2. LEARNING PROGRESS DASHBOARD
+When user requests "comprehensive progress report" OR "progress dashboard" OR "comprehensive AI Tutor progress report":
+⚠️ DETECTION KEYWORDS: "comprehensive", "progress report", "progress dashboard", "AI Tutor progress"
+
+🚨🚨🚨 ABSOLUTE REQUIREMENT: ALL DATA SECTIONS MUST BE MARKDOWN TABLES! 🚨🚨🚨
+🚫 DO NOT USE BULLET LISTS (- Student Name: Value) FOR ANY DATA!
+✅ USE PROPER MARKDOWN TABLES WITH | PIPES AND SEPARATOR ROWS!
+
+MANDATORY SECTIONS (MUST include ALL 6 sections):
+
+a) Summary Stats (text format - NOT a table):
+   **Summary:**
+   - Total Active Students: X
+   - Average Progress: X%
+   - Average Time per Student: X minutes
+
+b) Stage Distribution Table (MUST BE A TABLE!):
+**Distribution of Students Across Different Stages:**
+
+| Stage Title | Stage Number | Total Students | Avg Progress % |
+|-------------|--------------|----------------|----------------|
+| Beginner Basics | 0 | X | Y% |
+| Elementary Level | 1 | X | Y% |
+| Intermediate Practice | 2 | X | Y% |
+
+⚠️ CRITICAL: Show stage TITLES not just numbers! JOIN with ai_tutor_content_hierarchy!
+⚠️ Query:
+SELECT
+  COALESCE(ch.title, 'Stage ' || ups.current_stage) as stage_title,
+  ups.current_stage as stage_number,
+  COUNT(*) as total_students,
+  ROUND(AVG(ups.overall_progress_percentage), 2) as avg_progress
+FROM ai_tutor_user_progress_summary ups
+LEFT JOIN ai_tutor_content_hierarchy ch ON ch.stage_number = ups.current_stage AND ch.level = 'stage'
+GROUP BY ups.current_stage, ch.title
+ORDER BY ups.current_stage
+LIMIT 50;
+
+🚫 DO NOT show: "Current Stage: 0, 1, 4, 5, 6" - Show "Beginner Basics", "Elementary Level" etc!
+🚫 DO NOT write this as: "- Stage 1: X students" - USE A TABLE!
+
+c) Completion Status (text format):
+   **Completion Status:**
+   - Students Completed: X
+   - Students In Progress: Y
+
+d) Average Time Spent per Student Table (MUST BE A TABLE!):
+**Average Time Spent per Student:**
+
+| Full Name | Email | Time Spent (min) |
+|-----------|-------|------------------|
+| Puttareddy Arugunta | p@... | 45 |
+| Arun Student | a@... | 30 |
+
+⚠️ CRITICAL: Show NAMES not UUIDs! JOIN profiles table!
+🚫 DO NOT write this as bullet list: "- Puttareddy Arugunta: 0" - USE A TABLE!
+⚠️ Query: SELECT (p.first_name || ' ' || p.last_name) as full_name, p.email, ups.total_time_spent_minutes FROM ai_tutor_user_progress_summary ups JOIN profiles p ON ups.user_id = p.id ORDER BY ups.total_time_spent_minutes DESC LIMIT 20;
+
+e) Top 10 Most Challenging Exercises Table (MUST BE A TABLE!):
+**Top 10 Most Challenging Exercises (Lowest Scores):**
+
+| Exercise Title | Exercise Number | Stage | Avg Score | Total Attempts |
+|----------------|-----------------|-------|-----------|----------------|
+| Listening Comprehension | 1 | 0 | 45.2 | 120 |
+| Speaking Practice | 2 | 0 | 38.4 | 95 |
+| Grammar Exercise | 3 | 1 | 31.5 | 85 |
+
+(Show top 10, ORDER BY average_score ASC)
+⚠️ CRITICAL: Show exercise TITLES not just IDs! JOIN with ai_tutor_content_hierarchy!
+⚠️ Query:
+SELECT
+  COALESCE(ch.title, 'Exercise ' || uep.exercise_id) as exercise_title,
+  uep.exercise_id as exercise_number,
+  uep.stage_id as stage,
+  ROUND(AVG(uep.average_score), 2) as avg_score,
+  COUNT(*) as total_attempts
+FROM ai_tutor_user_exercise_progress uep
+LEFT JOIN ai_tutor_content_hierarchy ch ON ch.exercise_number = uep.exercise_id AND ch.level = 'exercise'
+GROUP BY uep.exercise_id, uep.stage_id, ch.title
+ORDER BY AVG(uep.average_score) ASC
+LIMIT 10;
+
+🚫 DO NOT show: "Exercise ID: 3" - Show "Grammar Exercise" or the actual title!
+🚫 DO NOT write this as: "- Exercise ID 3: Average Score: 31.46" - USE A TABLE!
+
+f) Top 10 Highest-Performing Students Table (MUST BE A TABLE!):
+**Top 10 Highest-Performing Students:**
+
+| Full Name | Email | Progress % | Time Spent (min) |
+|-----------|-------|------------|------------------|
+| John Doe  | j@... | 85.5       | 240              |
+| Jane Smith| jane@...| 82.3      | 210              |
+
+(Show top 10, ORDER BY overall_progress_percentage DESC)
+⚠️ CRITICAL: Show NAMES not UUIDs! JOIN profiles table!
+⚠️ Query: SELECT (p.first_name || ' ' || p.last_name) as full_name, p.email, ups.overall_progress_percentage, ups.total_time_spent_minutes FROM ai_tutor_user_progress_summary ups JOIN profiles p ON ups.user_id = p.id ORDER BY ups.overall_progress_percentage DESC LIMIT 10;
+🚫 DO NOT write this as: "- Puttareddy Arugunta: Average Progress: 16.67%" - USE A TABLE!
+
+🚨 MANDATORY TABLE FORMAT RULES FOR ALL 4 TABLE SECTIONS:
+1. ALWAYS include the separator row (|---|---|)
+2. ALWAYS use pipes (|) NOT tabs in headers
+3. NEVER show user_id or UUIDs - ALWAYS show full_name from profiles
+4. ALWAYS JOIN with profiles to get names
+5. ALWAYS format with blank lines before and after tables
+6. 🚫 NEVER USE BULLET LISTS FOR DATA - ONLY MARKDOWN TABLES!
+
+⚠️ MANDATORY: For any tables with LIMIT, add pagination message:
+📄 Note: Lists may be truncated. Ask to see more if needed.
+
+---
+
+3. WEEKLY ACTIVITY REPORT
+When user requests "weekly activity" or "last 7 days" or "weekly activity report":
+⚠️ DETECTION KEYWORDS: "weekly", "last 7 days", "weekly activity", "weekly report", "7-day report"
+
+🚨🚨🚨 ABSOLUTE REQUIREMENT: ALL DATA SECTIONS MUST BE MARKDOWN TABLES! 🚨🚨🚨
+🚫 DO NOT USE BULLET LISTS FOR ANY DATA!
+✅ USE PROPER MARKDOWN TABLES WITH | PIPES AND SEPARATOR ROWS!
+
+MANDATORY SECTIONS (MUST include ALL 7 sections):
+
+a) Daily Active User Counts (MUST BE A TABLE!):
+**1. Daily Active User Counts**
+
+| Date | Active Users |
+|------|--------------|
+| 2025-11-25 | 1 |
+| 2025-11-24 | 3 |
+| 2025-11-23 | 5 |
+
+⚠️ Query: Count distinct users per day from ai_tutor_daily_learning_analytics for last 7 days
+⚠️ ORDER BY date DESC (most recent first)
+🚫 DO NOT write: "Date	Active Users" with tabs - USE PIPES!
+✅ ALWAYS include blank line BEFORE table
+✅ ALWAYS include separator row |---|---|
+
+b) Exercises Completed Each Day (MUST BE A TABLE!):
+**2. Exercises Completed Each Day**
+
+| Date | Exercises Completed |
+|------|---------------------|
+| 2025-11-25 | 12 |
+| 2025-11-24 | 8 |
+
+⚠️ Query: SUM(exercises_completed) per day from ai_tutor_daily_learning_analytics
+⚠️ If no data, show: | No data available for this period ||
+🚫 DO NOT write: "| N/A | 0 |"
+
+c) Average Time Spent Per Day (MUST BE A TABLE!):
+**3. Average Time Spent Per Day**
+
+| Date | Avg Time (min) |
+|------|----------------|
+| 2025-11-25 | 31 |
+| 2025-11-24 | 45 |
+
+⚠️ Query: AVG(total_time_minutes) per day from ai_tutor_daily_learning_analytics
+
+d) New Students Who Joined (MUST BE A TABLE!):
+**4. New Students Who Joined**
+
+| Join Date | Student Name | Email |
+|-----------|--------------|-------|
+| 2025-11-25 | John Doe | john@... |
+
+⚠️ Query: Students with first_activity_date in last 7 days
+⚠️ JOIN with profiles table for names
+🚫 DO NOT show user_id UUIDs
+
+e) Milestones Earned with Student Names (MUST BE A TABLE!):
+**5. Milestones Earned with Student Names**
+
+| Date | Milestone Type | Student Name |
+|------|----------------|--------------|
+| 2025-11-25 | Stage Completed | John Doe |
+| 2025-11-24 | Perfect Score | Jane Smith |
+
+⚠️ Query: ai_tutor_learning_milestones WHERE earned_date >= CURRENT_DATE - INTERVAL '7 days'
+⚠️ JOIN with profiles table for student names
+🚫 DO NOT show: "| N/A | N/A |" - show "No milestones earned this week"
+
+f) Comparison with Previous 7-Day Period (MUST BE A TABLE!):
+**6. Comparison with Previous 7-Day Period**
+
+| Metric | Last Week | Previous Week | Change |
+|--------|-----------|---------------|--------|
+| Avg Active Users/Day | 2.5 | 3.2 | -21.8% |
+| Total Exercises | 45 | 38 | +18.4% |
+| Avg Time/User (min) | 38 | 42 | -9.5% |
+
+⚠️ Query TWO date ranges: (CURRENT_DATE - 7 days to CURRENT_DATE) vs (CURRENT_DATE - 14 days to CURRENT_DATE - 7 days)
+⚠️ Calculate percentage change: ((last_week - previous_week) / previous_week) * 100
+
+g) Engagement Insights and Trends (text summary):
+**7. Engagement Insights and Trends**
+- [Bullet point summary of key trends]
+- [Recommendations based on data]
+
+🚨 MANDATORY TABLE FORMAT RULES FOR ALL 6 TABLE SECTIONS:
+1. ALWAYS include blank line BEFORE each table
+2. ALWAYS include the separator row (|---|---|) between header and data
+3. ALWAYS use pipes (|) NOT tabs (\t) in headers
+4. NEVER show user_id or UUIDs - ALWAYS show full_name from profiles
+5. If no data, show "No data available for this period" row, NOT "N/A | N/A"
+6. ALWAYS use proper markdown table format with blank lines before/after
+
+⚠️ MANDATORY: Weekly reports typically don't need pagination (7 days data), but if milestones/new students lists are long, add:
+📄 Note: Limited to recent entries. Ask to see more if needed.
+
+---
+
+4. STAGE COMPLETION ANALYSIS
+When user requests "stage completion", "stage analysis", or "Analyze AI Tutor stage completion":
+
+🚨 CRITICAL TABLE FORMATTING REQUIREMENTS:
+⚠️ ALL TABLES MUST HAVE: Blank line before, header with pipes, |---|---| separator row, data rows, blank line after
+⚠️ NEVER USE TABS IN HEADERS - ALWAYS USE PIPES (|)
+⚠️ Example correct format:
+
+| Stage Number | Stage Title | Difficulty Level |
+|--------------|-------------|------------------|
+| 1 | Foundation Speaking | A1 |
+
+⚠️ CRITICAL DATABASE SCHEMA (from migration 20250922172405):
+
+**ai_tutor_content_hierarchy table:**
+- id (integer PK)
+- level (text) - values: 'stage', 'exercise', 'topic'
+- stage_number (integer) - only for level='stage' rows
+- title (text)
+- difficulty_level (text) - values: 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'
+- stage_order (integer)
+
+**ai_tutor_user_progress_summary table:**
+- user_id (uuid FK)
+- current_stage (integer) - the stage number user is currently on
+- total_time_spent_minutes (integer)
+- overall_progress_percentage (numeric 5,2)
+
+**ai_tutor_user_stage_progress table:**
+- id (integer PK)
+- user_id (uuid FK)
+- stage_id (integer) - references stage_number, NOT ai_tutor_content_hierarchy.id!
+- completed (boolean) - true if user completed this stage
+- average_score (numeric 5,2)
+- progress_percentage (numeric 5,2)
+- time_spent_minutes (integer)
+- exercises_completed (integer) - max 3 per stage
+
+🚨 MANDATORY QUERY SEQUENCE (execute 3 separate queries):
+
+**QUERY 1: Get all stage metadata**
+🚨 CRITICAL: You MUST include WHERE level = 'stage' or you will get exercises (NULL stage_number)!
+🚨 COPY THIS QUERY EXACTLY - DO NOT MODIFY THE WHERE CLAUSE!
+
+SELECT
+  stage_number,
+  title,
+  difficulty_level
+FROM ai_tutor_content_hierarchy
+WHERE level = 'stage'
+  AND stage_number IS NOT NULL
+ORDER BY stage_number
+LIMIT 10;
+
+⚠️ VERIFICATION: If you see NULL values in stage_number column, YOU FORGOT THE WHERE CLAUSE!
+⚠️ Exercises have level='exercise' and will show NULL for stage_number - FILTER THEM OUT!
+
+**QUERY 2: Get current enrollment per stage**
+SELECT
+  current_stage as stage_number,
+  COUNT(DISTINCT user_id) as total_students
+FROM ai_tutor_user_progress_summary
+WHERE current_stage IS NOT NULL
+GROUP BY current_stage
+ORDER BY current_stage;
+
+**QUERY 3: Get stage completion metrics**
+SELECT
+  stage_id,
+  COUNT(DISTINCT user_id) as students_attempted,
+  COUNT(DISTINCT CASE WHEN completed = true THEN user_id END) as students_completed,
+  COUNT(DISTINCT CASE WHEN completed = false OR completed IS NULL THEN user_id END) as students_in_progress,
+  ROUND(AVG(time_spent_minutes), 1) as avg_time_minutes,
+  ROUND(AVG(average_score), 1) as avg_score
+FROM ai_tutor_user_stage_progress
+GROUP BY stage_id
+ORDER BY stage_id;
+
+🚨 RESPONSE STRUCTURE (follow this EXACTLY):
+
+**Section 1: Learning Stages Overview**
+Table showing stage_number, title, difficulty_level from QUERY 1
+Format:
+
+| Stage Number | Stage Title | Difficulty Level |
+|--------------|-------------|------------------|
+| 1 | Foundation Speaking | A1 |
+| 2 | Daily Communication | A2 |
+
+🚨 CRITICAL VERIFICATION BEFORE DISPLAYING TABLE 1:
+- Check your query results: Do you see NULL in stage_number column?
+- If YES: YOU FORGOT "WHERE level = 'stage'" - GO BACK AND FIX YOUR QUERY!
+- If YES: You are showing EXERCISES, not STAGES - THIS IS WRONG!
+- Only proceed if ALL rows have non-NULL stage_number values!
+
+⚠️ CORRECT DATA: Stage numbers should be 1, 2, 3, 4, 5, 6 (integers, NOT NULL)
+⚠️ WRONG DATA: If you see NULL stage_number, you queried exercises by mistake!
+
+**Section 2: Stage Completion Metrics**
+🚨 CRITICAL: This table must have ONE ROW PER STAGE (stages 1-6), NOT one total row!
+🚨 DO NOT AGGREGATE ALL STAGES INTO ONE ROW!
+
+Combine QUERY 2 and QUERY 3 results by matching stage_number/stage_id
+Format:
+
+| Stage Number | Total Students | Completed | In Progress | Avg Time (min) | Avg Score |
+|--------------|----------------|-----------|-------------|----------------|-----------|
+| 1 | 11 | 5 | 6 | 45.3 | 78.5 |
+| 2 | 8 | 3 | 5 | 62.1 | 81.2 |
+| 3 | 5 | 2 | 3 | 38.7 | 72.1 |
+| 4 | 3 | 1 | 2 | 52.4 | 68.9 |
+| 5 | 2 | 0 | 2 | 41.2 | 65.3 |
+| 6 | 1 | 0 | 1 | 28.5 | 61.7 |
+
+⚠️ VERIFICATION BEFORE DISPLAYING:
+- Does your table have 6 rows (one per stage)? ✅ CORRECT
+- Does your table have 1 row (total aggregation)? ❌ WRONG - Go back and fix!
+- Each stage_number (1-6) should be a separate row!
+
+⚠️ Data source:
+- Total Students: from QUERY 2 (current enrollment by stage)
+- Completed, In Progress, Avg Time, Avg Score: from QUERY 3 (by stage_id)
+- If stage has data in QUERY 2 but not QUERY 3: show Total Students, use "-" for metrics
+- If stage has data in QUERY 3 but not QUERY 2: show 0 for Total Students
+
+🚨 HOW TO COMBINE THE DATA:
+FOR each stage_number from 1 to 6:
+  - Find matching row in QUERY 2 results (current_stage = stage_number)
+  - Find matching row in QUERY 3 results (stage_id = stage_number)
+  - Create ONE TABLE ROW with combined data
+  - Repeat for EACH stage (resulting in 6 rows total)
+
+**Section 3: Drop-off Rate Analysis**
+Calculate drop-off from Total Students column:
+- From Stage 1 to Stage 2: (11 - 8) / 11 * 100 = 27.3% drop
+Show as text bullets
+
+**Section 4: Most and Least Popular Stages**
+Based on Total Students from Section 2:
+- Most Popular: Stage with highest enrollment
+- Least Popular: Stage with lowest enrollment
+
+**Section 5: Recommendations**
+Analyze completion rates: Completed / Total Students
+Identify stages with < 50% completion
+Suggest improvements based on avg_score
+
+**Section 6: PAGINATION MESSAGE (MANDATORY)**
+📄 Showing first 10 results.
+💡 Load More: To see more, ask 'Show next 10 stages'
+
+❌ COMMON MISTAKES TO AVOID:
+
+1. ❌ **ERROR #1: Forgetting WHERE level = 'stage' in QUERY 1**
+   - SYMPTOM: You see NULL values in stage_number column
+   - SYMPTOM: You see exercise names like "Repeat After Me Phrases"
+   - FIX: Add WHERE level = 'stage' AND stage_number IS NOT NULL
+
+2. ❌ **ERROR #2: Showing ONE TOTAL ROW instead of 6 stage rows in Table 2**
+   - SYMPTOM: Table 2 has only 1 row with aggregate totals (Total Students: 17)
+   - SYMPTOM: You're aggregating all stages together instead of showing per-stage data
+   - FIX: Create ONE ROW PER STAGE (stages 1-6) by combining QUERY 2 and QUERY 3 results
+
+3. Using tabs in headers instead of pipes
+4. Missing |---|---| separator row
+5. Showing duplicate stage numbers
+6. Showing "-" in first table (only use in second table for missing metrics)
+7. Forgetting pagination message
+
+🚨 SELF-CHECK BEFORE RESPONDING:
+- Table 1: Do ALL rows have non-NULL stage_number? (Should be 1-6)
+- Table 2: Does it have 6 rows (one per stage) not 1 row (aggregate)?
+
+---
+
+5. EXERCISE PERFORMANCE MATRIX
+When user requests "exercise performance" or "exercise analytics":
+
+⚠️ CRITICAL DATABASE SCHEMA NOTES:
+- ai_tutor_user_exercise_progress has: stage_id, exercise_id, scores (numeric[] ARRAY!), average_score (numeric), best_score (numeric), attempts (integer), time_spent_minutes (integer)
+- ai_tutor_content_hierarchy has: stage_number, exercise_number, title, type, difficulty_level
+
+🚨 CRITICAL: scores column is numeric[] (ARRAY)! You CANNOT use AVG(scores) or AVG(UNNEST(scores))!
+✅ CORRECT: Use the pre-calculated ue.average_score column instead!
+✅ CORRECT: Use ue.best_score for best scores
+✅ CORRECT: Use ue.attempts for attempt counts
+✅ CORRECT: Use ue.time_spent_minutes for time spent
+
+REQUIRED QUERY PATTERN FOR EXERCISE PERFORMANCE:
+SELECT
+  ch.title AS exercise_title,
+  ch.stage_number,
+  ch.type,
+  COUNT(DISTINCT ue.user_id) AS total_students,
+  ROUND(AVG(ue.attempts), 1) AS avg_attempts,
+  ROUND(AVG(ue.average_score), 1) AS avg_score,  -- Use pre-calculated average_score!
+  ROUND(AVG(ue.time_spent_minutes), 1) AS avg_time
+FROM ai_tutor_user_exercise_progress ue
+JOIN ai_tutor_content_hierarchy ch
+  ON ch.stage_number = ue.stage_id AND ch.exercise_number = ue.exercise_id
+WHERE ch.level = 'exercise' AND ch.title IS NOT NULL
+GROUP BY ch.title, ch.stage_number, ch.type, ue.stage_id, ue.exercise_id
+ORDER BY ue.stage_id, ue.exercise_id
+LIMIT 50
+
+MANDATORY SECTIONS:
+a) Exercise Summary Table:
+| Exercise Title | Stage | Type | Total Students | Avg Attempts | Avg Score | Avg Time (min) |
+(Use query above, LIMIT 50)
+
+b) Most Challenging (Top 10):
+| Exercise Title | Stage | Avg Score | Total Students |
+(Same JOIN, ORDER BY AVG(ue.average_score) ASC LIMIT 10)
+
+c) Easiest (Top 10):
+| Exercise Title | Stage | Avg Score | Total Students |
+(Same JOIN, ORDER BY AVG(ue.average_score) DESC LIMIT 10)
+
+d) High Engagement (Most Attempts):
+| Exercise Title | Stage | Total Attempts | Total Students |
+(Same JOIN, SELECT SUM(ue.attempts), ORDER BY SUM(ue.attempts) DESC LIMIT 10)
+
+e) Low Completion (if requested):
+| Exercise Title | Stage | Completion % | Total Students |
+(Calculate: students with best_score >= passing_threshold / total students)
+
+⚠️ PAGINATION: If exercises > 50, add pagination message
+
+---
+
+6. STUDENT ENGAGEMENT INSIGHTS
+When user requests "engagement insights" or "at-risk students":
+MANDATORY SECTIONS (each as separate table):
+
+a) Declining Activity:
+| Full Name | Email | Last Active | Days Ago |
+(last_activity_date BETWEEN 14 and 7 days ago)
+
+b) Consistent Practice:
+| Full Name | Email | Current Streak | Current Stage |
+(streak_days >= 7)
+
+c) Stuck Students:
+| Full Name | Email | Exercise | Days Stuck | Last Attempt |
+(same exercise for > 3 days, not completed)
+
+d) Improving Students:
+| Full Name | Email | Best Score | Recent Avg | Improvement |
+(best_score > average of last_5_scores)
+
+e) Inactive Students:
+| Full Name | Email | Last Active | Days Inactive |
+(last_activity_date > 14 days ago)
+
+---
+
+7. MONTHLY PERFORMANCE TRENDS
+When user requests "monthly performance" or "30-day trends":
+MANDATORY SECTIONS:
+
+a) Growth Comparison (text):
+   - New Users: X this month vs Y last month (Z% change)
+   - Total Time: A mins this month vs B mins last month (C% change)
+   - Retention Rate: D%
+
+b) Daily Metrics Table:
+| Day of Week | Avg Active Users | Avg Exercises | Avg Time (min) |
+(GROUP BY day of week, 7 rows)
+
+c) Score Trends (text):
+   - Average Score This Month: X
+   - Average Score Last Month: Y
+   - Improvement: Z points
+
+═══════════════════════════════════════════════════════════════════════════════
+LMS QUICK ACTIONS - STANDARDIZED FORMATS
+═══════════════════════════════════════════════════════════════════════════════
+
+1. COURSE PERFORMANCE DASHBOARD
+When user requests "course performance" or "course analytics":
+
+🚨 CRITICAL DATABASE SCHEMA FOR COURSES:
+- courses table has status column (NOT published!)
+- status values: 'Draft', 'Published', 'Under Review', 'Rejected'
+- courses.creator_id → profiles.id (for creator name)
+- course_members.course_id → courses.id (for enrollments)
+- course_members.user_id → profiles.id (for student info)
+
+⚠️ CRITICAL: courses table does NOT have a "published" boolean column!
+✅ CORRECT: Use WHERE c.status = 'Published' to filter published courses
+❌ WRONG: WHERE c.published = TRUE (this column doesn't exist!)
+
+MANDATORY TABLE FORMAT:
+| Course Title | Creator Name | Total Enrolled | New (14d) | Avg Quiz Score | Avg Assignment Grade | Status |
+
+MANDATORY COLUMNS:
+- Course Title (from courses.title)
+- Creator Name (JOIN profiles p ON p.id = c.creator_id, use p.full_name or p.first_name || ' ' || p.last_name)
+- Total Enrolled (COUNT from course_members)
+- New (14d) (enrollments in last 14 days: COUNT WHERE created_at >= NOW() - INTERVAL '14 days')
+- Avg Quiz Score (from quiz_attempts)
+- Avg Assignment Grade (from assignment_submissions)
+- Status (courses.status: 'Draft', 'Published', 'Under Review', 'Rejected')
+
+FOLLOW-UP:
+- Top 5 Courses by enrollment (separate table, LIMIT 5)
+- Courses with zero enrollments in 30 days (separate table, LIMIT 20)
+
+---
+
+2. STUDENT ENGAGEMENT ANALYTICS
+When user requests "student engagement" or "student activity":
+
+🚨 CRITICAL: NEVER show user_id or course_id! ALWAYS JOIN with profiles and courses tables!
+✅ CORRECT: Show full_name, email from profiles table
+✅ CORRECT: Show title from courses table
+❌ WRONG: Showing UUIDs like "40a31328-7801-4269-9a68-8cec46638e19"
+❌ WRONG: Showing "User ID" or "Course ID" columns
+
+REQUIRED JOINS:
+- JOIN profiles p ON p.id = user_id (for full_name, email)
+- JOIN courses c ON c.id = course_id (for course title)
+
+MANDATORY SECTIONS:
+
+a) Summary Stats (text):
+   - Total Students: X
+   - Avg Courses per Student: Y
+   - Avg Assignments per Student: Z
+
+b) Course Enrollments per Student:
+| Full Name | Email | Courses Enrolled |
+(JOIN profiles, COUNT enrollments, ORDER BY count DESC)
+
+c) Top Active Students:
+| Full Name | Email | Courses Enrolled | Quiz Attempts | Assignments Submitted | Last Activity |
+(LIMIT 20, JOIN profiles, ORDER BY total activity DESC)
+
+d) At-Risk Students:
+| Full Name | Email | Courses Enrolled | Days Since Activity |
+(JOIN profiles, enrolled but no activity in 14 days)
+
+e) Pending Work:
+| Full Name | Email | Pending Assignments | Course Title |
+(JOIN profiles AND courses)
+
+f) Student Distribution Across Courses:
+| Course Title | Creator Name | Student Count |
+(JOIN courses AND profiles for creator, COUNT students, ORDER BY count DESC)
+
+---
+
+3. ASSIGNMENT TRACKING REPORT
+When user requests "assignment tracking" or "assignment status":
+
+🚨 CRITICAL DATABASE SCHEMA FOR ASSIGNMENTS:
+- Assignments are stored in course_lesson_content table where content_type = 'assignment'
+- Submissions are in assignment_submissions table
+- assignment_submissions.assignment_id → course_lesson_content.id
+- course_lesson_content.lesson_id → course_lessons.id
+- course_lessons.section_id → course_sections.id
+- course_sections.course_id → courses.id
+- assignment_submissions.user_id → profiles.id (for student info)
+- courses.creator_id → profiles.id (for teacher/creator info)
+
+✅ CORRECT JOIN PATTERN FOR ASSIGNMENTS:
+SELECT
+  clc.title AS assignment_title,
+  c.title AS course_title,
+  (p.first_name || ' ' || p.last_name) AS student_name,
+  p.email AS student_email,
+  asub.status,
+  asub.grade,
+  asub.submitted_at,
+  asub.graded_at
+FROM assignment_submissions asub
+JOIN course_lesson_content clc ON clc.id = asub.assignment_id
+JOIN course_lessons cl ON cl.id = clc.lesson_id
+JOIN course_sections cs ON cs.id = cl.section_id
+JOIN courses c ON c.id = cs.course_id
+JOIN profiles p ON p.id = asub.user_id
+WHERE clc.content_type = 'assignment'
+
+⚠️ CRITICAL: course_lesson_content does NOT have a standalone "assignments" table!
+⚠️ CRITICAL: Always filter by content_type = 'assignment' when querying assignments!
+⚠️ CRITICAL: Assignment COMPLETION status is in user_content_item_progress.completed_at (NOT assignment_submissions.submitted_at!)
+⚠️ CRITICAL: Use assignment_submissions ONLY for submission details (grade, feedback, status)
+
+MANDATORY SECTIONS:
+
+a) Summary Stats (text):
+   - Total Assignments: COUNT(DISTINCT clc.id) WHERE content_type = 'assignment'
+   - Total Submissions: COUNT(*) FROM assignment_submissions
+   - Submitted (not graded): COUNT(*) WHERE status = 'submitted' AND grade IS NULL
+   - Graded: COUNT(*) WHERE status = 'graded' OR grade IS NOT NULL
+   - Pending Grading: COUNT(*) WHERE grade IS NULL
+
+b) Completion Rates per Course (LIMIT 30):
+| Course Title | Total Assignments | Total Submissions | Completion Rate % |
+(Use the JOIN pattern above, GROUP BY c.title)
+
+c) Average Grades per Assignment (LIMIT 50):
+| Assignment Title | Course Title | Total Submissions | Avg Grade | Due Date |
+(AVG(asub.grade) WHERE grade IS NOT NULL, use JOIN pattern, LIMIT 50)
+
+d) Students with Ungraded Assignments (LIMIT 20):
+| Student Name | Email | Assignment Title | Course Title | Submitted Date | Days Pending |
+(WHERE grade IS NULL, calculate CURRENT_DATE - submitted_at::date as days_pending, LIMIT 20)
+
+e) Grading Delays (LIMIT 20):
+| Student Name | Email | Assignment Title | Course Title | Submitted Date | Days Pending |
+(WHERE grade IS NULL AND submitted_at < NOW() - INTERVAL '7 days', LIMIT 20)
+
+f) Difficult Assignments (LIMIT 10):
+| Assignment Title | Course Title | Avg Grade | Total Submissions |
+(WHERE AVG(grade) < 60, GROUP BY assignment, LIMIT 10)
+
+g) Recent Submissions Awaiting Grades (LIMIT 20):
+| Student Name | Email | Assignment Title | Course Title | Submitted Date |
+(WHERE grade IS NULL AND submitted_at >= NOW() - INTERVAL '7 days', LIMIT 20)
+
+⚠️ PAGINATION: Include pagination message at the end
+
+---
+
+4. QUIZ PERFORMANCE ANALYSIS
+When user requests "quiz performance" or "quiz analytics":
+
+🚨 CRITICAL DATABASE SCHEMA FOR QUIZZES:
+
+🚨 **CRITICAL: ALL quizzes are stored in course_lesson_content**
+   - Quizzes stored in: course_lesson_content WHERE content_type = 'quiz'
+   - Quiz questions: quiz_questions table (has lesson_content_id, NOT quiz_id!)
+   - Quiz attempts: quiz_attempts table (has lesson_content_id, NOT quiz_id!)
+   - Quiz submissions: quiz_submissions table (has lesson_content_id, lesson_id, course_id, manual_grading support)
+   - ❌ DO NOT use standalone_quiz tables (abandoned/deprecated)
+
+**Database relationships:**
+   - quiz_attempts.lesson_content_id → course_lesson_content.id (NOT quiz_id!)
+   - quiz_submissions.lesson_content_id → course_lesson_content.id (also has lesson_id and course_id directly!)
+   - quiz_questions.lesson_content_id → course_lesson_content.id (NOT quiz_id!)
+   - course_lesson_content.lesson_id → course_lessons.id
+   - course_lessons.section_id → course_sections.id
+   - course_sections.course_id → courses.id
+   - quiz_attempts.user_id → profiles.id
+   - quiz_submissions.user_id → profiles.id
+
+⚠️ CRITICAL: Neither quiz_attempts nor quiz_submissions have quiz_id column! They have lesson_content_id!
+⚠️ CRITICAL: For quiz COMPLETION status, ALWAYS use user_content_item_progress.completed_at (NOT quiz scores!)
+
+✅ CORRECT JOIN PATTERN FOR QUIZZES:
+SELECT
+  clc.title AS quiz_title,
+  c.title AS course_title,
+  (p.first_name || ' ' || p.last_name) AS student_name,
+  p.email AS student_email,
+  qa.score,
+  qa.submitted_at,
+  qa.attempt_number
+FROM quiz_attempts qa
+JOIN course_lesson_content clc ON clc.id = qa.lesson_content_id
+JOIN course_lessons cl ON cl.id = clc.lesson_id
+JOIN course_sections cs ON cs.id = cl.section_id
+JOIN courses c ON c.id = cs.course_id
+JOIN profiles p ON p.id = qa.user_id
+WHERE clc.content_type = 'quiz'
+
+MANDATORY SECTIONS:
+
+a) Summary Stats (text):
+   - Total Quizzes: COUNT(DISTINCT clc.id) WHERE content_type = 'quiz'
+   - Total Attempts: COUNT(*) FROM quiz_attempts
+   - Average Score: AVG(score)
+
+b) Total Quizzes and Attempt Counts (LIMIT 50):
+| Quiz Title | Course | Total Attempts | Avg Score | Retry Rate % |
+
+c) Recent Activity - Last 7 Days (LIMIT 20):
+| Student Name | Email | Quiz Title | Course/Type | Score | Date |
+(WHERE submitted_at >= NOW() - INTERVAL '7 days', LIMIT 20)
+
+d) Difficult Quizzes (LIMIT 10):
+| Quiz Title | Course/Type | Avg Score | Total Attempts |
+(WHERE AVG(score) < 60, LIMIT 10)
+
+e) Quizzes with Highest Completion (LIMIT 10):
+| Quiz Title | Course/Type | Attempts | Unique Students |
+(ORDER BY attempts DESC, LIMIT 10)
+
+f) Students with Incomplete Attempts (LIMIT 20):
+| Student Name | Email | Quiz Title | Course/Type | Last Attempt Date |
+(Find attempts where student has not completed, LIMIT 20)
+
+g) Quiz Performance Trends - Last 30 Days (LIMIT 30):
+| Date | Total Attempts | Avg Score | Unique Students |
+(GROUP BY DATE(submitted_at), ORDER BY date DESC, LIMIT 30)
+
+⚠️ PAGINATION: Include pagination message at the end
+
+---
+
+5. TEACHER ACTIVITY OVERVIEW
+When user requests "teacher activity" or "teacher performance":
+MANDATORY TABLE FORMAT:
+| Teacher Name | Email | Courses Created | Total Students | Avg Grading Time (days) | Pending Grades |
+
+FOLLOW-UP:
+- Most Active Teachers (by course count)
+- New Courses Last 30 Days table
+- Workload Analysis (students per teacher)
+
+---
+
+6. CONTENT STRUCTURE ANALYSIS
+When user requests "content structure" or "course organization":
+MANDATORY SECTIONS:
+
+a) Summary Stats (text):
+   - Total Sections: X
+   - Total Lessons: Y
+   - Avg Sections per Course: Z
+   - Avg Lessons per Section: W
+
+b) Course Content Table:
+| Course Title | Sections | Lessons | Content Items | Status |
+(ORDER BY lessons DESC)
+
+c) Minimal Content Courses:
+| Course Title | Creator | Lessons | Status |
+(WHERE lesson_count < 5)
+
+---
+
+7. ENROLLMENT TRENDS REPORT
+When user requests "enrollment trends" or "enrollment growth":
+MANDATORY SECTIONS:
+
+a) Monthly Growth (text):
+   - This Month: X enrollments
+   - Last Month: Y enrollments
+   - Growth Rate: Z%
+
+b) Popular Courses:
+| Course Title | Total Enrolled | Growth (30d) | Status |
+(ORDER BY enrolled DESC)
+
+c) Multi-Course Students:
+| Student Name | Email | Courses Enrolled | Last Enrollment Date |
+(students with > 1 course)
+
+d) Enrollment Timeline (Last 30 Days):
+| Date | New Enrollments | Total Active |
+(GROUP BY date, ORDER BY date DESC)
+
+---
+
+8. PLATFORM USAGE STATISTICS
+When user requests "platform statistics" or "platform usage":
+MANDATORY SECTIONS:
+
+a) User Summary (text):
+   - Total Students: X
+   - Total Teachers: Y
+   - Total Admins: Z
+   - New Users (30d): W
+   - Growth Rate: A%
+
+b) Course Summary (text):
+   - Published Courses: X
+   - Draft Courses: Y
+   - Under Review: Z
+   - Total Lessons: W
+   - Total Content Items: A
+
+c) Activity Metrics Table:
+| Metric | Count | Average |
+(Quiz Attempts, Assignments Submitted, Avg Quiz Score, Avg Assignment Grade)
+
+d) User Growth Trend (6 Months):
+| Month | New Users | Total Users | Growth % |
+
+e) Most Active Users:
+| Name | Email | Role | Quiz Attempts | Assignments | Total Activity |
+(LIMIT 20)
+
+f) Platform Health Score (text calculation):
+   - User Growth: X points
+   - Content Creation: Y points
+   - Engagement Rate: Z points
+   - Overall Score: W/100
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🚨 CRITICAL FORMATTING RULES FOR ALL QUICK ACTIONS:
+
+1. ALWAYS use the exact table format specified above for each quick action type
+2. ALWAYS include all mandatory columns in the specified order
+3. ALWAYS add blank lines before and after tables
+4. ALWAYS include follow-up sections where specified
+5. NEVER deviate from these formats - users expect consistency
+6. ALWAYS apply pagination (LIMIT 20-50 depending on query type)
+7. ALWAYS include summary statistics where specified
+8. ALWAYS format dates as YYYY-MM-DD
+9. ALWAYS round percentages to 1 decimal place
+10. ALWAYS round scores/grades to 1 decimal place
+
+When user clicks a quick action button, detect the type from keywords and apply the corresponding format above!
+
+═══════════════════════════════════════════════════════════════════════════════
+
 Always start by calling the appropriate tool(s) to gather information, then provide a response based on the tool results.`
         },
         {
@@ -1208,7 +2246,7 @@ Always start by calling the appropriate tool(s) to gather information, then prov
       // If we reach here, we hit the max iterations limit
       return new Response(JSON.stringify({
         ok: true,
-        response: "Maximum iterations reached. The task may be incomplete.",
+        response: "⏱️ This query is taking longer than expected to complete.\n\n**What happened?** Your request required many database operations and reached the processing limit.\n\n**What to do:**\n- ✅ Try breaking your request into smaller, more specific queries\n- ✅ Wait 1-2 minutes and try again\n- ✅ Use filters to narrow down the data (e.g., 'last 30 days', 'top 20 students')\n- ✅ Ask for summary statistics instead of detailed lists\n\n**Example:** Instead of 'Show all student data', try 'Show top 20 active students from last month'",
         iterations: iteration,
         toolInvocations: toolInvocations,
         conversationLength: messages.length,
@@ -1265,9 +2303,23 @@ Always start by calling the appropriate tool(s) to gather information, then prov
           const encoder = new TextEncoder();
 
           // Helper function to send SSE message
+          let streamClosed = false;
           const sendEvent = (event: string, data: any) => {
-            const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-            controller.enqueue(encoder.encode(message));
+            if (streamClosed) {
+              console.log(`⚠️ [STREAM WARNING] Attempted to send event '${event}' after stream closed - ignoring`);
+              return;
+            }
+            try {
+              const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+              controller.enqueue(encoder.encode(message));
+            } catch (error: any) {
+              if (error?.message?.includes('controller')) {
+                streamClosed = true;
+                console.log(`⚠️ [STREAM WARNING] Stream controller error on event '${event}' - stream closed`);
+              } else {
+                throw error;
+              }
+            }
           };
 
           try {
@@ -1303,10 +2355,216 @@ Always start by calling the appropriate tool(s) to gather information, then prov
               console.warn('⚠️ [STREAMING DEBUG] Could not find "Current User Query:" marker, using entire prompt as system');
             }
 
+            // Build messages with MCP adapter's comprehensive system prompt + iris-chat-simple's platform instruction
+            // The systemPrompt from iris-chat-simple contains: platform instruction + user context + conversation history
+            // We need to PREPEND the MCP adapter's formatting rules before this
+            const mcpSystemPrompt = `You are an assistant for an educational platform that can ONLY respond by using the available tools. You MUST use one or more tools to answer every user request.
+
+═══════════════════════════════════════════════════════════════════════════════
+🗄️ DATABASE SCHEMA REFERENCE - READ THIS FIRST!
+═══════════════════════════════════════════════════════════════════════════════
+
+⚠️ CRITICAL TABLE SCHEMAS - MEMORIZE THESE:
+
+1. **profiles** table:
+   - ❌ Does NOT have: full_name column
+   - ✅ DOES have: first_name, last_name (separate columns)
+   - ✅ To get full name: (p.first_name || ' ' || p.last_name) AS full_name
+   - Other columns: email, role, grade, created_at, phone_number, avatar_url
+
+2. **courses** table:
+   - ❌ Does NOT have: published (boolean) column
+   - ✅ DOES have: status column with values ('Draft', 'Published', 'Under Review', 'Rejected')
+   - ✅ To filter published: WHERE c.status = 'Published'
+   - Other columns: title, description, creator_id, created_at, price
+
+3. **COURSE STRUCTURE HIERARCHY** (CRITICAL - READ THIS!):
+   🚨 The course structure is hierarchical: courses → sections → lessons → content
+
+   ❌ WRONG: course_lesson_content does NOT have course_id column directly!
+   ✅ CORRECT: Must join through the hierarchy to reach courses table
+
+   **Complete join pattern to get from content to course:**
+   FROM course_lesson_content clc
+   JOIN course_lessons cl ON clc.lesson_id = cl.id
+   JOIN course_sections cs ON cl.section_id = cs.id
+   JOIN courses c ON cs.course_id = c.id
+
+   **Table relationships:**
+   - course_lesson_content has: id, lesson_id, content_type, title, due_date, etc.
+   - course_lessons has: id, section_id, title, lesson_order
+   - course_sections has: id, course_id, title, section_order
+   - courses has: id, title, status, creator_id, description, price
+
+   **Example: Query lessons per course:**
+   SELECT c.title AS course_title, COUNT(clc.id) AS lesson_count
+   FROM course_lesson_content clc
+   JOIN course_lessons cl ON clc.lesson_id = cl.id
+   JOIN course_sections cs ON cl.section_id = cs.id
+   JOIN courses c ON cs.course_id = c.id
+   GROUP BY c.id, c.title
+   LIMIT 50;
+
+   **Example: Query sections per course:**
+   SELECT c.title AS course_title, COUNT(DISTINCT cs.id) AS section_count
+   FROM course_sections cs
+   JOIN courses c ON cs.course_id = c.id
+   GROUP BY c.id, c.title
+   LIMIT 50;
+
+4. **assignments** storage:
+   - ❌ NO standalone "assignments" table exists!
+   - ✅ Assignments are in: course_lesson_content WHERE content_type = 'assignment'
+   - ✅ Submissions are in: assignment_submissions table
+   - ✅ Join pattern: assignment_submissions.assignment_id → course_lesson_content.id
+   - ✅ To get course from assignment: use the 4-table join pattern above
+
+5. **quizzes** storage:
+   - ❌ There is NO standalone "quizzes" table!
+   - ✅ ALL quizzes are in: course_lesson_content WHERE content_type = 'quiz'
+   - ✅ Quiz questions are in: quiz_questions table (has lesson_content_id, NOT quiz_id!)
+   - ✅ Attempts are in: quiz_attempts table (has lesson_content_id, NOT quiz_id!)
+   - ❌ DO NOT use standalone_quiz tables (abandoned/deprecated)
+   - ✅ To get course from quiz: use the 4-table join pattern above
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🚨🚨🚨 CRITICAL GLOBAL RULES - APPLY TO ALL QUERIES 🚨🚨🚨:
+
+⚠️ RULE #0: NEVER SHOW IDs OR UUIDs - ALWAYS SHOW HUMAN-READABLE NAMES!
+This is the MOST IMPORTANT rule that applies to EVERY query you execute:
+
+❌ NEVER show these columns in ANY table:
+- user_id (UUID)
+- student_id (UUID)
+- teacher_id (UUID)
+- creator_id (UUID)
+- course_id (UUID)
+- assignment_id (UUID)
+- quiz_id (UUID)
+- ANY column ending in "_id" that contains UUIDs
+
+✅ ALWAYS show these columns instead:
+- Full Name (from CONCAT(profiles.first_name, ' ', profiles.last_name) via JOIN - NOT p.full_name!)
+- Email (from profiles.email via JOIN)
+- Course Title (from courses.title via JOIN)
+- Assignment Title (from assignments.title via JOIN)
+- Quiz Title (from quiz_questions.title via JOIN)
+- Teacher Name (from CONCAT(profiles.first_name, ' ', profiles.last_name) via JOIN on creator_id/teacher_id)
+- Student Name (from CONCAT(profiles.first_name, ' ', profiles.last_name) via JOIN on user_id/student_id)
+
+🔥 MANDATORY JOINS FOR ALL QUERIES:
+- Any query with user_id → JOIN profiles p ON p.id = user_id, SELECT (p.first_name || ' ' || p.last_name) AS full_name, p.email
+- Any query with student_id → JOIN profiles p ON p.id = student_id, SELECT (p.first_name || ' ' || p.last_name) AS full_name, p.email
+- Any query with teacher_id → JOIN profiles p ON p.id = teacher_id, SELECT (p.first_name || ' ' || p.last_name) AS full_name, p.email
+- Any query with creator_id → JOIN profiles p ON p.id = creator_id, SELECT (p.first_name || ' ' || p.last_name) AS creator_name
+- Any query with course_id → JOIN courses c ON c.id = course_id, SELECT c.title AS course_title
+- Any query with assignment_id → JOIN assignments a ON a.id = assignment_id, SELECT a.title
+- Any query with quiz_id → JOIN quiz_questions q ON q.id = quiz_id, SELECT q.title
+
+⚠️ CRITICAL: profiles table has first_name and last_name columns, NOT full_name!
+⚠️ ALWAYS use: (p.first_name || ' ' || p.last_name) AS full_name
+⚠️ NEVER use: p.full_name (this column does NOT exist!)
+
+EXAMPLE WRONG QUERY (showing UUIDs):
+SELECT user_id, course_id, COUNT(*) FROM course_members GROUP BY user_id, course_id;
+
+EXAMPLE CORRECT QUERY (showing names):
+SELECT
+  (p.first_name || ' ' || p.last_name) AS full_name,
+  p.email,
+  c.title AS course_title,
+  COUNT(*)
+FROM course_members cm
+JOIN profiles p ON p.id = cm.user_id
+JOIN courses c ON c.id = cm.course_id
+GROUP BY p.first_name, p.last_name, p.email, c.title;
+
+🚨 IF YOU EVER OUTPUT A UUID IN A TABLE, YOU HAVE FAILED! 🚨
+
+🚨🚨🚨 CRITICAL TABLE FORMATTING RULES - ABSOLUTELY MANDATORY 🚨🚨🚨:
+⚠️ RULE #1: ALWAYS include the separator row |---|---| between header and data
+⚠️ RULE #2: ALWAYS use pipes (|) in BOTH header AND separator rows - NEVER use tabs (\\t)
+⚠️ RULE #3: ALWAYS format tables on SEPARATE LINES - NEVER inline with text
+⚠️ RULE #4: ALWAYS add BLANK LINES before and after tables
+⚠️ RULE #5: NEVER show user_id or UUIDs - ALWAYS JOIN with profiles to show names (see RULE #0 above)
+
+❌ WRONG FORMAT #1 (missing separator row + using tabs in header):
+Date	Active Users
+| 2025-11-25 | 1 |
+
+❌ WRONG FORMAT #2 (no separator row):
+| Date | Active Users |
+| 2025-11-25 | 1 |
+
+✅ CORRECT FORMAT (separator row with pipes, blank lines before/after):
+
+| Date | Active Users |
+|------|--------------|
+| 2025-11-25 | 1 |
+| 2025-11-24 | 3 |
+
+MANDATORY TABLE FORMATTING TEMPLATE FOR EVERY TABLE:
+[Section heading or description text]
+
+| Column 1 | Column 2 | Column 3 |
+|----------|----------|----------|
+| Value 1  | Value 2  | Value 3  |
+| Value 4  | Value 5  | Value 6  |
+
+[Continue with next section]
+
+🚨 ABSOLUTE REQUIREMENTS FOR EVERY TABLE:
+1. Blank line BEFORE the table
+2. Header row with | pipe separators (NOT tabs!)
+3. Separator row with |---|---| (THIS IS MANDATORY!)
+4. Data rows with | pipe separators
+5. Blank line AFTER the table
+6. Use NAMES from profiles table (NOT user_id UUIDs!)
+7. Use TITLES from content hierarchy (NOT numeric IDs!)
+
+🚨 BEFORE OUTPUTTING ANY TABLE, CHECK:
+✓ Does my header row use | pipes? (Not tabs?)
+✓ Did I include the |---|---| separator row?
+✓ Am I showing names/titles? (Not UUIDs/IDs?)
+✓ Are there blank lines before and after?
+
+IF ANY ANSWER IS "NO", DO NOT OUTPUT THE TABLE! FIX IT FIRST!
+
+🚨🚨🚨 CRITICAL PAGINATION RULES - ABSOLUTELY MANDATORY 🚨🚨🚨:
+⚠️ ALWAYS use LIMIT in your queries to prevent token overflow!
+⚠️ ALWAYS add pagination message when using LIMIT!
+
+DEFAULT PAGINATION RULES:
+- List queries: LIMIT 50
+- Top performers/students: LIMIT 20
+- Challenging exercises: LIMIT 10
+- Weekly/daily data: LIMIT 7-30 days max
+
+MANDATORY PAGINATION MESSAGE:
+When you use LIMIT in your query, you MUST end your response with:
+
+📄 Showing first [N] results.
+💡 **Load More**: To see more, ask 'Show next [N] results'
+
+EXAMPLE:
+[Your tables and analysis here]
+
+📄 Showing first 20 results.
+💡 **Load More**: To see more, ask 'Show next 20 students'
+
+⚠️ WITHOUT THIS MESSAGE, USERS CANNOT ACCESS MORE DATA!
+
+For all other rules, see the platform-specific instructions below.
+
+---
+
+`;
+
             const messages: any[] = [
               {
                 role: "system",
-                content: systemPrompt  // IRIS instructions + context + history
+                content: mcpSystemPrompt + systemPrompt  // MCP formatting rules + IRIS platform instructions + context + history
               },
               {
                 role: "user",
@@ -1321,8 +2579,15 @@ Always start by calling the appropriate tool(s) to gather information, then prov
             const toolInvocations: any[] = [];
 
             // Iterative tool calling loop
+            console.log(`🚨 [CRITICAL DEBUG] ========== ENTERING WHILE LOOP, MAX_ITERATIONS=${MAX_ITERATIONS} ==========`);
+
             while (iteration < MAX_ITERATIONS) {
               iteration++;
+
+              console.log(`🚨🚨🚨 [CRITICAL DEBUG] ========== ITERATION ${iteration} STARTED ==========`);
+              console.log(`🚨 [CRITICAL DEBUG] Current messages array length:`, messages.length);
+              console.log(`🚨 [CRITICAL DEBUG] Total tool invocations so far:`, toolInvocations.length);
+              console.log(`🚨 [CRITICAL DEBUG] Condition check: ${iteration} < ${MAX_ITERATIONS} = ${iteration < MAX_ITERATIONS}`);
 
               sendEvent('iteration', { iteration, message: `Processing iteration ${iteration}...` });
 
@@ -1341,6 +2606,16 @@ Always start by calling the appropriate tool(s) to gather information, then prov
                 }))));
 
               // Call OpenAI WITHOUT streaming first for tool calls
+              console.log(`🚨 [CRITICAL DEBUG] About to call OpenAI API for iteration ${iteration}`);
+              console.log(`🚨 [CRITICAL DEBUG] OpenAI request params:`, {
+                model: model,
+                messagesCount: messages.length,
+                toolsCount: tools.length,
+                tool_choice: toolChoice,
+                temperature: temperature,
+                stream: false
+              });
+
               const completion = await openai.chat.completions.create({
                 model: model,
                 messages: messages,
@@ -1350,15 +2625,22 @@ Always start by calling the appropriate tool(s) to gather information, then prov
                 stream: false // Tool calls don't stream well
               });
 
+              console.log(`🚨 [CRITICAL DEBUG] OpenAI API call completed for iteration ${iteration}`);
+
               const assistantMessage = completion.choices[0].message;
+              const finishReason = completion.choices[0].finish_reason;
 
               console.log(`🔍 [STREAMING DEBUG] Iteration ${iteration} - OpenAI response:`, {
+                finishReason: finishReason,
                 hasContent: !!assistantMessage.content,
                 contentPreview: assistantMessage.content?.substring(0, 200),
                 hasToolCalls: !!assistantMessage.tool_calls,
                 toolCallsCount: assistantMessage.tool_calls?.length,
                 toolNames: assistantMessage.tool_calls?.map((t: any) => t.function.name)
               });
+
+              console.log(`🚨 [CRITICAL DEBUG] Iteration ${iteration} - finish_reason:`, finishReason);
+              console.log(`🚨 [CRITICAL DEBUG] Iteration ${iteration} - Will continue?:`, !!(assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0));
 
               // Check if assistant wants to use tools
               if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
@@ -1411,6 +2693,8 @@ Always start by calling the appropriate tool(s) to gather information, then prov
 
                     messages.push(toolMessage);
 
+                    console.log(`🚨 [CRITICAL DEBUG] Tool ${toolName} completed successfully, messages array now has ${messages.length} messages`);
+
                   } catch (toolError: any) {
                     console.error(`Error invoking tool ${toolName}:`, toolError);
                     console.error(`🔍 [MCP-ADAPTER ERROR DEBUG] Tool invocation error:`, {
@@ -1441,20 +2725,29 @@ Always start by calling the appropriate tool(s) to gather information, then prov
                   }
                 }
 
+                console.log(`🚨 [CRITICAL DEBUG] Iteration ${iteration} - All tools executed, about to CONTINUE to next iteration`);
+                console.log(`🚨 [CRITICAL DEBUG] Messages array length before continue:`, messages.length);
+                console.log(`🚨 [CRITICAL DEBUG] Tool invocations count:`, toolInvocations.length);
+
                 continue; // Go to next iteration to process tool results
 
               } else {
                 // No tools called - final response with STREAMING
+                console.log(`🚨 [CRITICAL DEBUG] ========== NO TOOL CALLS IN ITERATION ${iteration} ==========`);
                 console.log(`🔍 [STREAMING DEBUG] No tool calls in iteration ${iteration}`);
                 console.log(`🔍 [STREAMING DEBUG] Total tool invocations so far:`, toolInvocations.length);
+                console.log(`🚨 [CRITICAL DEBUG] Assistant message content:`, assistantMessage.content);
+                console.log(`🚨 [CRITICAL DEBUG] Assistant message finish_reason:`, finishReason);
 
                 if (toolInvocations.length === 0) {
                   // Force tool usage
+                  console.log('🚨🚨🚨 [CRITICAL DEBUG] FORCING TOOL USAGE - NO TOOLS CALLED YET');
                   console.log('🔍 [STREAMING DEBUG] Forcing tool usage - no tools called yet');
                   messages.push({
                     role: "user",
                     content: "You must use the available tools to answer my request. Please call the appropriate tool(s) to gather the information I need."
                   });
+                  console.log(`🚨 [CRITICAL DEBUG] Added force tool usage message, about to CONTINUE`);
                   continue;
                 }
 
@@ -1507,13 +2800,25 @@ Always start by calling the appropriate tool(s) to gather information, then prov
                   tokensUsed: messages.reduce((acc: number, msg: any) => acc + (msg.content?.length || 0), 0)
                 });
 
+                console.log(`🚨 [CRITICAL DEBUG] ========== RESPONSE COMPLETE - CLOSING STREAM ==========`);
+                console.log(`🚨 [CRITICAL DEBUG] Total iterations:`, iteration);
+                console.log(`🚨 [CRITICAL DEBUG] Total tools used:`, toolInvocations.length);
+
+                streamClosed = true;
                 controller.close();
                 return;
               }
             }
 
             // Max iterations reached
-            sendEvent('error', { message: 'Maximum iterations reached. The task may be incomplete.' });
+            console.log(`🚨🚨🚨 [CRITICAL DEBUG] ========== EXITED WHILE LOOP ==========`);
+            console.log(`🚨 [CRITICAL DEBUG] Final iteration count:`, iteration);
+            console.log(`🚨 [CRITICAL DEBUG] MAX_ITERATIONS:`, MAX_ITERATIONS);
+            console.log(`🚨 [CRITICAL DEBUG] Total tool invocations:`, toolInvocations.length);
+            console.log(`🚨 [CRITICAL DEBUG] Reason: MAX_ITERATIONS REACHED`);
+
+            sendEvent('error', { message: '⏱️ This query is taking longer than expected to complete.\n\n**What happened?** Your request required many database operations and reached the processing limit.\n\n**What to do:**\n- ✅ Try breaking your request into smaller, more specific queries\n- ✅ Wait 1-2 minutes and try again\n- ✅ Use filters to narrow down the data (e.g., \'last 30 days\', \'top 20 students\')\n- ✅ Ask for summary statistics instead of detailed lists\n- 🔄 **If the conversation has grown long**, reset the chat and try again with a fresh session\n\n**Example:** Instead of \'Show all student data\', try \'Show top 20 active students from last month\'' });
+            streamClosed = true;
             controller.close();
 
           } catch (error: any) {
@@ -1526,6 +2831,7 @@ Always start by calling the appropriate tool(s) to gather information, then prov
             });
             // Send the actual error message, not just String(error)
             sendEvent('error', { message: error?.message || String(error) });
+            streamClosed = true;
             controller.close();
           }
         }
