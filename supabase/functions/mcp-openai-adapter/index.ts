@@ -320,9 +320,13 @@ serve(async (req) => {
 ⚠️ When this happens, simplify: SELECT first_name, last_name separately instead of concatenating!
 
 🚨 CRITICAL - READ THIS FIRST - MANDATORY RULES:
+⚠️ STEP 1: Use list_tables tool FIRST if querying unfamiliar tables to get exact column types!
+⚠️ STEP 2: Check data types in schema (integer vs text vs boolean) before writing WHERE clauses!
+⚠️ STEP 3: Use queryDatabase tool to execute your query!
 ⚠️ YOU MUST USE queryDatabase TOOL FOR EVERY DATA REQUEST!
 ⚠️ NEVER ASSUME "NO DATA" WITHOUT CHECKING THE DATABASE!
 ⚠️ NEVER SHOW COLUMNS WITH ALL ZEROS - EXCLUDE THEM FROM SELECT!
+⚠️ NEVER ASSUME COLUMN TYPES - CHECK SCHEMA FIRST!
 ⚠️ ALWAYS ADD "Load More" MESSAGE WHEN YOU USE LIMIT 50!
 ⚠️ "PLATFORM USAGE" = BOTH AI TUTOR + LMS DATA (NOT just AI Tutor alone!)!
 
@@ -503,6 +507,39 @@ MANDATORY TABLE FORMATTING TEMPLATE FOR EVERY TABLE:
 
 IF ANY ANSWER IS "NO", DO NOT OUTPUT THE TABLE! FIX IT FIRST!
 
+🎨🎨🎨 CRITICAL EMPTY RESULT FORMATTING RULES 🎨🎨🎨:
+🚨 THIS APPLIES TO ALL EMPTY/NULL VALUES - NO EXCEPTIONS! 🚨
+
+❌ NEVER EVER use HTML-like syntax in markdown tables:
+  - (No data available)">(No data available) ← WRONG!
+  - (No grades available)">(No grades available) ← WRONG!
+  - (No quiz scores available)">(No quiz scores available) ← WRONG!
+  - | (No data)"> ← WRONG!
+  - Any syntax with ")>" characters ← WRONG!
+
+✅ CORRECT ways to show empty/missing data:
+
+**In table cells (numeric columns):**
+| Course Title | Average Quiz Score |
+|--------------|-------------------|
+| Test Course  | N/A               |
+
+**In table cells (text columns):**
+| Course Title | Creator Name |
+|--------------|--------------|
+| Test Course  | Not assigned |
+
+**For entire empty sections (outside tables):**
+No quiz scores available for this period.
+
+**For empty tables:**
+No assignment grades available for any courses.
+
+🚨 VERIFICATION BEFORE SENDING RESPONSE:
+✓ Search your response for ")>" characters - if found, REMOVE THEM!
+✓ Replace HTML-like syntax with plain "N/A" or "Not available"
+✓ Use plain text for empty sections, not broken markdown
+
 🚫🚫🚫 ABSOLUTELY FORBIDDEN - NEVER DO THIS 🚫🚫🚫:
 ❌ NEVER output data as bullet lists when showing multiple rows of data
 ❌ NEVER write: "Here are the average time spent (in minutes) by each student: - Puttareddy Arugunta: 0 - Arun Student: 0"
@@ -571,11 +608,33 @@ LIMIT 50;
 
 IF ANY ANSWER IS "NO", REWRITE YOUR QUERY TO JOIN profiles!
 
+🚨🚨🚨 CRITICAL: ALWAYS CHECK SCHEMA BEFORE WRITING QUERIES 🚨🚨🚨
+
+⚠️ MANDATORY FIRST STEP FOR UNFAMILIAR TABLES:
+Before writing ANY query involving a table you haven't queried in this conversation:
+1. Call list_tables tool FIRST to get exact column names and types
+2. Check the data_type field for each column (integer, text, boolean, uuid, etc.)
+3. NEVER assume a column is text/boolean when it's actually integer
+4. NEVER assume column names (e.g., "full_name" doesn't exist - use first_name + last_name)
+
+🚨 The list_tables tool returns COMPLETE schema information including:
+- Exact column names (no guessing!)
+- Exact data types (integer vs text vs boolean - this matters!)
+- Nullable constraints
+- Default values
+
 IMPORTANT DATABASE SCHEMA KNOWLEDGE:
 - Course statuses are: "Published", "Draft", "Under Review" (NOT "active" or "inactive")
 - User roles are typically: "admin", "teacher", "student"
-- Always use listTables first to understand the database structure
 - Use proper column names and values as they exist in the database
+
+🔍 EXAMPLE - CORRECT APPROACH:
+User asks: "Show me completed stages"
+Step 1: Call list_tables to check ai_tutor_user_progress_summary schema
+Step 2: See that current_stage column is type "integer" (not boolean or text!)
+Step 3: Write correct query using integer comparison
+❌ WRONG: WHERE current_stage = 'completed' (type mismatch!)
+✅ CORRECT: Use ai_tutor_user_stage_progress.completed boolean column instead
 
 CRITICAL PLATFORM DISTINCTION:
 This platform has TWO separate educational systems - DO NOT CONFUSE THEM:
@@ -1280,7 +1339,18 @@ QUERY REQUIREMENTS:
 - LIMIT 20 (top 20 performers)
 - ORDER BY total_time_spent_minutes DESC
 - Filter: last_activity_date >= CURRENT_DATE - INTERVAL '30 days'
-- Must include average progress % at bottom
+
+AFTER THE TABLE, ADD SUMMARY STATS AS PLAIN TEXT (NOT A TABLE):
+
+**Average Progress Percentage:** 16.67%
+
+❌ WRONG - Do not format as table:
+Average Progress Percentage
+-----------------------------
+16.67
+
+✅ CORRECT - Use plain text with bold label:
+**Average Progress Percentage:** 16.67%
 
 ⚠️ MANDATORY PAGINATION MESSAGE:
 After displaying results, you MUST add:
@@ -1405,6 +1475,42 @@ f) Top 10 Highest-Performing Students Table (MUST BE A TABLE!):
 When user requests "weekly activity" or "last 7 days" or "weekly activity report":
 ⚠️ DETECTION KEYWORDS: "weekly", "last 7 days", "weekly activity", "weekly report", "7-day report"
 
+🚨🚨🚨 CRITICAL DATABASE SCHEMA FOR WEEKLY REPORTS 🚨🚨🚨
+
+**ai_tutor_daily_learning_analytics table - EXACT COLUMN NAMES:**
+
+❌❌❌ WRONG COLUMNS (WILL CAUSE ERRORS): ❌❌❌
+- date (DOES NOT EXIST!)
+- activity_day (DOES NOT EXIST!)
+- time_spent_minutes (DOES NOT EXIST!)
+- total_time_spent_minutes (DOES NOT EXIST!)
+
+✅✅✅ CORRECT COLUMNS (USE THESE EXACTLY): ✅✅✅
+- analytics_date (DATE) - The date column for filtering and GROUP BY
+- user_id (UUID) - Join to profiles for names
+- sessions_count (INTEGER)
+- exercises_completed (INTEGER)
+- exercises_attempted (INTEGER)
+- total_time_minutes (INTEGER) - Total time in minutes
+- average_score (NUMERIC 5,2)
+- best_score (NUMERIC 5,2)
+- average_session_duration (NUMERIC 5,2)
+
+🚨 CRITICAL COLUMN NAME RULES:
+1. For dates: ALWAYS use "analytics_date" (NOT "date", NOT "activity_day")
+2. For time: ALWAYS use "total_time_minutes" (NOT "time_spent_minutes", NOT "total_time_spent_minutes")
+3. For exercises: ALWAYS use "exercises_completed" OR "exercises_attempted"
+
+✅ CORRECT query patterns:
+SELECT analytics_date, COUNT(DISTINCT user_id) FROM ai_tutor_daily_learning_analytics WHERE analytics_date >= CURRENT_DATE - INTERVAL '7 days' GROUP BY analytics_date
+SELECT analytics_date, AVG(total_time_minutes) FROM ai_tutor_daily_learning_analytics WHERE analytics_date >= CURRENT_DATE - INTERVAL '7 days' GROUP BY analytics_date
+
+❌ WRONG (will fail with "column does not exist"):
+SELECT date FROM ai_tutor_daily_learning_analytics (column "date" does not exist!)
+SELECT activity_day FROM ai_tutor_daily_learning_analytics (column "activity_day" does not exist!)
+SELECT AVG(time_spent_minutes) FROM ai_tutor_daily_learning_analytics (column "time_spent_minutes" does not exist!)
+SELECT AVG(total_time_spent_minutes) FROM ai_tutor_daily_learning_analytics (column "total_time_spent_minutes" does not exist!)
+
 🚨🚨🚨 ABSOLUTE REQUIREMENT: ALL DATA SECTIONS MUST BE MARKDOWN TABLES! 🚨🚨🚨
 🚫 DO NOT USE BULLET LISTS FOR ANY DATA!
 ✅ USE PROPER MARKDOWN TABLES WITH | PIPES AND SEPARATOR ROWS!
@@ -1420,8 +1526,10 @@ a) Daily Active User Counts (MUST BE A TABLE!):
 | 2025-11-24 | 3 |
 | 2025-11-23 | 5 |
 
-⚠️ Query: Count distinct users per day from ai_tutor_daily_learning_analytics for last 7 days
-⚠️ ORDER BY date DESC (most recent first)
+⚠️ Query: COUNT(DISTINCT user_id) per analytics_date from ai_tutor_daily_learning_analytics
+⚠️ WHERE analytics_date >= CURRENT_DATE - INTERVAL '7 days'
+⚠️ GROUP BY analytics_date
+⚠️ ORDER BY analytics_date DESC (most recent first)
 🚫 DO NOT write: "Date	Active Users" with tabs - USE PIPES!
 ✅ ALWAYS include blank line BEFORE table
 ✅ ALWAYS include separator row |---|---|
@@ -1434,7 +1542,18 @@ b) Exercises Completed Each Day (MUST BE A TABLE!):
 | 2025-11-25 | 12 |
 | 2025-11-24 | 8 |
 
-⚠️ Query: SUM(exercises_completed) per day from ai_tutor_daily_learning_analytics
+🚨 BEFORE WRITING THIS QUERY - VERIFY:
+✓ Use analytics_date (NOT date, NOT activity_day)
+✓ Use SUM(exercises_completed) (NOT total_exercises)
+
+⚠️ CORRECT Query:
+SELECT analytics_date, SUM(exercises_completed) as total_exercises
+FROM ai_tutor_daily_learning_analytics
+WHERE analytics_date >= CURRENT_DATE - INTERVAL '7 days'
+GROUP BY analytics_date
+ORDER BY analytics_date DESC
+
+❌ WRONG: SELECT date, COUNT(*) AS exercises_completed (column "date" does not exist!)
 ⚠️ If no data, show: | No data available for this period ||
 🚫 DO NOT write: "| N/A | 0 |"
 
@@ -1446,7 +1565,19 @@ c) Average Time Spent Per Day (MUST BE A TABLE!):
 | 2025-11-25 | 31 |
 | 2025-11-24 | 45 |
 
-⚠️ Query: AVG(total_time_minutes) per day from ai_tutor_daily_learning_analytics
+🚨 BEFORE WRITING THIS QUERY - VERIFY:
+✓ Use analytics_date (NOT date, NOT activity_day)
+✓ Use AVG(total_time_minutes) (NOT time_spent_minutes, NOT total_time_spent_minutes!)
+
+⚠️ CORRECT Query:
+SELECT analytics_date, ROUND(AVG(total_time_minutes), 2) as avg_time
+FROM ai_tutor_daily_learning_analytics
+WHERE analytics_date >= CURRENT_DATE - INTERVAL '7 days'
+GROUP BY analytics_date
+ORDER BY analytics_date DESC
+
+❌ WRONG: SELECT AVG(time_spent_minutes) (column "time_spent_minutes" does not exist!)
+❌ WRONG: SELECT AVG(total_time_spent_minutes) (column "total_time_spent_minutes" does not exist!)
 
 d) New Students Who Joined (MUST BE A TABLE!):
 **4. New Students Who Joined**
@@ -1480,7 +1611,35 @@ f) Comparison with Previous 7-Day Period (MUST BE A TABLE!):
 | Total Exercises | 45 | 38 | +18.4% |
 | Avg Time/User (min) | 38 | 42 | -9.5% |
 
-⚠️ Query TWO date ranges: (CURRENT_DATE - 7 days to CURRENT_DATE) vs (CURRENT_DATE - 14 days to CURRENT_DATE - 7 days)
+🚨 BEFORE WRITING THESE QUERIES - VERIFY:
+✓ Use analytics_date (NOT date, NOT activity_day)
+✓ Use total_time_minutes (NOT time_spent_minutes, NOT total_time_spent_minutes)
+✓ Use exercises_completed (NOT total_exercises)
+
+⚠️ CORRECT Queries for comparison (execute TWO separate queries):
+
+**Query 1 - Last Week (7 days ago to today):**
+SELECT
+  COUNT(DISTINCT user_id) / 7.0 as avg_users_per_day,
+  SUM(exercises_completed) as total_exercises,
+  ROUND(AVG(total_time_minutes), 2) as avg_time
+FROM ai_tutor_daily_learning_analytics
+WHERE analytics_date >= CURRENT_DATE - INTERVAL '7 days'
+
+**Query 2 - Previous Week (14 days ago to 7 days ago):**
+SELECT
+  COUNT(DISTINCT user_id) / 7.0 as avg_users_per_day,
+  SUM(exercises_completed) as total_exercises,
+  ROUND(AVG(total_time_minutes), 2) as avg_time
+FROM ai_tutor_daily_learning_analytics
+WHERE analytics_date >= CURRENT_DATE - INTERVAL '14 days'
+  AND analytics_date < CURRENT_DATE - INTERVAL '7 days'
+
+❌ WRONG: WHERE date >= ... (column "date" does not exist!)
+❌ WRONG: WHERE activity_day >= ... (column "activity_day" does not exist!)
+❌ WRONG: AVG(time_spent_minutes) (column "time_spent_minutes" does not exist!)
+❌ WRONG: AVG(total_time_spent_minutes) (column "total_time_spent_minutes" does not exist!)
+
 ⚠️ Calculate percentage change: ((last_week - previous_week) / previous_week) * 100
 
 g) Engagement Insights and Trends (text summary):
@@ -1502,175 +1661,56 @@ g) Engagement Insights and Trends (text summary):
 ---
 
 4. STAGE COMPLETION ANALYSIS
-When user requests "stage completion", "stage analysis", or "Analyze AI Tutor stage completion":
 
-🚨 CRITICAL TABLE FORMATTING REQUIREMENTS:
-⚠️ ALL TABLES MUST HAVE: Blank line before, header with pipes, |---|---| separator row, data rows, blank line after
-⚠️ NEVER USE TABS IN HEADERS - ALWAYS USE PIPES (|)
-⚠️ Example correct format:
+🚫 CRITICAL WARNING 🚫
+The ai_tutor_user_progress_summary table does NOT have these columns:
+- stage_number (does not exist - use current_stage instead)
+- completion_status (does not exist)
+- status (does not exist)
 
-| Stage Number | Stage Title | Difficulty Level |
-|--------------|-------------|------------------|
-| 1 | Foundation Speaking | A1 |
+If you write "SELECT stage_number FROM ai_tutor_user_progress_summary" you will get an error!
 
-⚠️ CRITICAL DATABASE SCHEMA (from migration 20250922172405):
+✅ CORRECT APPROACH - Two queries to execute IN ORDER:
 
-**ai_tutor_content_hierarchy table:**
-- id (integer PK)
-- level (text) - values: 'stage', 'exercise', 'topic'
-- stage_number (integer) - only for level='stage' rows
-- title (text)
-- difficulty_level (text) - values: 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'
-- stage_order (integer)
+Query 1 - Get stage information with titles:
+SELECT stage_number, title, difficulty_level FROM ai_tutor_content_hierarchy WHERE level = 'stage' AND stage_number IS NOT NULL ORDER BY stage_number LIMIT 10
 
-**ai_tutor_user_progress_summary table:**
-- user_id (uuid FK)
-- current_stage (integer) - the stage number user is currently on
-- total_time_spent_minutes (integer)
-- overall_progress_percentage (numeric 5,2)
+Query 2 - Get metrics for each stage (this joins 3 tables correctly):
+SELECT ch.stage_number, COUNT(DISTINCT ups.user_id) FILTER (WHERE ups.current_stage = ch.stage_number) as total_students, COUNT(DISTINCT usp.user_id) FILTER (WHERE usp.completed = true) as completed, COUNT(DISTINCT usp.user_id) FILTER (WHERE usp.completed = false OR usp.completed IS NULL) as in_progress, ROUND(AVG(usp.time_spent_minutes), 1) as avg_time, ROUND(AVG(usp.average_score), 1) as avg_score FROM ai_tutor_content_hierarchy ch LEFT JOIN ai_tutor_user_progress_summary ups ON ups.current_stage = ch.stage_number LEFT JOIN ai_tutor_user_stage_progress usp ON usp.stage_id = ch.stage_number WHERE ch.level = 'stage' AND ch.stage_number IS NOT NULL GROUP BY ch.stage_number ORDER BY ch.stage_number LIMIT 10
 
-**ai_tutor_user_stage_progress table:**
-- id (integer PK)
-- user_id (uuid FK)
-- stage_id (integer) - references stage_number, NOT ai_tutor_content_hierarchy.id!
-- completed (boolean) - true if user completed this stage
-- average_score (numeric 5,2)
-- progress_percentage (numeric 5,2)
-- time_spent_minutes (integer)
-- exercises_completed (integer) - max 3 per stage
+Then combine results by stage_number to create final table.
 
-🚨 MANDATORY QUERY SEQUENCE (execute 3 separate queries):
+🚨 RESPONSE FORMAT:
 
-**QUERY 1: Get all stage metadata**
-🚨 CRITICAL: You MUST include WHERE level = 'stage' or you will get exercises (NULL stage_number)!
-🚨 COPY THIS QUERY EXACTLY - DO NOT MODIFY THE WHERE CLAUSE!
-
-SELECT
-  stage_number,
-  title,
-  difficulty_level
-FROM ai_tutor_content_hierarchy
-WHERE level = 'stage'
-  AND stage_number IS NOT NULL
-ORDER BY stage_number
-LIMIT 10;
-
-⚠️ VERIFICATION: If you see NULL values in stage_number column, YOU FORGOT THE WHERE CLAUSE!
-⚠️ Exercises have level='exercise' and will show NULL for stage_number - FILTER THEM OUT!
-
-**QUERY 2: Get current enrollment per stage**
-SELECT
-  current_stage as stage_number,
-  COUNT(DISTINCT user_id) as total_students
-FROM ai_tutor_user_progress_summary
-WHERE current_stage IS NOT NULL
-GROUP BY current_stage
-ORDER BY current_stage;
-
-**QUERY 3: Get stage completion metrics**
-SELECT
-  stage_id,
-  COUNT(DISTINCT user_id) as students_attempted,
-  COUNT(DISTINCT CASE WHEN completed = true THEN user_id END) as students_completed,
-  COUNT(DISTINCT CASE WHEN completed = false OR completed IS NULL THEN user_id END) as students_in_progress,
-  ROUND(AVG(time_spent_minutes), 1) as avg_time_minutes,
-  ROUND(AVG(average_score), 1) as avg_score
-FROM ai_tutor_user_stage_progress
-GROUP BY stage_id
-ORDER BY stage_id;
-
-🚨 RESPONSE STRUCTURE (follow this EXACTLY):
-
-**Section 1: Learning Stages Overview**
-Table showing stage_number, title, difficulty_level from QUERY 1
-Format:
+**1. Learning Stages Overview**
 
 | Stage Number | Stage Title | Difficulty Level |
 |--------------|-------------|------------------|
-| 1 | Foundation Speaking | A1 |
-| 2 | Daily Communication | A2 |
+| (stage_number) | (title) | (difficulty_level) |
 
-🚨 CRITICAL VERIFICATION BEFORE DISPLAYING TABLE 1:
-- Check your query results: Do you see NULL in stage_number column?
-- If YES: YOU FORGOT "WHERE level = 'stage'" - GO BACK AND FIX YOUR QUERY!
-- If YES: You are showing EXERCISES, not STAGES - THIS IS WRONG!
-- Only proceed if ALL rows have non-NULL stage_number values!
-
-⚠️ CORRECT DATA: Stage numbers should be 1, 2, 3, 4, 5, 6 (integers, NOT NULL)
-⚠️ WRONG DATA: If you see NULL stage_number, you queried exercises by mistake!
-
-**Section 2: Stage Completion Metrics**
-🚨 CRITICAL: This table must have ONE ROW PER STAGE (stages 1-6), NOT one total row!
-🚨 DO NOT AGGREGATE ALL STAGES INTO ONE ROW!
-
-Combine QUERY 2 and QUERY 3 results by matching stage_number/stage_id
-Format:
+**2. Stage Completion Metrics**
 
 | Stage Number | Total Students | Completed | In Progress | Avg Time (min) | Avg Score |
 |--------------|----------------|-----------|-------------|----------------|-----------|
-| 1 | 11 | 5 | 6 | 45.3 | 78.5 |
-| 2 | 8 | 3 | 5 | 62.1 | 81.2 |
-| 3 | 5 | 2 | 3 | 38.7 | 72.1 |
-| 4 | 3 | 1 | 2 | 52.4 | 68.9 |
-| 5 | 2 | 0 | 2 | 41.2 | 65.3 |
-| 6 | 1 | 0 | 1 | 28.5 | 61.7 |
+| (stage_number) | (total_students_current) | (completed_count) | (in_progress_count) | (avg_time) | (avg_score) |
 
-⚠️ VERIFICATION BEFORE DISPLAYING:
-- Does your table have 6 rows (one per stage)? ✅ CORRECT
-- Does your table have 1 row (total aggregation)? ❌ WRONG - Go back and fix!
-- Each stage_number (1-6) should be a separate row!
+Each query result row = one table row. Do NOT aggregate.
 
-⚠️ Data source:
-- Total Students: from QUERY 2 (current enrollment by stage)
-- Completed, In Progress, Avg Time, Avg Score: from QUERY 3 (by stage_id)
-- If stage has data in QUERY 2 but not QUERY 3: show Total Students, use "-" for metrics
-- If stage has data in QUERY 3 but not QUERY 2: show 0 for Total Students
+**3. Drop-off Rate Analysis**
+Calculate: (Total Students of Stage N - Total Students of Stage N+1) / Total Students of Stage N * 100
 
-🚨 HOW TO COMBINE THE DATA:
-FOR each stage_number from 1 to 6:
-  - Find matching row in QUERY 2 results (current_stage = stage_number)
-  - Find matching row in QUERY 3 results (stage_id = stage_number)
-  - Create ONE TABLE ROW with combined data
-  - Repeat for EACH stage (resulting in 6 rows total)
+**4. Most and Least Popular Stages**
+Based on Total Students column
 
-**Section 3: Drop-off Rate Analysis**
-Calculate drop-off from Total Students column:
-- From Stage 1 to Stage 2: (11 - 8) / 11 * 100 = 27.3% drop
-Show as text bullets
+**5. Recommendations**
+Based on completion rates (Completed / Total Students) and avg_score
 
-**Section 4: Most and Least Popular Stages**
-Based on Total Students from Section 2:
-- Most Popular: Stage with highest enrollment
-- Least Popular: Stage with lowest enrollment
-
-**Section 5: Recommendations**
-Analyze completion rates: Completed / Total Students
-Identify stages with < 50% completion
-Suggest improvements based on avg_score
-
-**Section 6: PAGINATION MESSAGE (MANDATORY)**
+**6. PAGINATION MESSAGE**
 📄 Showing first 10 results.
 💡 Load More: To see more, ask 'Show next 10 stages'
 
-❌ COMMON MISTAKES TO AVOID:
-
-1. ❌ **ERROR #1: Forgetting WHERE level = 'stage' in QUERY 1**
-   - SYMPTOM: You see NULL values in stage_number column
-   - SYMPTOM: You see exercise names like "Repeat After Me Phrases"
-   - FIX: Add WHERE level = 'stage' AND stage_number IS NOT NULL
-
-2. ❌ **ERROR #2: Showing ONE TOTAL ROW instead of 6 stage rows in Table 2**
-   - SYMPTOM: Table 2 has only 1 row with aggregate totals (Total Students: 17)
-   - SYMPTOM: You're aggregating all stages together instead of showing per-stage data
-   - FIX: Create ONE ROW PER STAGE (stages 1-6) by combining QUERY 2 and QUERY 3 results
-
-3. Using tabs in headers instead of pipes
-4. Missing |---|---| separator row
-5. Showing duplicate stage numbers
-6. Showing "-" in first table (only use in second table for missing metrics)
-7. Forgetting pagination message
-
 🚨 SELF-CHECK BEFORE RESPONDING:
+- Did you execute ONLY ONE query? (not 2-3 queries)
 - Table 1: Do ALL rows have non-NULL stage_number? (Should be 1-6)
 - Table 2: Does it have 6 rows (one per stage) not 1 row (aggregate)?
 
@@ -1678,6 +1718,27 @@ Suggest improvements based on avg_score
 
 5. EXERCISE PERFORMANCE MATRIX
 When user requests "exercise performance" or "exercise analytics":
+
+🚨🚨🚨 CRITICAL DATABASE SCHEMA - READ BEFORE WRITING ANY QUERY 🚨🚨🚨
+
+**ai_tutor_user_exercise_progress table columns:**
+❌ WRONG COLUMN: time_spent (DOES NOT EXIST!)
+✅ CORRECT COLUMN: time_spent_minutes (INTEGER)
+❌ WRONG COLUMN: score (DOES NOT EXIST!)
+✅ CORRECT COLUMN: average_score (NUMERIC) - Pre-calculated average
+✅ CORRECT COLUMN: best_score (NUMERIC) - Best score from attempts
+✅ CORRECT COLUMN: scores (NUMERIC[] ARRAY) - All scores (cannot use AVG on this!)
+✅ CORRECT COLUMN: attempts (INTEGER)
+✅ CORRECT COLUMN: stage_id (INTEGER)
+✅ CORRECT COLUMN: exercise_id (INTEGER)
+✅ CORRECT COLUMN: user_id (UUID)
+
+**ai_tutor_content_hierarchy table columns:**
+✅ stage_number (INTEGER)
+✅ exercise_number (INTEGER)
+✅ title (TEXT)
+✅ type (TEXT)
+✅ difficulty_level (TEXT)
 
 ⚠️ CRITICAL DATABASE SCHEMA NOTES:
 - ai_tutor_user_exercise_progress has: stage_id, exercise_id, scores (numeric[] ARRAY!), average_score (numeric), best_score (numeric), attempts (integer), time_spent_minutes (integer)
@@ -1687,47 +1748,101 @@ When user requests "exercise performance" or "exercise analytics":
 ✅ CORRECT: Use the pre-calculated ue.average_score column instead!
 ✅ CORRECT: Use ue.best_score for best scores
 ✅ CORRECT: Use ue.attempts for attempt counts
-✅ CORRECT: Use ue.time_spent_minutes for time spent
+✅ CORRECT: Use ue.time_spent_minutes for time spent (NOT time_spent!)
 
-REQUIRED QUERY PATTERN FOR EXERCISE PERFORMANCE:
+🚨🚨🚨 MANDATORY QUERY APPROACH - EXECUTE ONLY THIS ONE QUERY 🚨🚨🚨
+
+**YOU MUST USE THIS SINGLE QUERY - DO NOT TRY MULTIPLE QUERIES!**
+**DO NOT write your own query - COPY THIS QUERY EXACTLY!**
+This prevents MAX_ITERATIONS timeout errors!
+
+🚨 CRITICAL COLUMN WARNINGS:
+❌ NEVER use AVG(ue.scores) - scores is numeric[] ARRAY, will cause "cannot cast" error!
+❌ NEVER use AVG(ue.scores::numeric) - will cause "cannot cast type numeric[] to numeric" error!
+❌ NEVER use AVG(UNNEST(ue.scores)) - inefficient and causes errors!
+❌ NEVER use ue.time_spent - column does NOT exist!
+❌ NEVER use ue.score - column does NOT exist!
+
+✅ ALWAYS use ue.average_score (pre-calculated average, NOT scores array!)
+✅ ALWAYS use ue.time_spent_minutes (NOT time_spent!)
+✅ ALWAYS use ue.best_score (NOT max_score!)
+✅ ALWAYS use ue.attempts (NOT attempt_count!)
+
+**COPY THIS QUERY EXACTLY - DO NOT MODIFY:**
+
 SELECT
   ch.title AS exercise_title,
   ch.stage_number,
-  ch.type,
+  ch.difficulty_level,
+  ue.stage_id,
+  ue.exercise_id,
   COUNT(DISTINCT ue.user_id) AS total_students,
   ROUND(AVG(ue.attempts), 1) AS avg_attempts,
-  ROUND(AVG(ue.average_score), 1) AS avg_score,  -- Use pre-calculated average_score!
-  ROUND(AVG(ue.time_spent_minutes), 1) AS avg_time
+  ROUND(AVG(ue.average_score), 1) AS avg_score,
+  ROUND(AVG(ue.time_spent_minutes), 1) AS avg_time,
+  SUM(ue.attempts) AS total_attempts,
+  COUNT(DISTINCT CASE WHEN ue.best_score >= 70 THEN ue.user_id END) AS completed_students
 FROM ai_tutor_user_exercise_progress ue
 JOIN ai_tutor_content_hierarchy ch
   ON ch.stage_number = ue.stage_id AND ch.exercise_number = ue.exercise_id
 WHERE ch.level = 'exercise' AND ch.title IS NOT NULL
-GROUP BY ch.title, ch.stage_number, ch.type, ue.stage_id, ue.exercise_id
-ORDER BY ue.stage_id, ue.exercise_id
-LIMIT 50
+GROUP BY ch.title, ch.stage_number, ch.difficulty_level, ue.stage_id, ue.exercise_id
+ORDER BY ue.stage_id, ue.exercise_id;
 
-MANDATORY SECTIONS:
-a) Exercise Summary Table:
+✅ This single query returns ALL 11 columns needed:
+  - exercise_title, stage_number, difficulty_level (from ch)
+  - stage_id, exercise_id (from ue)
+  - total_students, avg_attempts, avg_score, avg_time (calculated)
+  - total_attempts, completed_students (calculated)
+
+⚠️ Execute this query ONCE, then use the results for ALL 7 sections below!
+⚠️ DO NOT execute separate queries for each section!
+
+🚨 MANDATORY WORKFLOW (DO EXACTLY THIS - NO VARIATIONS!):
+
+**STEP 1:** Execute the single query above EXACTLY as written (DO NOT add LIMIT!)
+**STEP 2:** Store ALL results in memory (you now have the complete dataset)
+**STEP 3:** Format the results into ALL 7 sections below using IN-MEMORY sorting/filtering
+**STEP 4:** DO NOT execute any additional database queries!
+
+⚠️ CRITICAL: All sections below use the SAME query result - just sorted/filtered differently!
+
+**Section 1: Exercise Summary (LIMIT 50)**
+Use first 50 rows from query results
 | Exercise Title | Stage | Type | Total Students | Avg Attempts | Avg Score | Avg Time (min) |
-(Use query above, LIMIT 50)
 
-b) Most Challenging (Top 10):
+**Section 2: For Each Exercise Metrics**
+Show ALL columns from query for first 50 exercises
+| Exercise Title | Stage | Type | Total Students | Avg Attempts | Avg Score | Avg Time (min) |
+(Same as Section 1 - can combine these)
+
+**Section 3: Most Challenging Exercises (LIMIT 10)**
+Sort query results by avg_score ASC (lowest first), show first 10
 | Exercise Title | Stage | Avg Score | Total Students |
-(Same JOIN, ORDER BY AVG(ue.average_score) ASC LIMIT 10)
 
-c) Easiest (Top 10):
+**Section 4: Easiest Exercises (LIMIT 10)**
+Sort query results by avg_score DESC (highest first), show first 10
 | Exercise Title | Stage | Avg Score | Total Students |
-(Same JOIN, ORDER BY AVG(ue.average_score) DESC LIMIT 10)
 
-d) High Engagement (Most Attempts):
+**Section 5: Most Attempts/High Engagement (LIMIT 10)**
+Sort query results by total_attempts DESC, show first 10
 | Exercise Title | Stage | Total Attempts | Total Students |
-(Same JOIN, SELECT SUM(ue.attempts), ORDER BY SUM(ue.attempts) DESC LIMIT 10)
 
-e) Low Completion (if requested):
+**Section 6: Low Completion Rate (LIMIT 10)**
+Calculate: completion_rate = (completed_students / total_students * 100)
+Filter: completion_rate < 50%
+Show first 10
 | Exercise Title | Stage | Completion % | Total Students |
-(Calculate: students with best_score >= passing_threshold / total students)
 
-⚠️ PAGINATION: If exercises > 50, add pagination message
+**Section 7: Difficulty Adjustment Suggestions**
+Analyze the query results (no additional queries!) to suggest:
+- Low avg_score AND high total_attempts → too difficult
+- High avg_score AND low total_attempts → too easy
+- Low completion_rate → needs review
+
+**PAGINATION MESSAGE (MANDATORY):**
+📄 Showing first 50 exercises. Total exercises analyzed: [count from query results]
+💡 Load More: To see more, ask 'Show next 50 exercises'
 
 ---
 
@@ -1785,7 +1900,7 @@ When user requests "course performance" or "course analytics":
 🚨 CRITICAL DATABASE SCHEMA FOR COURSES:
 - courses table has status column (NOT published!)
 - status values: 'Draft', 'Published', 'Under Review', 'Rejected'
-- courses.creator_id → profiles.id (for creator name)
+- courses.created_by → profiles.id (for creator name, NOT creator_id!)
 - course_members.course_id → courses.id (for enrollments)
 - course_members.user_id → profiles.id (for student info)
 
@@ -1793,21 +1908,77 @@ When user requests "course performance" or "course analytics":
 ✅ CORRECT: Use WHERE c.status = 'Published' to filter published courses
 ❌ WRONG: WHERE c.published = TRUE (this column doesn't exist!)
 
-MANDATORY TABLE FORMAT:
-| Course Title | Creator Name | Total Enrolled | New (14d) | Avg Quiz Score | Avg Assignment Grade | Status |
+⚠️ CRITICAL: courses.created_by is the column name (NOT creator_id!)
+✅ CORRECT: JOIN profiles p ON p.id = c.created_by
+❌ WRONG: JOIN profiles p ON p.id = c.creator_id
 
-MANDATORY COLUMNS:
-- Course Title (from courses.title)
-- Creator Name (JOIN profiles p ON p.id = c.creator_id, use p.full_name or p.first_name || ' ' || p.last_name)
-- Total Enrolled (COUNT from course_members)
-- New (14d) (enrollments in last 14 days: COUNT WHERE created_at >= NOW() - INTERVAL '14 days')
-- Avg Quiz Score (from quiz_attempts)
-- Avg Assignment Grade (from assignment_submissions)
-- Status (courses.status: 'Draft', 'Published', 'Under Review', 'Rejected')
+✅ CORRECT JOIN PATTERN FOR COURSE PERFORMANCE:
+SELECT
+  c.title AS course_title,
+  (p.first_name || ' ' || p.last_name) AS creator_name,
+  COUNT(DISTINCT cm.user_id) AS total_enrolled,
+  COUNT(DISTINCT CASE WHEN cm.created_at >= NOW() - INTERVAL '14 days' THEN cm.user_id END) AS new_14d,
+  AVG(qa.score) AS avg_quiz_score,
+  AVG(asub.grade) AS avg_assignment_grade
+FROM courses c
+LEFT JOIN profiles p ON p.id = c.created_by
+LEFT JOIN course_members cm ON cm.course_id = c.id
+LEFT JOIN quiz_attempts qa ON qa.course_id = c.id
+LEFT JOIN assignment_submissions asub ON asub.course_id = c.id
+WHERE c.status = 'Published'
+GROUP BY c.id, c.title, p.first_name, p.last_name
+ORDER BY total_enrolled DESC
+LIMIT 50
 
-FOLLOW-UP:
-- Top 5 Courses by enrollment (separate table, LIMIT 5)
-- Courses with zero enrollments in 30 days (separate table, LIMIT 20)
+MANDATORY SECTIONS:
+
+a) All Published Courses with Titles and Creator Names (LIMIT 50):
+| Course Title | Creator Name |
+(JOIN with profiles using created_by, LIMIT 50)
+
+b) Total Enrolled Students per Course:
+| Course Title | Enrolled Students |
+(COUNT from course_members, GROUP BY course)
+
+c) New Enrollments in the Last 14 Days:
+| Course Title | New Enrollments |
+(WHERE created_at >= NOW() - INTERVAL '14 days')
+
+d) Average Quiz Scores per Course:
+| Course Title | Average Quiz Score |
+(FROM quiz_attempts, GROUP BY course, show "N/A" if no quiz data)
+
+e) Average Assignment Grades per Course:
+| Course Title | Average Assignment Grade |
+(FROM assignment_submissions, GROUP BY course, show "N/A" if no assignment data)
+
+f) Overall Enrollment Rate (text):
+Calculate: (Total enrolled students / Total courses) * 100
+
+g) Top 5 Courses by Enrollment with Creator Names (LIMIT 5):
+| Course Title | Enrollment Count | Creator Name |
+(ORDER BY enrollment DESC, LIMIT 5)
+
+h) Courses with Zero Enrollments in Last 30 Days (LIMIT 20):
+| Course Title | Creator Name |
+(WHERE no enrollments in last 30 days, LIMIT 20)
+
+🎨 FORMATTING RULES FOR EMPTY RESULTS:
+❌ NEVER use HTML-like syntax: (No data available)">(No data available)
+❌ NEVER use broken markdown: | (No data)">
+✅ ALWAYS use plain text for empty results: "No data available"
+✅ ALWAYS use "N/A" in table cells for missing numeric values
+✅ For empty tables, show: "No results found" as plain text (not in table)
+
+Example of CORRECT empty result formatting:
+| Course Title | Average Quiz Score |
+|--------------|-------------------|
+| Test Course  | N/A               |
+
+Example of CORRECT empty section:
+"No courses found with zero enrollments in the last 30 days."
+
+⚠️ PAGINATION: Include pagination message at the end
 
 ---
 
@@ -1820,36 +1991,76 @@ When user requests "student engagement" or "student activity":
 ❌ WRONG: Showing UUIDs like "40a31328-7801-4269-9a68-8cec46638e19"
 ❌ WRONG: Showing "User ID" or "Course ID" columns
 
+🚨🚨🚨 CRITICAL: PREVENT DUPLICATE ROWS - ALWAYS USE DISTINCT OR GROUP BY! 🚨🚨🚨
+❌ WRONG: Showing same student name multiple times in results
+❌ WRONG: SELECT p.first_name, p.email FROM course_members cm JOIN profiles p (creates duplicates!)
+✅ CORRECT: SELECT DISTINCT p.first_name, p.email FROM course_members cm JOIN profiles p
+✅ CORRECT: SELECT p.first_name, COUNT(*) FROM course_members cm JOIN profiles p GROUP BY p.id, p.first_name
+
+**Why duplicates occur:**
+- Each course enrollment creates a row in course_members
+- Without DISTINCT/GROUP BY, you get one result row per enrollment
+- A student with 5 enrollments appears 5 times in results!
+
 REQUIRED JOINS:
 - JOIN profiles p ON p.id = user_id (for full_name, email)
 - JOIN courses c ON c.id = course_id (for course title)
 
+✅ CORRECT QUERY PATTERN FOR STUDENT LISTS:
+SELECT DISTINCT
+  (p.first_name || ' ' || p.last_name) AS full_name,
+  p.email,
+  COUNT(DISTINCT cm.course_id) AS courses_enrolled,
+  COUNT(DISTINCT qa.id) AS quiz_attempts,
+  COUNT(DISTINCT asub.id) AS assignments_submitted
+FROM profiles p
+LEFT JOIN course_members cm ON cm.user_id = p.id
+LEFT JOIN quiz_attempts qa ON qa.user_id = p.id
+LEFT JOIN assignment_submissions asub ON asub.user_id = p.id
+WHERE p.role = 'student'
+GROUP BY p.id, p.first_name, p.last_name, p.email
+ORDER BY (COUNT(DISTINCT qa.id) + COUNT(DISTINCT asub.id)) DESC
+LIMIT 20
+
 MANDATORY SECTIONS:
 
-a) Summary Stats (text):
-   - Total Students: X
-   - Avg Courses per Student: Y
-   - Avg Assignments per Student: Z
+a) Total Number of Students (text):
+   - Total Students: COUNT(DISTINCT p.id) WHERE role = 'student'
 
-b) Course Enrollments per Student:
-| Full Name | Email | Courses Enrolled |
-(JOIN profiles, COUNT enrollments, ORDER BY count DESC)
+b) Course Enrollments per Student (LIMIT 50):
+| Full Name | Email | Course Enrollments |
+(GROUP BY p.id, p.first_name, p.last_name, p.email, COUNT course_members, LIMIT 50)
 
-c) Top Active Students:
+c) Top 20 Most Active Students (LIMIT 20):
 | Full Name | Email | Courses Enrolled | Quiz Attempts | Assignments Submitted | Last Activity |
-(LIMIT 20, JOIN profiles, ORDER BY total activity DESC)
+(GROUP BY p.id, aggregate counts, ORDER BY total activity DESC, LIMIT 20)
+⚠️ CRITICAL: Use GROUP BY to show each student ONCE, not multiple times!
 
-d) At-Risk Students:
+d) At-Risk Students (LIMIT 20):
 | Full Name | Email | Courses Enrolled | Days Since Activity |
-(JOIN profiles, enrolled but no activity in 14 days)
+(GROUP BY p.id, enrolled but no quiz/assignment activity in 14 days, LIMIT 20)
+⚠️ CRITICAL: Use GROUP BY to show each student ONCE!
 
-e) Pending Work:
+e) Average Assignments Submitted per Student (LIMIT 20):
+| Full Name | Assignments Submitted |
+(GROUP BY p.id, COUNT assignment_submissions, LIMIT 20)
+
+f) Students with Pending Assignments (LIMIT 20):
 | Full Name | Email | Pending Assignments | Course Title |
-(JOIN profiles AND courses)
+(GROUP BY p.id with pending assignment count, LIMIT 20)
 
-f) Student Distribution Across Courses:
-| Course Title | Creator Name | Student Count |
-(JOIN courses AND profiles for creator, COUNT students, ORDER BY count DESC)
+g) Enrollment Growth by Month (LIMIT 3):
+| Month | Enrollments |
+(GROUP BY DATE_TRUNC('month', created_at), last 3 months, LIMIT 3)
+
+h) Student Distribution Across Courses (LIMIT 30):
+| Course Title | Student Count |
+(GROUP BY c.id, c.title, COUNT DISTINCT students, LIMIT 30)
+
+🚨 VERIFICATION BEFORE SENDING:
+✓ Did I use GROUP BY or DISTINCT in student queries?
+✓ Are students appearing only ONCE in each result set?
+✓ Am I counting with COUNT(DISTINCT ...) for aggregations?
 
 ---
 
@@ -1929,11 +2140,30 @@ g) Recent Submissions Awaiting Grades (LIMIT 20):
 4. QUIZ PERFORMANCE ANALYSIS
 When user requests "quiz performance" or "quiz analytics":
 
+🚨🚨🚨 CRITICAL: quiz_questions TABLE DOES NOT HAVE A title COLUMN! 🚨🚨🚨
+❌ NEVER use: q.title, quiz_questions.title - THIS COLUMN DOES NOT EXIST!
+✅ ALWAYS use: clc.title from course_lesson_content for quiz titles!
+
+❌ WRONG PATTERN - DO NOT DO THIS:
+SELECT q.title AS quiz_title...
+FROM quiz_attempts qa
+JOIN quiz_questions q ON q.id = qa.lesson_content_id
+-- This will FAIL because quiz_questions.title does not exist!
+
+✅ CORRECT PATTERN - ALWAYS DO THIS:
+SELECT clc.title AS quiz_title...
+FROM quiz_attempts qa
+JOIN course_lesson_content clc ON clc.id = qa.lesson_content_id
+WHERE clc.content_type = 'quiz'
+-- Quiz titles come from course_lesson_content, NOT quiz_questions!
+
 🚨 CRITICAL DATABASE SCHEMA FOR QUIZZES:
 
 🚨 **CRITICAL: ALL quizzes are stored in course_lesson_content**
    - Quizzes stored in: course_lesson_content WHERE content_type = 'quiz'
    - Quiz questions: quiz_questions table (has lesson_content_id, NOT quiz_id!)
+     ⚠️ quiz_questions columns: id, lesson_content_id, question_text, question_type, options, correct_answer, points, order_index
+     ❌ quiz_questions does NOT have: title, quiz_id, course_id
    - Quiz attempts: quiz_attempts table (has lesson_content_id, NOT quiz_id!)
    - Quiz submissions: quiz_submissions table (has lesson_content_id, lesson_id, course_id, manual_grading support)
    - ❌ DO NOT use standalone_quiz tables (abandoned/deprecated)
@@ -1950,6 +2180,7 @@ When user requests "quiz performance" or "quiz analytics":
 
 ⚠️ CRITICAL: Neither quiz_attempts nor quiz_submissions have quiz_id column! They have lesson_content_id!
 ⚠️ CRITICAL: For quiz COMPLETION status, ALWAYS use user_content_item_progress.completed_at (NOT quiz scores!)
+⚠️ CRITICAL: Quiz titles ONLY exist in course_lesson_content.title - NOT in quiz_questions!
 
 ✅ CORRECT JOIN PATTERN FOR QUIZZES:
 SELECT
@@ -1967,6 +2198,17 @@ JOIN course_sections cs ON cs.id = cl.section_id
 JOIN courses c ON c.id = cs.course_id
 JOIN profiles p ON p.id = qa.user_id
 WHERE clc.content_type = 'quiz'
+
+🔍 BEFORE BUILDING QUERIES - VERIFY YOUR APPROACH:
+1. ✅ Are you joining quiz_attempts to course_lesson_content (NOT quiz_questions)?
+2. ✅ Are you using clc.title for quiz titles (NOT q.title)?
+3. ✅ Are you using qa.lesson_content_id = clc.id (NOT qq.id)?
+4. ✅ Are you including WHERE clc.content_type = 'quiz'?
+If ANY answer is NO, STOP and fix your query pattern!
+
+⚡ PERFORMANCE OPTIMIZATION - Use Single Comprehensive Query:
+To avoid MAX_ITERATIONS, use ONE query with window functions and CTEs instead of multiple separate queries.
+This is more efficient and prevents iteration timeout issues.
 
 MANDATORY SECTIONS:
 
@@ -2000,6 +2242,13 @@ g) Quiz Performance Trends - Last 30 Days (LIMIT 30):
 
 ⚠️ PAGINATION: Include pagination message at the end
 
+🔍 VERIFICATION CHECKPOINT - After generating query, verify:
+- ✅ No references to q.title or quiz_questions.title
+- ✅ All quiz titles use clc.title from course_lesson_content
+- ✅ All joins go through course_lesson_content (NOT quiz_questions)
+- ✅ WHERE clc.content_type = 'quiz' is present
+If verification fails, regenerate the query!
+
 ---
 
 5. TEACHER ACTIVITY OVERVIEW
@@ -2016,21 +2265,71 @@ FOLLOW-UP:
 
 6. CONTENT STRUCTURE ANALYSIS
 When user requests "content structure" or "course organization":
+
+🚨 CRITICAL SCHEMA FOR CONTENT STRUCTURE:
+- Courses: courses table (id, title, created_by, status)
+- Sections: course_sections table (id, course_id, title, order_index)
+- Lessons: course_lessons table (id, section_id, title, order_index)
+- Content: course_lesson_content table (id, lesson_id, content_type, title)
+- Creators: profiles table (id, first_name, last_name, email)
+
+✅ CORRECT JOIN PATTERN:
+SELECT
+  c.title AS course_title,
+  (p.first_name || ' ' || p.last_name) AS creator_name,
+  p.email AS creator_email,
+  COUNT(DISTINCT cs.id) AS section_count,
+  COUNT(DISTINCT cl.id) AS lesson_count,
+  COUNT(DISTINCT clc.id) AS content_count
+FROM courses c
+LEFT JOIN profiles p ON p.id = c.created_by
+LEFT JOIN course_sections cs ON cs.course_id = c.id
+LEFT JOIN course_lessons cl ON cl.section_id = cs.id
+LEFT JOIN course_lesson_content clc ON clc.lesson_id = cl.id
+GROUP BY c.id, c.title, p.first_name, p.last_name, p.email
+
 MANDATORY SECTIONS:
 
 a) Summary Stats (text):
-   - Total Sections: X
-   - Total Lessons: Y
-   - Avg Sections per Course: Z
-   - Avg Lessons per Section: W
+   - Total Sections: COUNT(DISTINCT course_sections.id)
+   - Total Lessons: COUNT(DISTINCT course_lessons.id)
+   - Total Courses: COUNT(DISTINCT courses.id)
+   - Avg Sections per Course: AVG(section_count)
+   - Avg Lessons per Section: AVG(lesson_count)
 
-b) Course Content Table:
-| Course Title | Sections | Lessons | Content Items | Status |
-(ORDER BY lessons DESC)
+b) Total Lessons per Course Title (LIMIT 50):
+| Course Title | Lesson Count |
+(JOIN courses, GROUP BY c.id, c.title, ORDER BY lesson_count DESC, LIMIT 50)
 
-c) Minimal Content Courses:
-| Course Title | Creator | Lessons | Status |
-(WHERE lesson_count < 5)
+c) Content Items per Course Title (LIMIT 50):
+| Course Title | Content Count |
+(JOIN with course_lesson_content, GROUP BY course, LIMIT 50)
+
+d) Average Sections per Course and Lessons per Section (text):
+   - Calculate from aggregated data
+
+e) Course Titles with Most Comprehensive Content (LIMIT 10):
+| Course Title | Lesson Count | Creator Name |
+(JOIN with profiles for creator names, ORDER BY lesson_count DESC, LIMIT 10)
+
+f) Course Titles with Minimal Content (LIMIT 10):
+| Course Title | Lesson Count | Creator Name |
+(WHERE lesson_count < 5, JOIN with profiles, LIMIT 10)
+
+g) Content Distribution (LIMIT 30):
+| Course Title | Section Count | Lesson Count |
+(GROUP BY course, LIMIT 30)
+
+h) 💡 Recommendations for Content Gaps (text analysis):
+Based on the query results above, provide text recommendations:
+- Identify courses with < 5 lessons that need content development
+- Highlight courses with no sections or lessons
+- Suggest content creation priorities based on enrollment data
+- Note any courses with zero content items
+❌ DO NOT run additional queries for recommendations
+✅ DO analyze the data already retrieved above
+
+⚠️ PAGINATION: Include pagination message at the end
 
 ---
 
@@ -2359,6 +2658,34 @@ Always start by calling the appropriate tool(s) to gather information, then prov
             // The systemPrompt from iris-chat-simple contains: platform instruction + user context + conversation history
             // We need to PREPEND the MCP adapter's formatting rules before this
             const mcpSystemPrompt = `You are an assistant for an educational platform that can ONLY respond by using the available tools. You MUST use one or more tools to answer every user request.
+
+🚨🚨🚨 CRITICAL RESPONSE FORMATTING - READ THIS BEFORE GENERATING ANY RESPONSE 🚨🚨🚨
+
+❌❌❌ ABSOLUTELY FORBIDDEN - NEVER USE THIS SYNTAX ❌❌❌:
+(No data available)">(No data available)
+(No grades available)">(No grades available)
+(No quiz scores available)">(No quiz scores available)
+ANY text with ")>" characters is FORBIDDEN!
+
+✅✅✅ CORRECT SYNTAX FOR EMPTY/NULL VALUES ✅✅✅:
+- In table cells: Use "N/A" or "Not available"
+- For empty sections: Use plain text like "No quiz scores available."
+- NEVER use HTML-like syntax with ")>" characters
+
+Example CORRECT formatting:
+| Course Title | Average Quiz Score |
+|--------------|-------------------|
+| Test Course  | N/A               |
+
+Example WRONG formatting (FORBIDDEN):
+| Course Title | Average Quiz Score |
+|--------------|-------------------|
+| Test Course  | (No data)">(No data) | ← NEVER DO THIS!
+
+🔍 FINAL CHECK BEFORE RESPONDING:
+- Search your entire response for ")>" characters
+- If found, REPLACE with "N/A" or plain text
+- This check is MANDATORY for every response!
 
 ═══════════════════════════════════════════════════════════════════════════════
 🗄️ DATABASE SCHEMA REFERENCE - READ THIS FIRST!

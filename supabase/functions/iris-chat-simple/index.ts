@@ -970,6 +970,29 @@ FROM ai_tutor_user_progress_summary
 WHERE last_activity_date >= CURRENT_DATE - INTERVAL '30 days'
   AND total_time_spent_minutes > 0;
 
+🚨 STAGE COMPLETION ANALYSIS - CRITICAL QUERY PATTERN 🚨
+When user asks for "stage completion" or "Analyze AI Tutor stage completion":
+
+🚫 FORBIDDEN - ai_tutor_user_progress_summary does NOT have stage_number column!
+❌ NEVER: SELECT stage_number FROM ai_tutor_user_progress_summary
+❌ NEVER: GROUP BY stage_number FROM ai_tutor_user_progress_summary
+
+✅ USE THIS EXACT QUERY (copy verbatim - do NOT modify):
+SELECT ch.stage_number, ch.title, ch.difficulty_level, COUNT(DISTINCT ups.user_id) FILTER (WHERE ups.current_stage = ch.stage_number) as total_students_current, COUNT(DISTINCT usp.user_id) FILTER (WHERE usp.completed = true) as completed_count, COUNT(DISTINCT usp.user_id) FILTER (WHERE usp.completed = false OR usp.completed IS NULL) as in_progress_count, ROUND(AVG(usp.time_spent_minutes), 1) as avg_time, ROUND(AVG(usp.average_score), 1) as avg_score FROM ai_tutor_content_hierarchy ch LEFT JOIN ai_tutor_user_progress_summary ups ON ups.current_stage = ch.stage_number LEFT JOIN ai_tutor_user_stage_progress usp ON usp.stage_id = ch.stage_number WHERE ch.level = 'stage' AND ch.stage_number IS NOT NULL GROUP BY ch.stage_number, ch.title, ch.difficulty_level ORDER BY ch.stage_number LIMIT 10
+
+🚨 EXERCISE PERFORMANCE MATRIX - CRITICAL QUERY PATTERN 🚨
+When user asks for "exercise performance" or "Generate exercise performance analysis":
+
+🚫 FORBIDDEN COLUMNS - ai_tutor_user_exercise_progress table:
+❌ NEVER: SELECT score (does not exist - use average_score)
+❌ NEVER: SELECT time_spent (does not exist - use time_spent_minutes)
+❌ NEVER: AVG(scores) (scores is ARRAY type - use average_score instead)
+
+✅ USE THIS EXACT QUERY (copy verbatim - do NOT modify):
+SELECT ch.title AS exercise_title, ch.stage_number, ch.difficulty_level, ue.stage_id, ue.exercise_id, COUNT(DISTINCT ue.user_id) AS total_students, ROUND(AVG(ue.attempts), 1) AS avg_attempts, ROUND(AVG(ue.average_score), 1) AS avg_score, ROUND(AVG(ue.time_spent_minutes), 1) AS avg_time, SUM(ue.attempts) AS total_attempts, COUNT(DISTINCT CASE WHEN ue.best_score >= 70 THEN ue.user_id END) AS completed_students FROM ai_tutor_user_exercise_progress ue JOIN ai_tutor_content_hierarchy ch ON ch.stage_number = ue.stage_id AND ch.exercise_number = ue.exercise_id WHERE ch.level = 'exercise' AND ch.title IS NOT NULL GROUP BY ch.title, ch.stage_number, ch.difficulty_level, ue.stage_id, ue.exercise_id ORDER BY ue.stage_id, ue.exercise_id
+
+⚠️ Execute this query ONCE, then format results for all sections (challenging exercises, easiest exercises, etc.) by sorting in memory. Do NOT run multiple queries!
+
 RESPONSE FORMAT:
 Show ONLY ONE section titled "🎓 AI Tutor Platform Usage"
 Do NOT create a second "LMS Platform Usage" section
@@ -1233,21 +1256,23 @@ When asked "platform usage", include data from BOTH systems using CTEs.`;
         errorMessage.includes('128000 tokens') ||
         errorMessage.includes('185403 tokens')) {
       // This is a conversation length issue
-      userFriendlyMessage = `📊 **Conversation Too Long**
+      userFriendlyMessage = `📊 **Conversation Too Long - Please Reset Chat**
 
 Our conversation has become too lengthy for me to process effectively. This happens when we've exchanged many messages or discussed complex topics with lots of data.
 
-**What you can do:**
-- **Start a new conversation** by refreshing the page
-- **Ask a shorter, more specific question** 
-- **Break complex requests into smaller parts**
+**🔄 ACTION REQUIRED: Click the "Reset Chat" button** (🔄 icon at the top) to start a new conversation.
 
 **Why this happens:**
 - Each conversation builds up context from previous messages
 - Large data responses add to this context
-- There's a limit to how much I can remember at once
+- There's a limit to how much I can remember at once (128,000 tokens)
 
-**Tip:** For the best experience, start fresh conversations for new topics or when you notice responses getting slower.`;
+**What you can do next:**
+1. **Click the Reset Chat button (🔄)** - This clears the conversation history
+2. **Ask your question again** - Start fresh with your current query
+3. **Break complex requests into smaller parts** - For very detailed analytics
+
+**Tip:** If you see a yellow warning about message count, reset the chat proactively to avoid this error.`;
     } else if (errorMessage.includes('429') || 
                errorMessage.includes('Request too large') ||
                errorMessage.includes('TPM') ||
