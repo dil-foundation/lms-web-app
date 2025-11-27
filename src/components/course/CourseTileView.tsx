@@ -116,7 +116,7 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
         {courses.map((course) => (
           <Card
             key={course.id}
-            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-[250px] sm:h-[260px] md:h-[270px] flex flex-col overflow-hidden"
+            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 flex flex-col overflow-hidden"
             onClick={() => handleCourseClick(course)}
           >
             <CardHeader className="p-0 relative flex-shrink-0">
@@ -183,8 +183,8 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
               </div>
             </CardHeader>
             
-            <CardContent className="p-2 sm:p-2.5 md:p-3 flex flex-col justify-between h-full overflow-hidden">
-              <div className="flex-shrink-0">
+            <CardContent className="p-2 sm:p-2.5 md:p-3 flex flex-col h-full overflow-hidden">
+              <div className="flex-grow flex flex-col">
                 {/* Course Title */}
                 <div className="mb-1.5 sm:mb-2">
                   <h3 className="font-medium text-[11px] sm:text-xs md:text-sm line-clamp-2 group-hover:text-primary transition-colors leading-tight">
@@ -217,8 +217,8 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
                 </div>
               </div>
 
-              {/* Compact Action Button */}
-              <div className="mt-2 flex-shrink-0">
+              {/* Compact Action Button - Always at bottom */}
+              <div className="mt-auto pt-2 flex-shrink-0">
                 <Button
                   size="sm"
                   className={`w-full h-7 sm:h-8 text-[10px] sm:text-xs ${
