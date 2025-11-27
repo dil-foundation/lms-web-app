@@ -18,6 +18,7 @@ export interface IRISContext {
   role: string;
   permissions: string[];
   tenantId?: string;
+  platform?: 'lms' | 'ai_tutor';
 }
 
 export interface IRISResponse {

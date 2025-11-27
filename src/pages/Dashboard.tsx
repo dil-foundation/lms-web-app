@@ -447,7 +447,7 @@ const Dashboard = () => {
                     <>
                       {isAIMode ? (
                         <>
-
+                          <Route path="/ai-iris" element={<IRISv2 />} />
                           <Route path="/ai-learn" element={<AIStudentLearn />} />
                           <Route path="/ai-practice" element={<AIAdminPractice />} />
                           <Route path="/ai-reports" element={<ReportsAnalytics />} />
