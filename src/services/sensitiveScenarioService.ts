@@ -19,20 +19,22 @@ export interface SensitiveScenario {
 
 export interface SensitiveScenarioEvaluation {
   success: boolean;
-  overall_score: number;
+  score?: number; // Main score from API
+  overall_score?: number;
   fluency_score: number;
-  vocabulary_score: number;
-  grammar_score: number;
-  content_relevance_score: number;
-  keyword_usage_score: number;
-  response_time_score: number;
+  vocabulary_score?: number;
+  grammar_score?: number;
+  content_relevance_score?: number;
+  keyword_usage_score?: number;
+  response_time_score?: number;
   strengths: string[];
   areas_for_improvement: string[];
-  keyword_matches: string[];
-  total_keywords_expected: number;
-  keywords_used_count: number;
-  feedback: string;
-  suggestions: string[];
+  keyword_matches?: string[];
+  total_keywords_expected?: number;
+  keywords_used_count?: number;
+  feedback?: string;
+  suggested_improvement?: string;
+  suggestions?: string[];
   message?: string;
   error?: string;
 }
@@ -219,12 +221,12 @@ class SensitiveScenarioService {
     urduUsed: boolean = false
   ): Promise<SensitiveScenarioEvaluation> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/evaluate-critical-opinion`, {
+      const response = await fetch(`${this.baseUrl}/api/evaluate-sensitive-scenario`, {
         method: 'POST',
         headers: getAuthHeadersWithAccept(),
         body: JSON.stringify({
           audio_base64: audioBase64,
-          topic_id: topicId,
+          scenario_id: topicId,
           filename: filename,
           user_id: userId,
           time_spent_seconds: timeSpentSeconds,

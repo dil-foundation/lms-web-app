@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-
+import { Badge } from '@/components/ui/badge';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { CompletionDialog } from '@/components/practice/CompletionDialog';
-import { ArrowLeft, Mic, Lightbulb, FileText, Brain, Target, Loader2, Play, Pause, CheckCircle, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Mic, Lightbulb, FileText, Brain, Target, Loader2, Play, Pause, CheckCircle, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,6 +34,7 @@ export default function CriticalOpinionBuilder() {
   
   // State management
   const [topics, setTopics] = useState<CriticalOpinionTopic[]>([]);
+  const [currentTopicIndex, setCurrentTopicIndex] = useState(0); // Changed to index-based
   const [selectedTopic, setSelectedTopic] = useState<CriticalOpinionTopic | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasStarted, setHasStarted] = useState(false);
@@ -53,7 +54,7 @@ export default function CriticalOpinionBuilder() {
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
   const [isCompleted, setIsCompleted] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
-  const [lastCompletedTopicId, setLastCompletedTopicId] = useState<number | null>(null);
+  const [resumeDataLoaded, setResumeDataLoaded] = useState(false);
 
 
   // Load topics on component mount
@@ -63,11 +64,6 @@ export default function CriticalOpinionBuilder() {
         setLoading(true);
         const fetchedTopics = await criticalOpinionService.getAllTopics();
         setTopics(fetchedTopics);
-        
-        // Set first topic as default if available
-        if (fetchedTopics.length > 0) {
-          setSelectedTopic(fetchedTopics[0]);
-        }
       } catch (error) {
         console.error('Error loading topics:', error);
         toast.error('Failed to load critical opinion topics');
@@ -79,40 +75,88 @@ export default function CriticalOpinionBuilder() {
     loadTopics();
   }, []);
 
-  // Fetch current progress on mount
+  // Fetch current progress and resume from where user left off
   useEffect(() => {
-    const fetchProgress = async () => {
-      if (!user?.id) return;
+    const fetchProgressAndResume = async () => {
+      if (!user?.id || !topics.length || resumeDataLoaded) return;
 
       try {
         const progressData = await getCurrentTopicProgress(user.id, 6, 3); // Stage 6, Exercise 3
         
-        if (progressData.success && progressData.current_topic_id) {
-          setLastCompletedTopicId(progressData.current_topic_id);
+        if (progressData.success && progressData.data?.current_topic_id !== undefined) {
+          const resumeIndex = Math.min(Math.max(0, progressData.data.current_topic_id), topics.length - 1);
+          console.log(`Resuming Stage 6 Critical Opinion Builder from topic ${progressData.data.current_topic_id} (index ${resumeIndex})`);
+          setCurrentTopicIndex(resumeIndex);
+          setSelectedTopic(topics[resumeIndex]);
+        } else {
+          // Start from beginning
+          setCurrentTopicIndex(0);
+          setSelectedTopic(topics[0]);
         }
+        
+        setResumeDataLoaded(true);
       } catch (error) {
         console.error('Error fetching progress:', error);
+        // Start from beginning if error
+        setCurrentTopicIndex(0);
+        setSelectedTopic(topics[0]);
+        setResumeDataLoaded(true);
       }
     };
 
-    fetchProgress();
-  }, [user]);
+    fetchProgressAndResume();
+  }, [user, topics, resumeDataLoaded]);
 
 
+
+  // Get current topic info
+  const totalTopics = topics.length;
+  const topicNumber = currentTopicIndex + 1; // 1-based for display
+
+  // Save progress to API
+  const saveProgress = async (topicIndex: number) => {
+    if (user?.id && topics.length > 0) {
+      try {
+        await updateCurrentTopic(
+          user.id,
+          6, // Stage 6
+          3, // Exercise 3 (Critical Opinion Builder)
+          topicIndex // Pass topic index as topic_id
+        );
+        console.log(`Progress saved: Stage 6, Exercise 3, Topic ${topicIndex + 1}/${topics.length}`);
+      } catch (error) {
+        console.warn('Failed to save progress:', error);
+      }
+    }
+  };
+
+  // Navigate between topics
+  const handleNavigateTopic = (direction: 'prev' | 'next') => {
+    let newIndex = currentTopicIndex;
+    
+    if (direction === 'prev' && currentTopicIndex > 0) {
+      newIndex = currentTopicIndex - 1;
+    } else if (direction === 'next' && currentTopicIndex < topics.length - 1) {
+      newIndex = currentTopicIndex + 1;
+    } else {
+      return; // No change
+    }
+    
+    setCurrentTopicIndex(newIndex);
+    setSelectedTopic(topics[newIndex]);
+    saveProgress(newIndex);
+    
+    // Check if user has reached the last topic
+    if (newIndex === topics.length - 1 && !isCompleted) {
+      setIsCompleted(true);
+    }
+  };
 
   const handleTopicClick = async (topic: CriticalOpinionTopic) => {
     setSelectedTopic(topic);
     setHasStarted(true);
     setShowFeedback(false);
-
-    // Update progress when topic is selected
-    if (user?.id && topic.id) {
-      try {
-        await updateCurrentTopic(user.id, 6, 3, topic.id); // Stage 6, Exercise 3
-      } catch (error) {
-        console.error('Error updating progress:', error);
-      }
-    }
+    saveProgress(currentTopicIndex); // Save progress when starting a topic
   };
 
   // Audio playback functions
@@ -321,11 +365,16 @@ export default function CriticalOpinionBuilder() {
     setIsCompleted(false);
     setEvaluationResult(null);
     setShowFeedback(false);
+    setCurrentTopicIndex(0);
+    setSelectedTopic(topics[0]);
+    saveProgress(0);
+    resetBuilder();
   };
 
   const handleContinue = () => {
     setShowCompletionDialog(false);
     resetBuilder();
+    navigate('/dashboard/practice');
   };
 
 
@@ -375,66 +424,62 @@ export default function CriticalOpinionBuilder() {
 
           {/* Topic Selection */}
           <div className="space-y-4 sm:space-y-6 md:space-y-8">
-            <div className="text-center">
-              <p className="text-muted-foreground text-xs sm:text-sm md:text-base max-w-2xl mx-auto px-2">
-                Click on a topic to start building your opinion immediately with our AI-powered guidance system
-              </p>
-            </div>
+            {/* Progress Indicator */}
+            {totalTopics > 0 && (
+              <div className="text-center space-y-2">
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 text-base px-4 py-1.5">
+                  Topic {topicNumber} of {totalTopics}
+                </Badge>
+                <p className="text-muted-foreground text-xs sm:text-sm md:text-base max-w-2xl mx-auto px-2">
+                  Click on the topic to start building your opinion immediately with our AI-powered guidance system
+                </p>
+              </div>
+            )}
 
-            {topics.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
-                {topics.map((topic) => {
-                  const isCompleted = lastCompletedTopicId !== null && topic.id < lastCompletedTopicId;
-                  return (
-                    <Card 
-                      key={topic.id}
-                      className={`group cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 sm:hover:-translate-y-2 hover:scale-[1.02] sm:hover:scale-105 border-2 ${
-                        isCompleted ? 'border-primary/50' : 'border-transparent hover:border-primary/20'
-                      } bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-xl sm:rounded-2xl overflow-hidden`}
-                      onClick={() => handleTopicClick(topic)}
-                    >
-                      <CardContent className="p-4 sm:p-5 md:p-6">
-                        <div className="space-y-3 sm:space-y-4">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br from-primary to-primary/80 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110 flex-shrink-0">
-                              <Lightbulb className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white" />
-                            </div>
-                            <div className="flex items-center space-x-1.5 sm:space-x-2 flex-wrap justify-end">
-                              {isCompleted && (
-                                <div className="flex items-center space-x-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-primary text-white text-[10px] sm:text-xs">
-                                  <CheckCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                                  <span>Completed</span>
-                                </div>
-                              )}
-                              {(topic.complexity || topic.difficulty_level) && (
-                                <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg sm:rounded-xl text-[10px] sm:text-[11px] md:text-xs font-semibold shadow-md ${
-                                  (topic.complexity === 'Advanced' || topic.difficulty_level === 'Advanced')
-                                    ? 'bg-gradient-to-r from-red-500 to-red-600 text-white' 
-                                    : (topic.complexity === 'Intermediate' || topic.difficulty_level === 'Intermediate')
-                                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
-                                    : 'bg-gradient-to-r from-primary to-primary/80 text-white'
-                                }`}>
-                                  {topic.complexity || topic.difficulty_level}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div>
-                            <h3 className="font-bold text-sm sm:text-base md:text-lg mb-1.5 sm:mb-2 text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors duration-300 line-clamp-2">
-                              {topic.title}
-                            </h3>
-                            <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3 leading-relaxed line-clamp-3">
-                              {topic.description || 'No description available'}
-                            </p>
-                            <span className="inline-block px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg sm:rounded-xl text-[10px] sm:text-[11px] md:text-xs font-semibold bg-gradient-to-r from-primary/10 to-primary/20 text-primary border border-primary/20">
-                              {topic.category}
-                            </span>
-                          </div>
+            {/* Current Topic Card */}
+            {selectedTopic ? (
+              <div className="max-w-2xl mx-auto">
+                <Card 
+                  className="group cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 sm:hover:-translate-y-2 hover:scale-[1.02] border-2 border-transparent hover:border-primary/20 bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-xl sm:rounded-2xl overflow-hidden"
+                  onClick={() => handleTopicClick(selectedTopic)}
+                >
+                  <CardContent className="p-4 sm:p-5 md:p-6">
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br from-primary to-primary/80 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110 flex-shrink-0">
+                          <Lightbulb className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white" />
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                        <div className="flex items-center space-x-1.5 sm:space-x-2 flex-wrap justify-end">
+                          <Badge variant="outline" className="border-primary/30 text-primary/70 font-semibold">
+                            {topicNumber}/{totalTopics}
+                          </Badge>
+                          {(selectedTopic.complexity || selectedTopic.difficulty_level) && (
+                            <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg sm:rounded-xl text-[10px] sm:text-[11px] md:text-xs font-semibold shadow-md ${
+                              (selectedTopic.complexity === 'Advanced' || selectedTopic.difficulty_level === 'Advanced')
+                                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white' 
+                                : (selectedTopic.complexity === 'Intermediate' || selectedTopic.difficulty_level === 'Intermediate')
+                                ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                                : 'bg-gradient-to-r from-primary to-primary/80 text-white'
+                            }`}>
+                              {selectedTopic.complexity || selectedTopic.difficulty_level}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm sm:text-base md:text-lg mb-1.5 sm:mb-2 text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors duration-300">
+                          {selectedTopic.title}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3 leading-relaxed">
+                          {selectedTopic.description || 'No description available'}
+                        </p>
+                        <span className="inline-block px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg sm:rounded-xl text-[10px] sm:text-[11px] md:text-xs font-semibold bg-gradient-to-r from-primary/10 to-primary/20 text-primary border border-primary/20">
+                          {selectedTopic.category}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             ) : (
               <Card className="bg-gradient-to-br from-muted/30 to-muted/50 border-2 border-dashed border-muted-foreground/20 rounded-xl sm:rounded-2xl">
@@ -448,6 +493,33 @@ export default function CriticalOpinionBuilder() {
                   </p>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Navigation Controls */}
+            {totalTopics > 1 && (
+              <div className="flex justify-between items-center max-w-2xl mx-auto">
+                <Button
+                  variant="outline"
+                  onClick={() => handleNavigateTopic('prev')}
+                  disabled={currentTopicIndex === 0}
+                  className="px-4 py-2 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-2" />
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground font-medium">
+                  {topicNumber} / {totalTopics}
+                </span>
+                <Button
+                  variant="outline"
+                  onClick={() => handleNavigateTopic('next')}
+                  disabled={currentTopicIndex === totalTopics - 1}
+                  className="px-4 py-2 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
             )}
 
             {/* Building Guidelines */}

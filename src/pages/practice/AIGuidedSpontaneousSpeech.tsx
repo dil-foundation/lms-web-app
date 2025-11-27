@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { CompletionDialog } from '@/components/practice/CompletionDialog';
-import { ArrowLeft, Mic, Bot, User, Rocket, Clock, Zap, Loader2, Play, Pause, Target, MessageSquare, CheckCircle, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Mic, Bot, User, Rocket, Clock, Zap, Loader2, Play, Pause, Target, MessageSquare, CheckCircle, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { 
@@ -41,6 +42,7 @@ export default function AIGuidedSpontaneousSpeech() {
   
   // State management
   const [topics, setTopics] = useState<SpontaneousSpeechTopic[]>([]);
+  const [currentTopicIndex, setCurrentTopicIndex] = useState(0); // Changed to index-based
   const [currentTopic, setCurrentTopic] = useState<SpontaneousSpeechTopic | null>(null);
   const [loading, setLoading] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
@@ -56,7 +58,7 @@ export default function AIGuidedSpontaneousSpeech() {
   const [recordingStartTime, setRecordingStartTime] = useState<number>(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
-  const [lastCompletedTopicId, setLastCompletedTopicId] = useState<number | null>(null);
+  const [resumeDataLoaded, setResumeDataLoaded] = useState(false);
 
   // Load topics on component mount
   useEffect(() => {
@@ -65,11 +67,6 @@ export default function AIGuidedSpontaneousSpeech() {
         setLoading(true);
         const fetchedTopics = await spontaneousSpeechService.getAllTopics();
         setTopics(fetchedTopics);
-        
-        // Set first topic as default if available
-        if (fetchedTopics.length > 0) {
-          setCurrentTopic(fetchedTopics[0]);
-        }
       } catch (error) {
         console.error('Error loading topics:', error);
         toast.error('Failed to load spontaneous speech topics');
@@ -81,30 +78,87 @@ export default function AIGuidedSpontaneousSpeech() {
     loadTopics();
   }, []);
 
-  // Fetch current progress on mount
+  // Fetch current progress and resume from where user left off
   useEffect(() => {
-    const fetchProgress = async () => {
-      if (!user?.id) return;
+    const fetchProgressAndResume = async () => {
+      if (!user?.id || !topics.length || resumeDataLoaded) return;
 
       try {
         const progressData = await getCurrentTopicProgress(user.id, 6, 1); // Stage 6, Exercise 1
         
-        if (progressData.success && progressData.current_topic_id) {
-          setLastCompletedTopicId(progressData.current_topic_id);
+        if (progressData.success && progressData.data?.current_topic_id !== undefined) {
+          const resumeIndex = Math.min(Math.max(0, progressData.data.current_topic_id), topics.length - 1);
+          console.log(`Resuming Stage 6 Spontaneous Speech from topic ${progressData.data.current_topic_id} (index ${resumeIndex})`);
+          setCurrentTopicIndex(resumeIndex);
+          setCurrentTopic(topics[resumeIndex]);
+        } else {
+          // Start from beginning
+          setCurrentTopicIndex(0);
+          setCurrentTopic(topics[0]);
         }
+        
+        setResumeDataLoaded(true);
       } catch (error) {
         console.error('Error fetching progress:', error);
+        // Start from beginning if error
+        setCurrentTopicIndex(0);
+        setCurrentTopic(topics[0]);
+        setResumeDataLoaded(true);
       }
     };
 
-    fetchProgress();
-  }, [user]);
+    fetchProgressAndResume();
+  }, [user, topics, resumeDataLoaded]);
 
   const [conversation, setConversation] = useState<ConversationMessage[]>([]);
+
+  // Get current topic info
+  const totalTopics = topics.length;
+  const topicNumber = currentTopicIndex + 1; // 1-based for display
+
+  // Save progress to API
+  const saveProgress = async (topicIndex: number) => {
+    if (user?.id && topics.length > 0) {
+      try {
+        await updateCurrentTopic(
+          user.id,
+          6, // Stage 6
+          1, // Exercise 1 (Spontaneous Speech)
+          topicIndex // Pass topic index as topic_id
+        );
+        console.log(`Progress saved: Stage 6, Exercise 1, Topic ${topicIndex + 1}/${topics.length}`);
+      } catch (error) {
+        console.warn('Failed to save progress:', error);
+      }
+    }
+  };
+
+  // Navigate between topics
+  const handleNavigateTopic = (direction: 'prev' | 'next') => {
+    let newIndex = currentTopicIndex;
+    
+    if (direction === 'prev' && currentTopicIndex > 0) {
+      newIndex = currentTopicIndex - 1;
+    } else if (direction === 'next' && currentTopicIndex < topics.length - 1) {
+      newIndex = currentTopicIndex + 1;
+    } else {
+      return; // No change
+    }
+    
+    setCurrentTopicIndex(newIndex);
+    setCurrentTopic(topics[newIndex]);
+    saveProgress(newIndex);
+    
+    // Check if user has reached the last topic
+    if (newIndex === topics.length - 1 && !isCompleted) {
+      setIsCompleted(true);
+    }
+  };
 
   const handleStartSession = () => {
     setSessionStarted(true);
     setShowFeedback(true);
+    saveProgress(currentTopicIndex); // Save progress when starting a session
   };
 
   const handleStartRecording = async () => {
@@ -195,13 +249,7 @@ export default function AIGuidedSpontaneousSpeech() {
     setConversation([initialMessage]);
 
     // Update progress when topic is selected
-    if (user?.id && topic.id) {
-      try {
-        await updateCurrentTopic(user.id, 6, 1, topic.id); // Stage 6, Exercise 1
-      } catch (error) {
-        console.error('Error updating progress:', error);
-      }
-    }
+    saveProgress(currentTopicIndex);
   };
 
   const resetSession = () => {
@@ -221,11 +269,16 @@ export default function AIGuidedSpontaneousSpeech() {
     setIsCompleted(false);
     setEvaluationResult(null);
     setConversation([]);
+    setCurrentTopicIndex(0);
+    setCurrentTopic(topics[0]);
+    saveProgress(0);
+    resetSession();
   };
 
   const handleContinue = () => {
     setShowCompletionDialog(false);
     resetSession();
+    navigate('/dashboard/practice');
   };
 
   const cleanupCurrentAudio = () => {
@@ -428,56 +481,53 @@ export default function AIGuidedSpontaneousSpeech() {
 
           {/* Main Content Area */}
           <div className="px-4 sm:px-6 pb-8 space-y-6">
-            {/* Topic Selection */}
-            <div className="text-center">
-              <p className="text-muted-foreground text-sm sm:text-base">Click on a topic to start your conversation immediately</p>
-            </div>
+            {/* Progress Indicator */}
+            {totalTopics > 0 && (
+              <div className="text-center space-y-2">
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 text-base px-4 py-1.5">
+                  Topic {topicNumber} of {totalTopics}
+                </Badge>
+                <p className="text-muted-foreground text-sm sm:text-base">Click on the topic to start your conversation immediately</p>
+              </div>
+            )}
 
-            {topics.length > 0 ? (
+            {/* Current Topic Card */}
+            {currentTopic ? (
               <div className="space-y-4">
-                {topics.map((topic) => {
-                  const isCompleted = lastCompletedTopicId !== null && topic.id < lastCompletedTopicId;
-                  return (
-                    <Card 
-                      key={topic.id}
-                      className={`cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden ${
-                        isCompleted ? 'border-2 border-primary/50' : ''
-                      }`}
-                      onClick={() => handleTopicClick(topic)}
-                    >
-                      <CardContent className="p-5 sm:p-6">
-                        <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
-                          <div className="flex items-start space-x-3 sm:space-x-4 flex-1">
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center border border-primary/30 flex-shrink-0">
-                              <Rocket className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-base sm:text-lg font-semibold mb-2 text-primary">{topic.title}</h3>
-                              <p className="text-muted-foreground text-xs sm:text-sm mb-2">{topic.description}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {isCompleted && (
-                              <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-primary text-white text-xs flex-shrink-0">
-                                <CheckCircle className="h-3 w-3" />
-                                <span>Completed</span>
-                              </div>
-                            )}
-                            {(topic.complexity || topic.difficulty_level) && (
-                              <span className={`px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 flex-shrink-0 ${
-                                (topic.complexity === 'Expert' || topic.difficulty_level === 'Expert')
-                                  ? 'text-red-700 dark:text-red-300' 
-                                  : 'text-orange-700 dark:text-orange-300'
-                              }`}>
-                                {topic.complexity || topic.difficulty_level}
-                              </span>
-                            )}
-                          </div>
+                <Card 
+                  className="cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden"
+                  onClick={() => handleTopicClick(currentTopic)}
+                >
+                  <CardContent className="p-5 sm:p-6">
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
+                      <div className="flex items-start space-x-3 sm:space-x-4 flex-1">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center border border-primary/30 flex-shrink-0">
+                          <Rocket className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-base sm:text-lg font-semibold text-primary">{currentTopic.title}</h3>
+                            <Badge variant="outline" className="border-primary/30 text-primary/70 font-semibold ml-2">
+                              {topicNumber}/{totalTopics}
+                            </Badge>
+                          </div>
+                          <p className="text-muted-foreground text-xs sm:text-sm mb-2">{currentTopic.description}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {(currentTopic.complexity || currentTopic.difficulty_level) && (
+                          <span className={`px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 flex-shrink-0 ${
+                            (currentTopic.complexity === 'Expert' || currentTopic.difficulty_level === 'Expert')
+                              ? 'text-red-700 dark:text-red-300' 
+                              : 'text-orange-700 dark:text-orange-300'
+                          }`}>
+                            {currentTopic.complexity || currentTopic.difficulty_level}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             ) : (
               <Card className="border-0 bg-gradient-to-br from-muted/30 to-muted/50 rounded-2xl shadow-lg">
@@ -489,6 +539,33 @@ export default function AIGuidedSpontaneousSpeech() {
                   </p>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Navigation Controls */}
+            {totalTopics > 1 && (
+              <div className="flex justify-between items-center">
+                <Button
+                  variant="outline"
+                  onClick={() => handleNavigateTopic('prev')}
+                  disabled={currentTopicIndex === 0}
+                  className="px-4 py-2 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-2" />
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground font-medium">
+                  {topicNumber} / {totalTopics}
+                </span>
+                <Button
+                  variant="outline"
+                  onClick={() => handleNavigateTopic('next')}
+                  disabled={currentTopicIndex === totalTopics - 1}
+                  className="px-4 py-2 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
             )}
 
             {/* Session Guidelines */}

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { CompletionDialog } from '@/components/practice/CompletionDialog';
-import { ArrowLeft, Mic, Users, User, Heart, Shield, AlertTriangle, Loader2, Zap, Play, Pause, Target, MessageSquare, CheckCircle, RotateCcw, Square } from 'lucide-react';
+import { ArrowLeft, Mic, Users, User, Heart, Shield, AlertTriangle, Loader2, Zap, Play, Pause, Target, MessageSquare, CheckCircle, RotateCcw, Square, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { 
@@ -42,6 +43,7 @@ export default function SensitiveScenarioRoleplay() {
   
   // State management
   const [scenarios, setScenarios] = useState<SensitiveScenario[]>([]);
+  const [currentScenarioIndex, setCurrentScenarioIndex] = useState(0); // Changed to index-based
   const [selectedScenario, setSelectedScenario] = useState<SensitiveScenario | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasStarted, setHasStarted] = useState(false);
@@ -57,7 +59,7 @@ export default function SensitiveScenarioRoleplay() {
   const [recordingStartTime, setRecordingStartTime] = useState<number>(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
-  const [lastCompletedScenarioId, setLastCompletedScenarioId] = useState<number | null>(null);
+  const [resumeDataLoaded, setResumeDataLoaded] = useState(false);
 
   // Load scenarios on component mount
   useEffect(() => {
@@ -68,11 +70,6 @@ export default function SensitiveScenarioRoleplay() {
         
         if (fetchedScenarios && Array.isArray(fetchedScenarios)) {
           setScenarios(fetchedScenarios);
-          
-          // Set first scenario as default if available
-          if (fetchedScenarios.length > 0) {
-            setSelectedScenario(fetchedScenarios[0]);
-          }
         } else {
           console.error('Invalid scenarios response format:', fetchedScenarios);
           setScenarios([]);
@@ -89,30 +86,87 @@ export default function SensitiveScenarioRoleplay() {
     loadScenarios();
   }, []);
 
-  // Fetch current progress on mount
+  // Fetch current progress and resume from where user left off
   useEffect(() => {
-    const fetchProgress = async () => {
-      if (!user?.id) return;
+    const fetchProgressAndResume = async () => {
+      if (!user?.id || !scenarios.length || resumeDataLoaded) return;
 
       try {
         const progressData = await getCurrentTopicProgress(user.id, 6, 2); // Stage 6, Exercise 2
         
-        if (progressData.success && progressData.data?.exercise_data?.current_topic_id) {
-          setLastCompletedScenarioId(progressData.data.exercise_data.current_topic_id);
+        if (progressData.success && progressData.data?.current_topic_id !== undefined) {
+          const resumeIndex = Math.min(Math.max(0, progressData.data.current_topic_id), scenarios.length - 1);
+          console.log(`Resuming Stage 6 Sensitive Scenario from topic ${progressData.data.current_topic_id} (index ${resumeIndex})`);
+          setCurrentScenarioIndex(resumeIndex);
+          setSelectedScenario(scenarios[resumeIndex]);
+        } else {
+          // Start from beginning
+          setCurrentScenarioIndex(0);
+          setSelectedScenario(scenarios[0]);
         }
+        
+        setResumeDataLoaded(true);
       } catch (error) {
         console.error('Error fetching progress:', error);
+        // Start from beginning if error
+        setCurrentScenarioIndex(0);
+        setSelectedScenario(scenarios[0]);
+        setResumeDataLoaded(true);
       }
     };
 
-    fetchProgress();
-  }, [user]);
+    fetchProgressAndResume();
+  }, [user, scenarios, resumeDataLoaded]);
 
   const [conversation, setConversation] = useState<RoleplayMessage[]>([]);
+
+  // Get current scenario info
+  const totalScenarios = scenarios.length;
+  const scenarioNumber = currentScenarioIndex + 1; // 1-based for display
+
+  // Save progress to API
+  const saveProgress = async (scenarioIndex: number) => {
+    if (user?.id && scenarios.length > 0) {
+      try {
+        await updateCurrentTopic(
+          user.id,
+          6, // Stage 6
+          2, // Exercise 2 (Sensitive Scenario)
+          scenarioIndex // Pass scenario index as topic_id
+        );
+        console.log(`Progress saved: Stage 6, Exercise 2, Scenario ${scenarioIndex + 1}/${scenarios.length}`);
+      } catch (error) {
+        console.warn('Failed to save progress:', error);
+      }
+    }
+  };
+
+  // Navigate between scenarios
+  const handleNavigateScenario = (direction: 'prev' | 'next') => {
+    let newIndex = currentScenarioIndex;
+    
+    if (direction === 'prev' && currentScenarioIndex > 0) {
+      newIndex = currentScenarioIndex - 1;
+    } else if (direction === 'next' && currentScenarioIndex < scenarios.length - 1) {
+      newIndex = currentScenarioIndex + 1;
+    } else {
+      return; // No change
+    }
+    
+    setCurrentScenarioIndex(newIndex);
+    setSelectedScenario(scenarios[newIndex]);
+    saveProgress(newIndex);
+    
+    // Check if user has reached the last scenario
+    if (newIndex === scenarios.length - 1 && !isCompleted) {
+      setIsCompleted(true);
+    }
+  };
 
   const handleScenarioClick = async (scenario: SensitiveScenario) => {
     setSelectedScenario(scenario);
     setHasStarted(true);
+    saveProgress(currentScenarioIndex); // Save progress when starting a scenario
     setShowFeedback(true);
 
     // Update progress when scenario is selected
@@ -219,11 +273,16 @@ export default function SensitiveScenarioRoleplay() {
     setIsCompleted(false);
     setEvaluationResult(null);
     setConversation([]);
+    setCurrentScenarioIndex(0);
+    setSelectedScenario(scenarios[0]);
+    saveProgress(0);
+    resetRoleplay();
   };
 
   const handleContinue = () => {
     setShowCompletionDialog(false);
     resetRoleplay();
+    navigate('/dashboard/practice');
   };
 
   const cleanupCurrentAudio = () => {
@@ -343,6 +402,7 @@ export default function SensitiveScenarioRoleplay() {
         // Create modified feedback object for error cases
         const errorFeedback = {
           ...evaluation,
+          score: 0,
           overall_score: 0,
           fluency_score: 0,
           vocabulary_score: 0,
@@ -356,7 +416,19 @@ export default function SensitiveScenarioRoleplay() {
         return;
       }
       
-      setEvaluationResult(evaluation);
+      // Extract score from nested evaluation object if it exists, otherwise use top-level
+      const normalizedEvaluation = {
+        ...evaluation,
+        score: evaluation.evaluation?.score ?? evaluation.score ?? evaluation.overall_score ?? 0,
+        fluency_score: evaluation.evaluation?.fluency_score ?? evaluation.fluency_score ?? 0,
+        suggested_improvement: evaluation.evaluation?.suggested_improvement ?? evaluation.suggested_improvement,
+        strengths: evaluation.evaluation?.strengths ?? evaluation.strengths ?? [],
+        areas_for_improvement: evaluation.evaluation?.areas_for_improvement ?? evaluation.areas_for_improvement ?? [],
+        feedback: evaluation.evaluation?.feedback ?? evaluation.feedback,
+      };
+      
+      console.log('Normalized evaluation:', normalizedEvaluation);
+      setEvaluationResult(normalizedEvaluation);
       toast.success('Evaluation completed!');
       
       // Check if the exercise is completed based on API response
@@ -424,62 +496,59 @@ export default function SensitiveScenarioRoleplay() {
 
           {/* Main Content Area */}
           <div className="px-4 sm:px-6 pb-8 space-y-6">
-            {/* Scenario Selection */}
-            <div className="text-center">
-              <p className="text-muted-foreground text-xs sm:text-sm md:text-base">Click on a scenario to start the roleplay immediately</p>
-            </div>
+            {/* Progress Indicator */}
+            {totalScenarios > 0 && (
+              <div className="text-center space-y-2">
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 text-base px-4 py-1.5">
+                  Scenario {scenarioNumber} of {totalScenarios}
+                </Badge>
+                <p className="text-muted-foreground text-xs sm:text-sm md:text-base">Click on the scenario to start the roleplay immediately</p>
+              </div>
+            )}
 
-            {scenarios.length > 0 ? (
+            {/* Current Scenario Card */}
+            {selectedScenario ? (
               <div className="space-y-3 sm:space-y-4">
-                {scenarios.map((scenario, index) => {
-                  const isCompleted = lastCompletedScenarioId !== null && scenario.id < lastCompletedScenarioId;
-                  return (
-                    <Card 
-                      key={scenario.id}
-                      className={`cursor-pointer transition-all hover:shadow-xl hover:scale-[1.01] sm:hover:scale-[1.02] border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl md:rounded-3xl shadow-lg overflow-hidden ${
-                        isCompleted ? 'border-2 border-primary/50' : ''
-                      }`}
-                      onClick={() => handleScenarioClick(scenario)}
-                    >
-                      <CardContent className="p-4 sm:p-5 md:p-6">
-                        <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br from-primary to-primary/80 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0 border border-primary/30">
-                            <Users className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white" />
-                          </div>
+                <Card 
+                  className="cursor-pointer transition-all hover:shadow-xl hover:scale-[1.01] sm:hover:scale-[1.02] border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl md:rounded-3xl shadow-lg overflow-hidden"
+                  onClick={() => handleScenarioClick(selectedScenario)}
+                >
+                  <CardContent className="p-4 sm:p-5 md:p-6">
+                    <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br from-primary to-primary/80 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0 border border-primary/30">
+                        <Users className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
                           <div className="flex-1 min-w-0">
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
-                              <div className="flex-1 min-w-0">
-                                <span className="font-semibold text-primary text-xs sm:text-sm md:text-base">Scenario:</span>{' '}
-                                <span className="text-xs sm:text-sm md:text-base break-words">
-                                  {scenario.scenario || scenario.context || scenario.description || 'No content available'}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap flex-shrink-0">
-                                {isCompleted && (
-                                  <div className="flex items-center space-x-1 px-2 py-0.5 sm:py-1 rounded-full bg-primary text-white text-[10px] sm:text-xs">
-                                    <CheckCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                                    <span>Completed</span>
-                                  </div>
-                                )}
-                                {(scenario.difficulty || scenario.difficulty_level) && (
-                                  <span className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs md:text-sm font-medium flex-shrink-0 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm ${
-                                    (scenario.difficulty === 'Advanced' || scenario.difficulty_level === 'Advanced')
-                                      ? 'text-red-600 dark:text-red-400' 
-                                      : (scenario.difficulty === 'Intermediate' || scenario.difficulty_level === 'Intermediate')
-                                      ? 'text-orange-600 dark:text-orange-400'
-                                      : 'text-green-600 dark:text-green-400'
-                                  }`}>
-                                    {scenario.difficulty || scenario.difficulty_level}
-                                  </span>
-                                )}
-                              </div>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-semibold text-primary text-xs sm:text-sm md:text-base">Scenario:</span>
+                              <Badge variant="outline" className="border-primary/30 text-primary/70 font-semibold ml-2">
+                                {scenarioNumber}/{totalScenarios}
+                              </Badge>
                             </div>
+                            <span className="text-xs sm:text-sm md:text-base break-words">
+                              {selectedScenario.scenario || selectedScenario.context || selectedScenario.description || 'No content available'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap flex-shrink-0">
+                            {(selectedScenario.difficulty || selectedScenario.difficulty_level) && (
+                              <span className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs md:text-sm font-medium flex-shrink-0 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm ${
+                                (selectedScenario.difficulty === 'Advanced' || selectedScenario.difficulty_level === 'Advanced')
+                                  ? 'text-red-600 dark:text-red-400' 
+                                  : (selectedScenario.difficulty === 'Intermediate' || selectedScenario.difficulty_level === 'Intermediate')
+                                  ? 'text-orange-600 dark:text-orange-400'
+                                  : 'text-green-600 dark:text-green-400'
+                              }`}>
+                                {selectedScenario.difficulty || selectedScenario.difficulty_level}
+                              </span>
+                            )}
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             ) : (
               <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl sm:rounded-2xl md:rounded-3xl shadow-lg overflow-hidden">
@@ -491,6 +560,33 @@ export default function SensitiveScenarioRoleplay() {
                   </p>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Navigation Controls */}
+            {totalScenarios > 1 && (
+              <div className="flex justify-between items-center">
+                <Button
+                  variant="outline"
+                  onClick={() => handleNavigateScenario('prev')}
+                  disabled={currentScenarioIndex === 0}
+                  className="px-4 py-2 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-2" />
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground font-medium">
+                  {scenarioNumber} / {totalScenarios}
+                </span>
+                <Button
+                  variant="outline"
+                  onClick={() => handleNavigateScenario('next')}
+                  disabled={currentScenarioIndex === totalScenarios - 1}
+                  className="px-4 py-2 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
             )}
 
             {/* Roleplay Guidelines */}
@@ -754,17 +850,26 @@ export default function SensitiveScenarioRoleplay() {
                 
                 {/* Content */}
                 <div className="p-4 sm:p-5 md:p-6 space-y-4 sm:space-y-5 md:space-y-6">
-                  {/* Scores Grid */}
+                  {/* Scores Grid - Only Overall and Fluency */}
                   <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
                     <div className="text-center p-2.5 sm:p-3 md:p-4 bg-white/60 dark:bg-gray-800/60 rounded-lg sm:rounded-xl border border-primary/20">
-                      <div className={`text-base sm:text-lg md:text-xl lg:text-2xl font-bold ${
-                        (evaluationResult.overall_score || 0) === 0 
-                          ? 'text-red-600 dark:text-red-400' 
-                          : 'text-primary'
-                      }`}>
-                        {evaluationResult.overall_score || 0}
-                      </div>
-                      <div className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground font-medium mt-0.5">Overall</div>
+                      {(() => {
+                        // Prioritize score field from API response
+                        const overallScore = evaluationResult.score ?? evaluationResult.overall_score ?? 0;
+                        const scoreValue = Number(overallScore) || 0;
+                        return (
+                          <>
+                            <div className={`text-base sm:text-lg md:text-xl lg:text-2xl font-bold ${
+                              scoreValue === 0 
+                                ? 'text-red-600 dark:text-red-400' 
+                                : 'text-primary'
+                            }`}>
+                              {scoreValue}
+                            </div>
+                            <div className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground font-medium mt-0.5">Overall Score</div>
+                          </>
+                        );
+                      })()}
                     </div>
                     <div className="text-center p-2.5 sm:p-3 md:p-4 bg-white/60 dark:bg-gray-800/60 rounded-lg sm:rounded-xl border border-primary/20">
                       <div className={`text-base sm:text-lg md:text-xl lg:text-2xl font-bold ${
@@ -776,27 +881,26 @@ export default function SensitiveScenarioRoleplay() {
                       </div>
                       <div className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground font-medium mt-0.5">Fluency</div>
                     </div>
-                    <div className="text-center p-2.5 sm:p-3 md:p-4 bg-white/60 dark:bg-gray-800/60 rounded-lg sm:rounded-xl border border-primary/20">
-                      <div className={`text-base sm:text-lg md:text-xl lg:text-2xl font-bold ${
-                        (evaluationResult.vocabulary_score || 0) === 0 
-                          ? 'text-red-600 dark:text-red-400' 
-                          : 'text-primary'
-                      }`}>
-                        {evaluationResult.vocabulary_score || 0}
-                      </div>
-                      <div className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground font-medium mt-0.5">Vocabulary</div>
-                    </div>
-                    <div className="text-center p-2.5 sm:p-3 md:p-4 bg-white/60 dark:bg-gray-800/60 rounded-lg sm:rounded-xl border border-primary/20">
-                      <div className={`text-base sm:text-lg md:text-xl lg:text-2xl font-bold ${
-                        (evaluationResult.content_relevance_score || 0) === 0 
-                          ? 'text-red-600 dark:text-red-400' 
-                          : 'text-primary'
-                      }`}>
-                        {evaluationResult.content_relevance_score || 0}
-                      </div>
-                      <div className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground font-medium mt-0.5">Relevance</div>
-                    </div>
                   </div>
+
+                  {/* Suggested Improvement */}
+                  {evaluationResult.suggested_improvement && (
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-blue-200 dark:border-blue-700">
+                      <div className="flex items-start space-x-2 sm:space-x-3">
+                        <div className="w-6 h-6 sm:w-7 sm:h-7 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Target className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <h5 className="font-semibold text-blue-700 dark:text-blue-300 mb-1.5 text-xs sm:text-sm">
+                            Suggested Improvement
+                          </h5>
+                          <p className="text-[10px] sm:text-xs md:text-sm text-blue-900 dark:text-blue-200 leading-relaxed break-words">
+                            {evaluationResult.suggested_improvement}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Feedback */}
                   {evaluationResult.feedback && (
@@ -909,7 +1013,7 @@ export default function SensitiveScenarioRoleplay() {
         isOpen={showCompletionDialog}
         onClose={() => setShowCompletionDialog(false)}
         exerciseName="Sensitive Scenario Roleplay"
-        score={evaluationResult?.overall_score || 0}
+        score={Number(evaluationResult?.score ?? evaluationResult?.overall_score ?? 0)}
         onRedo={handleRedo}
         onContinue={handleContinue}
       />

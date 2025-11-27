@@ -220,14 +220,18 @@ class SecureLinksService {
         })
         .eq('token', token)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Database error marking link as used:', error);
         throw new Error(`Failed to mark link as used: ${error.message}`);
       }
 
-      return data ? this.transformDatabaseRecord(data) : null;
+      if (!data) {
+        throw new Error('Link not found or already used. Please request a new observation link.');
+      }
+
+      return this.transformDatabaseRecord(data);
     } catch (error: any) {
       console.error('Error marking link as used:', error);
       throw new Error(error.message || 'Failed to mark link as used');
