@@ -769,10 +769,10 @@ export const ReportsOverview = () => {
                     <BarChart 
                       data={coursePerformanceData} 
                       margin={{ 
-                        top: 10, 
+                        top: isMobile ? 55 : 65, 
                         right: isMobile ? 10 : 15, 
                         left: 0, 
-                        bottom: isMobile ? 85 : 70 
+                        bottom: isMobile ? 55 : 60 
                       }}
                     >
                       <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
@@ -790,7 +790,7 @@ export const ReportsOverview = () => {
                       <Legend 
                         wrapperStyle={{ 
                           fontSize: isMobile ? '8px' : '10px',
-                          paddingTop: isMobile ? '30px' : '25px',
+                          paddingBottom: isMobile ? '10px' : '12px',
                           display: 'flex',
                           justifyContent: 'center',
                           gap: isMobile ? '8px' : '12px'
@@ -799,7 +799,7 @@ export const ReportsOverview = () => {
                         iconType="rect"
                         layout="horizontal"
                         align="center"
-                        verticalAlign="bottom"
+                        verticalAlign="top"
                       />
                       <Bar dataKey="enrollments" fill="var(--color-enrollments)" name="Enrollments" radius={[4, 4, 0, 0]} />
                       <Bar dataKey="completion_rate" fill="var(--color-completionRate)" name="Completion %" radius={[4, 4, 0, 0]} />
