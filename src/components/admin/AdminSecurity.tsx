@@ -1069,46 +1069,42 @@ const AdminSecurity = () => {
           <div className="bg-card border rounded-lg p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
             <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
               {/* Sub-tabs - Subtle Style */}
-              <div className="border-b border-border/20 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 overflow-x-auto">
-                <TabsList className="h-auto bg-transparent p-0 gap-1 w-auto min-w-full">
+              <div className="border-b border-border/20 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6">
+                <TabsList className="h-auto bg-transparent p-0 gap-0.5 sm:gap-1 w-full justify-start">
                   <TabsTrigger
                     value="overview"
-                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
+                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 lg:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
                   >
                     <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                    <span className="hidden sm:inline">Overview</span>
+                    <span className="hidden lg:inline">Overview</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="authentication"
-                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
+                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 lg:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
                   >
                     <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                    <span className="hidden sm:inline">Authentication</span>
-                    <span className="sm:hidden">Auth</span>
+                    <span className="hidden lg:inline">Authentication</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="mfa"
-                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
+                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 lg:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
                   >
                     <Key className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                    <span className="hidden sm:inline">MFA Management</span>
-                    <span className="sm:hidden">MFA</span>
+                    <span className="hidden lg:inline">MFA Management</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="alerts"
-                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
+                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 lg:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
                   >
                     <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                    <span className="hidden sm:inline">Security Alerts</span>
-                    <span className="sm:hidden">Alerts</span>
+                    <span className="hidden lg:inline">Security Alerts</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="logs"
-                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
+                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 lg:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-all duration-200 hover:bg-primary/90 hover:text-primary-foreground whitespace-nowrap"
                   >
                     <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                    <span className="hidden sm:inline">Access Logs</span>
-                    <span className="sm:hidden">Logs</span>
+                    <span className="hidden lg:inline">Access Logs</span>
                   </TabsTrigger>
                 </TabsList>
               </div>
