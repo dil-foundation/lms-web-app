@@ -56,6 +56,9 @@ export const useAdminDashboard = (
   const isMountedRef = useRef(true);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoRefreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Use ref for timeRange in API calls to avoid dependency issues
+  const timeRangeRef = useRef(initialTimeRange);
+  const filtersRef = useRef(filters);
 
   // Map UI time range values to API values
   const mapTimeRangeToApiValue = useCallback((uiValue: string): string => {
@@ -69,6 +72,7 @@ export const useAdminDashboard = (
   }, []);
 
   // Fetch dashboard data
+  // Note: Using refs instead of state to avoid dependency issues
   const fetchData = useCallback(async (showRefreshIndicator = false, customTimeRange?: string, customFilters?: DashboardFilters) => {
     if (!isMountedRef.current) return;
 
@@ -80,23 +84,16 @@ export const useAdminDashboard = (
       }
       setError(null);
 
-      const apiTimeRange = mapTimeRangeToApiValue(customTimeRange || timeRange);
-      const activeFilters = customFilters || filters;
+      // Use custom values if provided, otherwise use ref values
+      const apiTimeRange = mapTimeRangeToApiValue(customTimeRange || timeRangeRef.current);
+      const activeFilters = customFilters || filtersRef.current;
       console.log('🔄 [useAdminDashboard] Fetching data with timeRange:', apiTimeRange, 'filters:', activeFilters);
-      
-      // Small delay to prevent rapid successive calls
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
-      if (!isMountedRef.current) return; // Check again after delay
       
       const result = await adminDashboardService.getAllOverviewData(apiTimeRange, activeFilters);
       
       if (isMountedRef.current) {
         setData(result);
-        // Clear any previous errors
-        if (error) {
-          setError(null);
-        }
+        setError(null);
         console.log('✅ [useAdminDashboard] Successfully loaded data');
         
         if (showRefreshIndicator) {
@@ -109,7 +106,6 @@ export const useAdminDashboard = (
         // Check for AbortError first before logging
         if (error.name === 'AbortError') {
           console.log('🚫 [useAdminDashboard] Request was cancelled, not showing error toast');
-          // Don't set error state or show toast for cancelled requests
           return;
         }
 
@@ -126,34 +122,46 @@ export const useAdminDashboard = (
         setRefreshing(false);
       }
     }
-  }, [timeRange, mapTimeRangeToApiValue, error, filters]);
+  }, [mapTimeRangeToApiValue]); // Removed state dependencies
 
-  // Handle time range change with debouncing
+  // Handle time range change - fetch immediately on dropdown selection
   const handleTimeRangeChange = useCallback((newTimeRange: string) => {
+    console.log('🔄 [useAdminDashboard] Time range changed to:', newTimeRange);
+    
+    // Update both state (for UI) and ref (for API calls)
     setTimeRange(newTimeRange);
-    console.log('Time range changed to:', newTimeRange);
+    timeRangeRef.current = newTimeRange;
     
-    // Clear existing timeout
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-    
-    // Debounce the API call
-    debounceTimeoutRef.current = setTimeout(() => {
-      if (isMountedRef.current) {
-        fetchData(true, newTimeRange);
-      }
-    }, 300);
-  }, [fetchData]);
-
-  // Handle refresh
-  const handleRefresh = useCallback(() => {
     // Clear any pending debounced requests
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
     
-    fetchData(true);
+    // Clear cache to ensure fresh data
+    adminDashboardService.clearCache();
+    
+    // Fetch immediately - no debounce for explicit dropdown selection
+    if (isMountedRef.current) {
+      fetchData(true, newTimeRange);
+    }
+  }, [fetchData]);
+
+  // Handle refresh - fetch immediately with fresh data
+  const handleRefresh = useCallback(() => {
+    console.log('🔄 [useAdminDashboard] Manual refresh triggered');
+    
+    // Clear any pending debounced requests
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    
+    // Clear cache to ensure fresh data on manual refresh
+    adminDashboardService.clearCache();
+    
+    // Fetch immediately
+    if (isMountedRef.current) {
+      fetchData(true);
+    }
   }, [fetchData]);
 
   // Clear error

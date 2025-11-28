@@ -43,6 +43,8 @@ export const useTeacherDashboard = (
   const isMountedRef = useRef(true);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoRefreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Use ref for timeRange in API calls to avoid dependency issues that cause request abortion
+  const timeRangeRef = useRef(initialTimeRange);
 
   // Map UI time range values to API values
   const mapTimeRangeToApiValue = useCallback((uiValue: string): string => {
@@ -56,6 +58,8 @@ export const useTeacherDashboard = (
   }, []);
 
   // Fetch dashboard data
+  // Note: Using timeRangeRef instead of timeRange state to avoid dependency issues
+  // that cause the useEffect cleanup to abort in-flight requests
   const fetchData = useCallback(async (showRefreshIndicator = false, customTimeRange?: string) => {
     if (!isMountedRef.current) return;
 
@@ -67,22 +71,16 @@ export const useTeacherDashboard = (
       }
       setError(null);
 
-      const apiTimeRange = mapTimeRangeToApiValue(customTimeRange || timeRange);
+      // Use customTimeRange if provided, otherwise use the ref value
+      const apiTimeRange = mapTimeRangeToApiValue(customTimeRange || timeRangeRef.current);
       console.log('🔄 [useTeacherDashboard] Fetching data with timeRange:', apiTimeRange);
-      
-      // Small delay to prevent rapid successive calls
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
-      if (!isMountedRef.current) return; // Check again after delay
       
       const result = await teacherDashboardService.getOverviewData(apiTimeRange);
       
       if (isMountedRef.current) {
         setData(result);
         // Clear any previous errors
-        if (error) {
-          setError(null);
-        }
+        setError(null);
         console.log('✅ [useTeacherDashboard] Successfully loaded data');
       }
       
@@ -112,33 +110,46 @@ export const useTeacherDashboard = (
         setRefreshing(false);
       }
     }
-  }, [timeRange, mapTimeRangeToApiValue]);
+  }, [mapTimeRangeToApiValue]); // Removed timeRange from dependencies to prevent cleanup abortion
 
-  // Handle time range change with debouncing
+  // Handle time range change - fetch immediately on dropdown selection
   const handleTimeRangeChange = useCallback((newTimeRange: string) => {
+    console.log('🔄 [useTeacherDashboard] Time range changed to:', newTimeRange);
+    
+    // Update both state (for UI) and ref (for API calls)
     setTimeRange(newTimeRange);
+    timeRangeRef.current = newTimeRange;
     
-    // Clear existing timeout
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-    
-    // Debounce the API call
-    debounceTimeoutRef.current = setTimeout(() => {
-      if (isMountedRef.current) {
-        fetchData(true, newTimeRange);
-      }
-    }, 300);
-  }, [fetchData]);
-
-  // Handle refresh
-  const handleRefresh = useCallback(() => {
     // Clear any pending debounced requests
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
     
-    fetchData(true);
+    // Clear cache for the new time range to ensure fresh data
+    teacherDashboardService.clearCache();
+    
+    // Fetch immediately - no debounce for explicit dropdown selection
+    if (isMountedRef.current) {
+      fetchData(true, newTimeRange);
+    }
+  }, [fetchData]);
+
+  // Handle refresh - fetch immediately with fresh data
+  const handleRefresh = useCallback(() => {
+    console.log('🔄 [useTeacherDashboard] Manual refresh triggered');
+    
+    // Clear any pending debounced requests
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    
+    // Clear cache to ensure fresh data on manual refresh
+    teacherDashboardService.clearCache();
+    
+    // Fetch immediately
+    if (isMountedRef.current) {
+      fetchData(true);
+    }
   }, [fetchData]);
 
   // Clear error

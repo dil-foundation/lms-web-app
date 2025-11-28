@@ -936,6 +936,7 @@ const ClassManagement: React.FC = () => {
                     onView={openViewDialog}
                     onEdit={openEditDialog}
                     onDelete={handleClassDeleteCheck}
+                    canDelete={!isTeacher}
                   />
                 </div>
               )}
@@ -1155,6 +1156,7 @@ const ClassManagement: React.FC = () => {
                     onView={openViewDialog}
                     onEdit={openEditDialog}
                     onDelete={handleClassDeleteCheck}
+                    canDelete={!isTeacher}
                   />
                 </div>
               )}
@@ -1166,6 +1168,7 @@ const ClassManagement: React.FC = () => {
                     onView={openViewDialog}
                     onEdit={openEditDialog}
                     onDelete={handleClassDeleteCheck}
+                    canDelete={!isTeacher}
                   />
                 </div>
               )}

@@ -53,8 +53,13 @@ export const useTeacherProgress = (
   // Refs
   const isMountedRef = useRef(true);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Use refs for filter values in API calls to avoid dependency issues that cause request abortion
+  const timeRangeRef = useRef(initialTimeRange);
+  const searchQueryRef = useRef(initialSearchQuery);
+  const stageFilterRef = useRef(initialStageFilter);
 
   // Fetch progress data
+  // Note: Using refs instead of state to avoid dependency issues that cause request abortion
   const fetchData = useCallback(async (
     showRefreshIndicator = false, 
     customTimeRange?: string,
@@ -71,20 +76,16 @@ export const useTeacherProgress = (
       }
       setError(null);
 
-      const effectiveTimeRange = customTimeRange || timeRange;
-      const effectiveSearchQuery = customSearchQuery !== undefined ? customSearchQuery : searchQuery;
-      const effectiveStageFilter = customStageFilter !== undefined ? customStageFilter : stageFilter;
+      // Use custom values if provided, otherwise use ref values
+      const effectiveTimeRange = customTimeRange || timeRangeRef.current;
+      const effectiveSearchQuery = customSearchQuery !== undefined ? customSearchQuery : searchQueryRef.current;
+      const effectiveStageFilter = customStageFilter !== undefined ? customStageFilter : stageFilterRef.current;
 
       console.log('🔄 [useTeacherProgress] Fetching data with filters:', {
         timeRange: effectiveTimeRange,
         searchQuery: effectiveSearchQuery,
         stageFilter: effectiveStageFilter
       });
-      
-      // Small delay to prevent rapid successive calls
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
-      if (!isMountedRef.current) return; // Check again after delay
       
       const result = await teacherDashboardService.getProgressOverviewData(
         effectiveTimeRange,
@@ -94,10 +95,7 @@ export const useTeacherProgress = (
       
       if (isMountedRef.current) {
         setData(result);
-        // Clear any previous errors
-        if (error) {
-          setError(null);
-        }
+        setError(null);
         console.log('✅ [useTeacherProgress] Successfully loaded data');
       }
       
@@ -127,68 +125,89 @@ export const useTeacherProgress = (
         setRefreshing(false);
       }
     }
-  }, [timeRange, searchQuery, stageFilter, error]);
+  }, []); // Removed state dependencies to prevent cleanup abortion
 
-  // Handle time range change with debouncing
+  // Handle time range change - fetch immediately on dropdown selection
   const handleTimeRangeChange = useCallback((newTimeRange: string) => {
+    console.log('🔄 [useTeacherProgress] Time range changed to:', newTimeRange);
+    
+    // Update both state (for UI) and ref (for API calls)
     setTimeRange(newTimeRange);
+    timeRangeRef.current = newTimeRange;
     
-    // Clear existing timeout
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-    
-    // Debounce the API call
-    debounceTimeoutRef.current = setTimeout(() => {
-      if (isMountedRef.current) {
-        fetchData(true, newTimeRange, searchQuery, stageFilter);
-      }
-    }, 300);
-  }, [fetchData, searchQuery, stageFilter]);
-
-  // Handle search change with debouncing
-  const handleSearchChange = useCallback((newSearchQuery: string) => {
-    setSearchQuery(newSearchQuery);
-    
-    // Clear existing timeout
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-    
-    // Debounce the API call
-    debounceTimeoutRef.current = setTimeout(() => {
-      if (isMountedRef.current) {
-        fetchData(true, timeRange, newSearchQuery, stageFilter);
-      }
-    }, 500); // Longer debounce for search
-  }, [fetchData, timeRange, stageFilter]);
-
-  // Handle stage filter change with debouncing
-  const handleStageFilterChange = useCallback((newStageFilter: string) => {
-    setStageFilter(newStageFilter);
-    
-    // Clear existing timeout
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-    
-    // Debounce the API call
-    debounceTimeoutRef.current = setTimeout(() => {
-      if (isMountedRef.current) {
-        fetchData(true, timeRange, searchQuery, newStageFilter);
-      }
-    }, 300);
-  }, [fetchData, timeRange, searchQuery]);
-
-  // Handle refresh
-  const handleRefresh = useCallback(() => {
     // Clear any pending debounced requests
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
     
-    fetchData(true, timeRange, searchQuery, stageFilter);
-  }, [fetchData, timeRange, searchQuery, stageFilter]);
+    // Clear cache to ensure fresh data
+    teacherDashboardService.clearCache();
+    
+    // Fetch immediately - no debounce for explicit dropdown selection
+    if (isMountedRef.current) {
+      fetchData(true, newTimeRange);
+    }
+  }, [fetchData]);
+
+  // Handle search change with debouncing (keep debounce for text input)
+  const handleSearchChange = useCallback((newSearchQuery: string) => {
+    // Update both state (for UI) and ref (for API calls)
+    setSearchQuery(newSearchQuery);
+    searchQueryRef.current = newSearchQuery;
+    
+    // Clear existing timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    
+    // Debounce the API call for search (typing)
+    debounceTimeoutRef.current = setTimeout(() => {
+      if (isMountedRef.current) {
+        teacherDashboardService.clearCache();
+        fetchData(true, undefined, newSearchQuery);
+      }
+    }, 500); // Keep debounce for search input
+  }, [fetchData]);
+
+  // Handle stage filter change - fetch immediately on dropdown selection
+  const handleStageFilterChange = useCallback((newStageFilter: string) => {
+    console.log('🔄 [useTeacherProgress] Stage filter changed to:', newStageFilter);
+    
+    // Update both state (for UI) and ref (for API calls)
+    setStageFilter(newStageFilter);
+    stageFilterRef.current = newStageFilter;
+    
+    // Clear any pending debounced requests
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    
+    // Clear cache to ensure fresh data
+    teacherDashboardService.clearCache();
+    
+    // Fetch immediately - no debounce for explicit dropdown selection
+    if (isMountedRef.current) {
+      fetchData(true, undefined, undefined, newStageFilter);
+    }
+  }, [fetchData]);
+
+  // Handle refresh - fetch immediately with fresh data
+  const handleRefresh = useCallback(() => {
+    console.log('🔄 [useTeacherProgress] Manual refresh triggered');
+    
+    // Clear any pending debounced requests
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    
+    // Clear cache to ensure fresh data on manual refresh
+    teacherDashboardService.clearCache();
+    
+    // Fetch immediately
+    if (isMountedRef.current) {
+      fetchData(true);
+    }
+  }, [fetchData]);
 
   // Clear error
   const clearError = useCallback(() => {
