@@ -248,7 +248,7 @@ class CourseClassSyncService {
   }
 
   /**
-   * Update course in database with new member lists
+   * Update course members via course_members table
    */
   private async updateCourseInDatabase(
     courseId: string, 
@@ -256,22 +256,92 @@ class CourseClassSyncService {
     students: { id: string; name: string; email: string; avatar_url?: string }[]
   ): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('courses')
-        .update({
-          teachers,
-          students,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', courseId);
+      // Get current course members
+      const { data: existingMembers } = await supabase
+        .from('course_members')
+        .select('user_id, role')
+        .eq('course_id', courseId);
 
-      if (error) {
-        console.error('Error updating course in database:', error);
-        throw new Error(`Failed to update course: ${error.message}`);
+      const existingMemberMap = new Map(
+        existingMembers?.map(m => [m.user_id, m.role]) || []
+      );
+
+      // Determine which teachers to add
+      const teachersToAdd = teachers.filter(t => !existingMemberMap.has(t.id));
+      
+      // Determine which students to add
+      const studentsToAdd = students.filter(s => !existingMemberMap.has(s.id));
+
+      // Determine which members to remove (those not in the new lists)
+      const allNewMemberIds = new Set([
+        ...teachers.map(t => t.id),
+        ...students.map(s => s.id)
+      ]);
+      const membersToRemove = Array.from(existingMemberMap.keys())
+        .filter(userId => !allNewMemberIds.has(userId));
+
+      // Add new teachers
+      if (teachersToAdd.length > 0) {
+        const { error } = await supabase
+          .from('course_members')
+          .insert(
+            teachersToAdd.map(t => ({
+              course_id: courseId,
+              user_id: t.id,
+              role: 'teacher'
+            }))
+          );
+        
+        if (error && !error.message.includes('duplicate')) {
+          console.error('Error adding teachers to course_members:', error);
+        }
       }
+
+      // Add new students
+      if (studentsToAdd.length > 0) {
+        const { error } = await supabase
+          .from('course_members')
+          .insert(
+            studentsToAdd.map(s => ({
+              course_id: courseId,
+              user_id: s.id,
+              role: 'student'
+            }))
+          );
+        
+        if (error && !error.message.includes('duplicate')) {
+          console.error('Error adding students to course_members:', error);
+        }
+      }
+
+      // Remove members who are no longer in any enrolled class
+      if (membersToRemove.length > 0) {
+        const { error } = await supabase
+          .from('course_members')
+          .delete()
+          .eq('course_id', courseId)
+          .in('user_id', membersToRemove);
+        
+        if (error) {
+          console.error('Error removing members from course_members:', error);
+        }
+      }
+
+      // Update course timestamp (non-critical, may fail due to RLS for non-admin users)
+      const { error: timestampError } = await supabase
+        .from('courses')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', courseId);
+      
+      if (timestampError) {
+        // This is expected for teachers who don't have UPDATE permission on courses
+        console.log(`Note: Could not update course timestamp (this is normal for non-admin users)`);
+      }
+
+      console.log(`Synced course ${courseId}: added ${teachersToAdd.length} teachers, ${studentsToAdd.length} students, removed ${membersToRemove.length} members`);
     } catch (error) {
       console.error('Error in updateCourseInDatabase:', error);
-      throw error;
+      // Don't throw - this is a background sync process
     }
   }
 

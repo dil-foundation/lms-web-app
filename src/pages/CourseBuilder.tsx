@@ -2129,7 +2129,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
 const CourseBuilder = () => {
   const { courseId } = useParams();
   const { user } = useAuth();
-  const { profile } = useUserProfile();
+  const { profile, loading: profileLoading } = useUserProfile();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('details');
   const [saveAction, setSaveAction] = useState<null | 'draft' | 'publish' | 'unpublish' | 'review' | 'approve' | 'reject'>(null);
@@ -2243,7 +2243,10 @@ const CourseBuilder = () => {
   const isTeacher = profile?.role === 'teacher';
   const teacherId = isTeacher ? user?.id : undefined;
   
-  const { classes: dbClasses, loading: classesLoading, stats: classStats, createClass, updateClass, deleteClass, refetch: refetchClasses } = useClasses(teacherId);
+  // Only fetch classes after profile is loaded to ensure correct filtering
+  const shouldFetchClasses = !profileLoading && !!user;
+  
+  const { classes: dbClasses, loading: classesLoading, stats: classStats, createClass, updateClass, deleteClass, refetch: refetchClasses } = useClasses(teacherId, shouldFetchClasses);
   const { teachers: classTeachers, loading: classTeachersLoading } = useTeachers();
   const { students: classStudents, loading: classStudentsLoading } = useStudents();
   const { boards: classBoards, loading: classBoardsLoading } = useBoards();
