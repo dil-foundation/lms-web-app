@@ -18,6 +18,7 @@ import { useClasses, useClassesPaginated, useTeachers, useStudents, useBoards, u
 import { ClassWithMembers, CreateClassData, UpdateClassData } from '@/services/classService';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
 import { ViewToggle } from '@/components/ui/ViewToggle';
 import { ClassCardView } from '@/components/class/ClassCardView';
@@ -75,6 +76,14 @@ const ClassManagement: React.FC = () => {
   const [isCheckingClassDependencies, setIsCheckingClassDependencies] = useState(false);
   const [classToDelete, setClassToDelete] = useState<ClassWithMembers | null>(null);
 
+  // Get user context first
+  const { user } = useAuth();
+  const { profile } = useUserProfile();
+  
+  // Determine if current user is a teacher (use profile.role for more reliable role checking)
+  const isTeacher = profile?.role === 'teacher';
+  const teacherId = isTeacher ? user?.id : undefined;
+  
   // Use paginated classes hook
   const paginationParams = {
     page: currentPage,
@@ -82,7 +91,8 @@ const ClassManagement: React.FC = () => {
     search: searchTerm,
     grade: gradeFilter,
     school: schoolFilter,
-    board: boardFilter
+    board: boardFilter,
+    teacherId: teacherId // Pass teacher ID to filter classes
   };
   
   const { 
@@ -103,8 +113,7 @@ const ClassManagement: React.FC = () => {
   }, [preferences.teacherClassView]);
   
   // Use other hooks for stats and form data
-  const { stats, createClass, updateClass, deleteClass } = useClasses();
-  const { user } = useAuth();
+  const { stats, createClass, updateClass, deleteClass } = useClasses(teacherId);
   const { teachers, loading: teachersLoading } = useTeachers();
   const { students, loading: studentsLoading } = useStudents();
   const { boards, loading: boardsLoading } = useBoards();
