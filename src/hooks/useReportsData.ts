@@ -60,6 +60,8 @@ export const useReportsData = (
   const isMountedRef = useRef(true);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoRefreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Use ref for timeRange in API calls to avoid dependency issues
+  const timeRangeRef = useRef(initialTimeRange);
 
   // Map UI time range values to API values
   const mapTimeRangeToApiValue = useCallback((uiValue: string): string => {
@@ -76,8 +78,9 @@ export const useReportsData = (
   }, []);
 
   // Fetch reports data
+  // Note: Using timeRangeRef instead of timeRange state to avoid dependency issues
   const fetchData = useCallback(async (showRefreshIndicator = false, customTimeRange?: string) => {
-    console.log('🚀 [useReportsData] fetchData called!', { showRefreshIndicator, customTimeRange, currentTimeRange: timeRange });
+    console.log('🚀 [useReportsData] fetchData called!', { showRefreshIndicator, customTimeRange, currentTimeRange: timeRangeRef.current });
     
     if (!isMountedRef.current) {
       console.log('⚠️ [useReportsData] Component not mounted, returning early');
@@ -95,14 +98,10 @@ export const useReportsData = (
       }
       setError(null);
 
-      const apiTimeRange = mapTimeRangeToApiValue(customTimeRange || timeRange);
-      console.log('🗺️ [useReportsData] Mapped timeRange:', { ui: customTimeRange || timeRange, api: apiTimeRange });
+      // Use custom value if provided, otherwise use ref value
+      const apiTimeRange = mapTimeRangeToApiValue(customTimeRange || timeRangeRef.current);
+      console.log('🗺️ [useReportsData] Mapped timeRange:', { ui: customTimeRange || timeRangeRef.current, api: apiTimeRange });
       console.log('🔄 [useReportsData] About to fetch data with API timeRange:', apiTimeRange);
-      
-      // Small delay to prevent rapid successive calls
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
-      if (!isMountedRef.current) return; // Check again after delay
       
       // Fetch reports data and key metrics in parallel
       const [reportsData, dashboardData] = await Promise.all([
@@ -121,10 +120,7 @@ export const useReportsData = (
         };
         
         setData(result);
-        // Clear any previous errors
-        if (error) {
-          setError(null);
-        }
+        setError(null);
         console.log('✅ [useReportsData] Successfully loaded data');
         
         if (showRefreshIndicator) {
@@ -158,47 +154,49 @@ export const useReportsData = (
         setRefreshing(false);
       }
     }
-  }, [mapTimeRangeToApiValue, error]); // Removed timeRange from dependencies to prevent recreation
+  }, [mapTimeRangeToApiValue]); // Removed state dependencies
 
-  // Handle time range change with debouncing
+  // Handle time range change - fetch immediately on dropdown selection
   const handleTimeRangeChange = useCallback((newTimeRange: string) => {
-    console.log('⏰ [useReportsData] handleTimeRangeChange called with:', newTimeRange);
-    console.log('🔍 [useReportsData] Current timeout ref:', debounceTimeoutRef.current);
+    console.log('🔄 [useReportsData] Time range changed to:', newTimeRange);
     
+    // Update both state (for UI) and ref (for API calls)
     setTimeRange(newTimeRange);
-    console.log('📝 [useReportsData] State updated, timeRange:', newTimeRange);
+    timeRangeRef.current = newTimeRange;
     
-    // Clear existing timeout
+    // Clear any pending debounced requests
     if (debounceTimeoutRef.current) {
-      console.log('🔄 [useReportsData] Clearing previous debounce timeout');
       clearTimeout(debounceTimeoutRef.current);
       debounceTimeoutRef.current = null;
     }
     
-    // Debounce the API call
-    console.log('⏳ [useReportsData] Setting 300ms debounce timer...');
-    const timeoutId = setTimeout(() => {
-      console.log('✨ [useReportsData] Debounce timer fired! Calling fetchData...');
-      console.log('🔍 [useReportsData] isMountedRef.current:', isMountedRef.current);
-      if (isMountedRef.current) {
-        fetchData(true, newTimeRange);
-      } else {
-        console.log('⚠️ [useReportsData] Component unmounted, skipping fetch');
-      }
-    }, 300);
+    // Clear cache to ensure fresh data
+    reportsService.clearCache?.();
+    adminDashboardService.clearCache();
     
-    debounceTimeoutRef.current = timeoutId;
-    console.log('💾 [useReportsData] Stored timeout ID:', timeoutId);
+    // Fetch immediately - no debounce for explicit dropdown selection
+    if (isMountedRef.current) {
+      fetchData(true, newTimeRange);
+    }
   }, [fetchData]);
 
-  // Handle refresh
+  // Handle refresh - fetch immediately with fresh data
   const handleRefresh = useCallback(() => {
+    console.log('🔄 [useReportsData] Manual refresh triggered');
+    
     // Clear any pending debounced requests
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
     
-    fetchData(true);
+    // Clear cache to ensure fresh data on manual refresh
+    reportsService.clearCache?.();
+    adminDashboardService.clearCache();
+    
+    // Fetch immediately
+    if (isMountedRef.current) {
+      fetchData(true);
+    }
   }, [fetchData]);
 
   // Clear error
