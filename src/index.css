@@ -7,6 +7,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import accessibility fixes - must be near the top */
+@import './styles/accessibility-fix.css';
+
 /* Apple-style animations */
 @keyframes fade-in-up {
   from {
@@ -118,9 +121,6 @@
 .delay-2500 {
   animation-delay: 2500ms;
 }
-
-/* Import accessibility fixes */
-@import './styles/accessibility-fix.css';
 
 /* Hide scrollbar while keeping scroll functionality */
 .scrollbar-hide {

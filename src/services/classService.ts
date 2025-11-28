@@ -54,6 +54,7 @@ export interface ClassPaginationParams {
   grade?: string;
   school?: string;
   board?: string;
+  teacherId?: string; // Optional: filter classes by teacher
 }
 
 export interface ClassPaginationResult {
@@ -67,8 +68,11 @@ export interface ClassPaginationResult {
 
 class ClassService {
   // Get all classes with their members
-  async getClasses(): Promise<ClassWithMembers[]> {
-    const { data, error } = await supabase
+  async getClasses(teacherId?: string): Promise<ClassWithMembers[]> {
+    // Use inner join only when filtering by teacher to ensure proper filtering
+    const classTeachersJoin = teacherId ? 'class_teachers!inner' : 'class_teachers';
+
+    let query = supabase
       .from('classes')
       .select(`
         *,
@@ -82,7 +86,7 @@ class ClassService {
           name,
           code
         ),
-        class_teachers (
+        ${classTeachersJoin} (
           teacher_id,
           is_primary,
           profiles (
@@ -108,6 +112,13 @@ class ClassService {
       `)
       .order('created_at', { ascending: false });
 
+    // Apply teacher filter if teacherId is provided
+    if (teacherId) {
+      query = query.eq('class_teachers.teacher_id', teacherId);
+    }
+
+    const { data, error } = await query;
+
     if (error) {
       throw new Error(`Failed to fetch classes: ${error.message}`);
     }
@@ -125,8 +136,11 @@ class ClassService {
 
   // Get classes with pagination, search, and filtering
   async getClassesPaginated(params: ClassPaginationParams): Promise<ClassPaginationResult> {
-    const { page, limit, search, grade, school, board } = params;
+    const { page, limit, search, grade, school, board, teacherId } = params;
     const offset = (page - 1) * limit;
+
+    // Use inner join only when filtering by teacher to ensure proper filtering
+    const classTeachersJoin = teacherId ? 'class_teachers!inner' : 'class_teachers';
 
     // Build the query
     let query = supabase
@@ -143,7 +157,7 @@ class ClassService {
           name,
           code
         ),
-        class_teachers (
+        ${classTeachersJoin} (
           teacher_id,
           is_primary,
           profiles (
@@ -167,6 +181,11 @@ class ClassService {
           )
         )
       `, { count: 'exact' });
+
+    // Apply teacher filter if teacherId is provided
+    if (teacherId) {
+      query = query.eq('class_teachers.teacher_id', teacherId);
+    }
 
     // Apply search filter
     if (search && search.trim()) {

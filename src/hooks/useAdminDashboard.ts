@@ -178,35 +178,51 @@ export const useAdminDashboard = (
     }, autoRefreshInterval);
   }, [enableAutoRefresh, autoRefreshInterval, fetchData]);
 
-  // Initial data fetch and cleanup
+  // Initial data fetch only on mount
   useEffect(() => {
+    // Ensure mounted ref is true
+    isMountedRef.current = true;
+    
     // Small delay to prevent rapid requests on mount
     const initialFetchTimeout = setTimeout(() => {
       if (isMountedRef.current) {
-        fetchData();
+        fetchData(false);
       }
     }, 100);
     
+    return () => {
+      clearTimeout(initialFetchTimeout);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
+  
+  // Setup auto refresh when enabled
+  useEffect(() => {
     if (enableAutoRefresh) {
       setupAutoRefresh();
+      
+      return () => {
+        if (autoRefreshTimeoutRef.current) {
+          clearTimeout(autoRefreshTimeoutRef.current);
+        }
+      };
     }
-    
+  }, [enableAutoRefresh, setupAutoRefresh]);
+  
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
       isMountedRef.current = false;
       
-      // Clear all timeouts
-      clearTimeout(initialFetchTimeout);
+      // Clear any pending debounced calls
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
-      }
-      if (autoRefreshTimeoutRef.current) {
-        clearTimeout(autoRefreshTimeoutRef.current);
       }
       
       // Cleanup service requests
       adminDashboardService.cleanup();
     };
-  }, [fetchData, setupAutoRefresh, enableAutoRefresh]);
+  }, []);
 
   return {
     data,

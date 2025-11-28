@@ -439,13 +439,19 @@ export const ReportsAnalytics = () => {
                 const apiStages = practiceStageData?.stages || [];
                 const stageColors = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6'];
                 
+                console.log('🎨 Practice Stage Data:', practiceStageData);
+                console.log('📊 API Stages:', apiStages);
+                
                 const chartData = stageNumbers.map((stageNum, index) => {
-                  // Find matching stage data from API
+                  // Find matching stage data from API by stageId or by searching the stage name
                   const apiStage = apiStages.find(stage => 
+                    stage.stageId === stageNum ||
                     stage.stage?.toLowerCase().includes(stageNum.toString()) ||
                     stage.stage?.toLowerCase().includes(`stage ${stageNum}`) ||
                     stage.stage?.toLowerCase().includes(`stage${stageNum}`)
                   );
+                  
+                  console.log(`🔍 Stage ${stageNum} match:`, apiStage);
                   
                   return {
                     stage: `Stage ${stageNum}`,
@@ -455,6 +461,8 @@ export const ReportsAnalytics = () => {
                     color: stageColors[index]
                   };
                 });
+
+                console.log('📈 Final Chart Data:', chartData);
 
                 const maxValue = 100;
                 const chartHeight = 200;
@@ -720,6 +728,11 @@ export const ReportsAnalytics = () => {
         </CardHeader>
         <CardContent className="pt-0">
           <div className="h-[280px] sm:h-[320px]">
+            {(() => {
+              console.log('⏰ Time Usage Data:', timeUsageData);
+              console.log('📊 Time Usage Patterns:', timeUsageData?.patterns);
+              return null;
+            })()}
             <ResponsiveContainer width="100%" height="100%">
               <LineChart 
                 data={timeUsageData?.patterns || []}

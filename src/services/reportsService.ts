@@ -3,6 +3,7 @@ import { getAuthHeadersWithAccept } from '@/utils/authUtils';
 
 // TypeScript interfaces for API responses
 export interface PracticeStagePerformance {
+  stageId?: number;
   stage: string;
   performance: number;
   users: number;
@@ -166,12 +167,13 @@ class ReportsService {
 
       // Normalize stages to our expected format
       const normalizedStages: PracticeStagePerformance[] = stages.map((stage: any) => ({
+        stageId: stage.stage_id || stage.stageId,
         stage: stage.stage || stage.stage_name || stage.name || 'Unknown Stage',
-        performance: stage.performance || stage.performance_score || stage.score || 0,
+        performance: stage.performance || stage.performance_percentage || stage.performance_score || stage.score || 0,
         users: stage.users || stage.user_count || stage.total_users || 0,
-        avgScore: stage.avg_score || stage.avgScore || stage.average_score || 0,
-        status: this.getPerformanceStatus(stage.performance || stage.performance_score || stage.score || 0),
-        completionRate: stage.completion_rate || stage.completionRate,
+        avgScore: stage.avg_score || stage.avgScore || stage.average_score || stage.metrics?.average_score || 0,
+        status: this.getPerformanceStatus(stage.performance || stage.performance_percentage || stage.performance_score || stage.score || 0),
+        completionRate: stage.completion_rate || stage.completionRate || stage.metrics?.completion_rate,
         averageTime: stage.average_time || stage.averageTime || stage.avg_time,
       }));
 
@@ -340,12 +342,14 @@ class ReportsService {
 
       // Normalize patterns to our expected format
       const normalizedPatterns: TimeUsagePattern[] = patterns.map((pattern: any) => ({
-        hour: pattern.hour || pattern.time || pattern.period || '00:00',
-        users: pattern.users || pattern.user_count || pattern.active_users || 0,
+        hour: pattern.hour !== undefined ? String(pattern.hour) : pattern.formatted_hour || pattern.time || pattern.period || '00:00',
+        users: pattern.users || pattern.usage_count || pattern.user_count || pattern.active_users || 0,
         sessions: pattern.sessions || pattern.session_count,
         avgDuration: pattern.avg_duration || pattern.avgDuration || pattern.average_duration,
         peakHour: pattern.peak_hour || pattern.peakHour || pattern.is_peak,
       }));
+
+      console.log('📊 Normalized time usage patterns:', normalizedPatterns);
 
       return {
         patterns: normalizedPatterns,
