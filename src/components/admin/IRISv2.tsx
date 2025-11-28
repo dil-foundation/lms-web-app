@@ -94,7 +94,7 @@ export const IRISv2 = () => {
       title: "Weekly Activity Report",
       description: "Last 7 days learning trends",
       icon: Calendar,
-      prompt: "Create a detailed weekly activity report for the last 7 days showing: 1) Daily active user counts (LIMIT 7 days), 2) Exercises completed each day, 3) Average time spent per day, 4) New students who joined with names (LIMIT 20), 5) Comparison with the previous 7-day period, and 6) Engagement insights and trends. CRITICAL: Use LIMIT clauses and include pagination message for any list exceeding limits."
+      prompt: "Show AI Tutor activity for the last 7 days using ai_tutor_daily_learning_analytics table. For each day show: 1) Date (analytics_date), 2) Active student count (COUNT DISTINCT user_id), 3) Total exercises completed (SUM exercises_completed), 4) Total time in minutes (SUM total_time_minutes). Group by analytics_date, order by date DESC, LIMIT 7 days. Then compare total active students this week vs previous week. Include pagination message."
     },
     {
       title: "Stage Completion Analysis",
@@ -589,9 +589,24 @@ Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
     }
   };
 
-  const handleQuickAction = (prompt: string) => {
+  const handleQuickAction = async (prompt: string) => {
     if (!isLoading && userContext) {
-      handleSendMessage(prompt);
+      // Reset chat to start a new conversation for each quick action
+      setMessages([]);
+      setInputValue('');
+      setSuggestions([]);
+      setShowLongConversationWarning(false);
+
+      // Reinitialize IRIS with welcome message and wait for it to complete
+      await initializeIRIS();
+
+      // Send the quick action prompt in a new conversation
+      // Use requestAnimationFrame + setTimeout to ensure React has fully rendered the welcome message
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          handleSendMessage(prompt);
+        }, 150);
+      });
     }
   };
 

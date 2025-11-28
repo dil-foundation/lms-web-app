@@ -60,7 +60,8 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { cn } from '@/lib/utils';
 import { ContentLoader } from '@/components/ContentLoader';
 import AccessLogService from '@/services/accessLogService';
@@ -2128,6 +2129,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
 const CourseBuilder = () => {
   const { courseId } = useParams();
   const { user } = useAuth();
+  const { profile } = useUserProfile();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('details');
   const [saveAction, setSaveAction] = useState<null | 'draft' | 'publish' | 'unpublish' | 'review' | 'approve' | 'reject'>(null);
@@ -2237,7 +2239,11 @@ const CourseBuilder = () => {
   
 
   // Class management hooks
-  const { classes: dbClasses, loading: classesLoading, stats: classStats, createClass, updateClass, deleteClass, refetch: refetchClasses } = useClasses();
+  // Determine if current user is a teacher (use profile.role for more reliable role checking)
+  const isTeacher = profile?.role === 'teacher';
+  const teacherId = isTeacher ? user?.id : undefined;
+  
+  const { classes: dbClasses, loading: classesLoading, stats: classStats, createClass, updateClass, deleteClass, refetch: refetchClasses } = useClasses(teacherId);
   const { teachers: classTeachers, loading: classTeachersLoading } = useTeachers();
   const { students: classStudents, loading: classStudentsLoading } = useStudents();
   const { boards: classBoards, loading: classBoardsLoading } = useBoards();
