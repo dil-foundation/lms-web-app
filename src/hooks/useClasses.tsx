@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import ClassService, { ClassWithMembers, CreateClassData, UpdateClassData, ClassStats, ClassPaginationParams, ClassPaginationResult } from '@/services/classService';
 
-export const useClasses = () => {
+export const useClasses = (teacherId?: string) => {
   const [classes, setClasses] = useState<ClassWithMembers[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<ClassStats>({
@@ -17,7 +17,7 @@ export const useClasses = () => {
   const fetchClasses = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await ClassService.getClasses();
+      const data = await ClassService.getClasses(teacherId);
       setClasses(data);
     } catch (error: any) {
       toast.error('Failed to load classes', { description: error.message });
@@ -25,7 +25,7 @@ export const useClasses = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [teacherId]);
 
   // Fetch class statistics
   const fetchStats = useCallback(async () => {

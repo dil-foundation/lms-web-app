@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -107,6 +107,8 @@ export const ReportsOverview = () => {
   const [error, setError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Ref to track if this is the first load
+  const isFirstLoad = useRef(true);
   
   // State for dashboard data
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -292,9 +294,10 @@ export const ReportsOverview = () => {
   // Fetch data when timeRange changes
   useEffect(() => {
     if (user) {
-      if (loading) {
+      if (isFirstLoad.current) {
         // Initial load
         fetchAllData(false);
+        isFirstLoad.current = false;
       } else {
         // Filter change
         fetchAllData(true);
