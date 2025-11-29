@@ -6,13 +6,35 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { MultiSelect } from '@/components/ui/MultiSelect';
 import { MessageSquare, Users, GraduationCap, UserCheck } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 const roles = [
   { value: 'student', label: 'Students', icon: GraduationCap, description: 'All students can participate' },
   { value: 'teacher', label: 'Teachers', icon: Users, description: 'All teachers can participate' },
   { value: 'admin', label: 'Admins', icon: UserCheck, description: 'All administrators can participate' },
 ];
+
+// Fetch users by role
+const fetchUsersByRole = async (role: string) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, first_name, last_name, email, avatar_url, role')
+    .eq('role', role)
+    .order('first_name');
+
+  if (error) throw error;
+
+  return data.map(user => ({
+    id: user.id,
+    name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email || 'Unknown User',
+    email: user.email || '',
+    avatar_url: user.avatar_url || undefined,
+    role: user.role
+  }));
+};
 
 export const DiscussionDialog = ({ isOpen, onOpenChange, editingDiscussion, onSave, isSaving, courses, isLoadingCourses }: any) => {
   const [discussionData, setDiscussionData] = useState({
@@ -21,27 +43,83 @@ export const DiscussionDialog = ({ isOpen, onOpenChange, editingDiscussion, onSa
     course: 'general',
     content: '',
     participants: ['admin'],
+    specificParticipants: {
+      student: [] as string[],
+      teacher: [] as string[],
+      admin: [] as string[]
+    }
+  });
+
+  // Fetch users for each selected role
+  const { data: students = [], isLoading: loadingStudents } = useQuery({
+    queryKey: ['students-for-discussion'],
+    queryFn: () => fetchUsersByRole('student'),
+    enabled: discussionData.participants.includes('student')
+  });
+
+  const { data: teachers = [], isLoading: loadingTeachers } = useQuery({
+    queryKey: ['teachers-for-discussion'],
+    queryFn: () => fetchUsersByRole('teacher'),
+    enabled: discussionData.participants.includes('teacher')
+  });
+
+  const { data: admins = [], isLoading: loadingAdmins } = useQuery({
+    queryKey: ['admins-for-discussion'],
+    queryFn: () => fetchUsersByRole('admin'),
+    enabled: discussionData.participants.includes('admin')
   });
 
   useEffect(() => {
+    console.log('[DEBUG] DiscussionDialog useEffect - Triggered');
+    console.log('[DEBUG] DiscussionDialog useEffect - editingDiscussion:', editingDiscussion);
+    console.log('[DEBUG] DiscussionDialog useEffect - isOpen:', isOpen);
+
     if (editingDiscussion) {
-      setDiscussionData({
+      console.log('[DEBUG] DiscussionDialog useEffect - Editing mode');
+      console.log('[DEBUG] DiscussionDialog useEffect - editingDiscussion.participants:', editingDiscussion.participants);
+      console.log('[DEBUG] DiscussionDialog useEffect - editingDiscussion.specificParticipants:', editingDiscussion.specificParticipants);
+
+      const newData = {
         type: editingDiscussion.discussion_type || 'regular',
         title: editingDiscussion.title || '',
         course: editingDiscussion.course_id || 'general',
         content: editingDiscussion.content || '',
         participants: editingDiscussion.participants || ['admin'],
-      });
+        specificParticipants: editingDiscussion.specificParticipants || {
+          student: [],
+          teacher: [],
+          admin: []
+        }
+      };
+
+      console.log('[DEBUG] DiscussionDialog useEffect - Setting discussionData to:', newData);
+      setDiscussionData(newData);
     } else {
+      console.log('[DEBUG] DiscussionDialog useEffect - New discussion mode (creating fresh state)');
       setDiscussionData({
         type: 'regular',
         title: '',
         course: 'general',
         content: '',
         participants: ['admin'],
+        specificParticipants: {
+          student: [],
+          teacher: [],
+          admin: []
+        }
       });
     }
-  }, [editingDiscussion, isOpen]); // Add isOpen dependency to reset when dialog opens
+  }, [editingDiscussion, isOpen]);
+
+  const handleSpecificParticipantsChange = (role: 'student' | 'teacher' | 'admin', selectedIds: string[]) => {
+    setDiscussionData(prev => ({
+      ...prev,
+      specificParticipants: {
+        ...prev.specificParticipants,
+        [role]: selectedIds
+      }
+    }));
+  };
 
   const handleSave = () => {
     onSave(discussionData);
@@ -109,7 +187,7 @@ export const DiscussionDialog = ({ isOpen, onOpenChange, editingDiscussion, onSa
               {roles.map((role) => {
                 const Icon = role.icon;
                 const isChecked = discussionData.participants.includes(role.value);
-                
+
                 return (
                   <div key={role.value} className="flex items-center space-x-2.5">
                     <Checkbox
@@ -124,7 +202,11 @@ export const DiscussionDialog = ({ isOpen, onOpenChange, editingDiscussion, onSa
                         } else {
                           setDiscussionData(prev => ({
                             ...prev,
-                            participants: prev.participants.filter(p => p !== role.value)
+                            participants: prev.participants.filter(p => p !== role.value),
+                            specificParticipants: {
+                              ...prev.specificParticipants,
+                              [role.value]: [] // Clear specific selections when unchecking role
+                            }
                           }));
                         }
                       }}
@@ -147,6 +229,70 @@ export const DiscussionDialog = ({ isOpen, onOpenChange, editingDiscussion, onSa
               })}
             </div>
           </div>
+
+          {/* Specific Participants Selection */}
+          {discussionData.participants.includes('student') && (
+            <div className="space-y-2">
+              <Label>Select Specific Students (Optional)</Label>
+              <MultiSelect
+                options={students.map(student => ({
+                  value: student.id,
+                  label: student.name,
+                  subLabel: student.email,
+                  imageUrl: student.avatar_url
+                }))}
+                onValueChange={(selectedIds) => handleSpecificParticipantsChange('student', selectedIds)}
+                value={discussionData.specificParticipants.student}
+                placeholder={loadingStudents ? "Loading students..." : "Search and select students..."}
+                className="min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave empty to include all students, or select specific students to participate
+              </p>
+            </div>
+          )}
+
+          {discussionData.participants.includes('teacher') && (
+            <div className="space-y-2">
+              <Label>Select Specific Teachers (Optional)</Label>
+              <MultiSelect
+                options={teachers.map(teacher => ({
+                  value: teacher.id,
+                  label: teacher.name,
+                  subLabel: teacher.email,
+                  imageUrl: teacher.avatar_url
+                }))}
+                onValueChange={(selectedIds) => handleSpecificParticipantsChange('teacher', selectedIds)}
+                value={discussionData.specificParticipants.teacher}
+                placeholder={loadingTeachers ? "Loading teachers..." : "Search and select teachers..."}
+                className="min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave empty to include all teachers, or select specific teachers to participate
+              </p>
+            </div>
+          )}
+
+          {discussionData.participants.includes('admin') && (
+            <div className="space-y-2">
+              <Label>Select Specific Admins (Optional)</Label>
+              <MultiSelect
+                options={admins.map(admin => ({
+                  value: admin.id,
+                  label: admin.name,
+                  subLabel: admin.email,
+                  imageUrl: admin.avatar_url
+                }))}
+                onValueChange={(selectedIds) => handleSpecificParticipantsChange('admin', selectedIds)}
+                value={discussionData.specificParticipants.admin}
+                placeholder={loadingAdmins ? "Loading admins..." : "Search and select admins..."}
+                className="min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave empty to include all admins, or select specific admins to participate
+              </p>
+            </div>
+          )}
         </div>
         <div className="flex-shrink-0 flex justify-end space-x-2 p-4 border-t border-border/20 bg-background rounded-b-xl">
           <Button 
