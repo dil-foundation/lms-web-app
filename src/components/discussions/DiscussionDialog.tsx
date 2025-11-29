@@ -187,12 +187,14 @@ export const DiscussionDialog = ({ isOpen, onOpenChange, editingDiscussion, onSa
               {roles.map((role) => {
                 const Icon = role.icon;
                 const isChecked = discussionData.participants.includes(role.value);
+                const isAdmin = role.value === 'admin';
 
                 return (
                   <div key={role.value} className="flex items-center space-x-2.5">
                     <Checkbox
                       id={`participant-${role.value}`}
                       checked={isChecked}
+                      disabled={isAdmin}
                       onCheckedChange={(checked) => {
                         if (checked) {
                           setDiscussionData(prev => ({
@@ -216,7 +218,7 @@ export const DiscussionDialog = ({ isOpen, onOpenChange, editingDiscussion, onSa
                     <div className="flex-1 min-w-0">
                       <label
                         htmlFor={`participant-${role.value}`}
-                        className="text-sm font-medium leading-tight cursor-pointer block"
+                        className={`text-sm font-medium leading-tight block ${isAdmin ? 'cursor-default' : 'cursor-pointer'}`}
                       >
                         {role.label}
                       </label>
