@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, Plus, BookOpen, Edit, Trash2, Eye, RefreshCw, Users, MoreHorizontal, MapPin, GraduationCap, Clock, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useClasses, useClassesPaginated, useTeachers, useStudents, useBoards, useSchools } from '@/hooks/useClasses';
-import { ClassWithMembers, CreateClassData, UpdateClassData } from '@/services/classService';
+import ClassService, { ClassWithMembers, CreateClassData, UpdateClassData } from '@/services/classService';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -68,6 +68,7 @@ const ClassManagement: React.FC = () => {
   // Loading states for create and update operations
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isLoadingViewData, setIsLoadingViewData] = useState(false);
   
   // Class deletion dependency state
   const [classDependencies, setClassDependencies] = useState<{
@@ -78,11 +79,14 @@ const ClassManagement: React.FC = () => {
 
   // Get user context first
   const { user } = useAuth();
-  const { profile } = useUserProfile();
+  const { profile, loading: profileLoading } = useUserProfile();
   
   // Determine if current user is a teacher (use profile.role for more reliable role checking)
   const isTeacher = profile?.role === 'teacher';
   const teacherId = isTeacher ? user?.id : undefined;
+  
+  // Only fetch classes after profile is loaded to ensure correct filtering
+  const shouldFetchClasses = !profileLoading && !!user;
   
   // Use paginated classes hook
   const paginationParams = {
@@ -103,7 +107,7 @@ const ClassManagement: React.FC = () => {
     hasNextPage, 
     hasPreviousPage,
     refetch: refetchClasses 
-  } = useClassesPaginated(paginationParams);
+  } = useClassesPaginated(paginationParams, shouldFetchClasses);
 
   // Update items per page when view changes
   useEffect(() => {
@@ -113,7 +117,7 @@ const ClassManagement: React.FC = () => {
   }, [preferences.teacherClassView]);
   
   // Use other hooks for stats and form data
-  const { stats, createClass, updateClass, deleteClass } = useClasses(teacherId);
+  const { stats, createClass, updateClass, deleteClass } = useClasses(teacherId, shouldFetchClasses);
   const { teachers, loading: teachersLoading } = useTeachers();
   const { students, loading: studentsLoading } = useStudents();
   const { boards, loading: boardsLoading } = useBoards();
@@ -233,12 +237,25 @@ const ClassManagement: React.FC = () => {
         student_ids: formData.students
       };
 
+      console.log('Updating class with data:', {
+        classId: classData.id,
+        className: classData.name,
+        teacherIds: classData.teacher_ids,
+        teacherCount: classData.teacher_ids.length,
+        studentIds: classData.student_ids,
+        studentCount: classData.student_ids.length
+      });
+
       const result = await updateClass(classData);
       if (result) {
         setIsEditDialogOpen(false);
         setEditingClass(null);
         resetForm();
-        refetchClasses(); // Refresh paginated data
+        
+        // Force a fresh fetch with a small delay to ensure DB is updated
+        setTimeout(() => {
+          refetchClasses();
+        }, 300);
       }
     } catch (error) {
       console.error('Error updating class:', error);
@@ -323,40 +340,99 @@ const ClassManagement: React.FC = () => {
     }
   };
 
-  const openEditDialog = (cls: ClassWithMembers) => {
+  const openEditDialog = async (cls: ClassWithMembers) => {
     // Small delay to ensure dropdown is fully closed
-    setTimeout(() => {
-      setEditingClass(cls);
-      setFormData({
-        name: cls.name,
-        code: cls.code,
-        grade: cls.grade,
-        school_id: cls.school_id || '',
-        board_id: cls.board_id || '',
-        description: cls.description,
-        max_students: String(cls.max_students || 30),
-        teachers: cls.teachers.map(t => t.id),
-        students: cls.students.map(s => s.id)
-      });
-      // Clear validation errors when opening edit dialog
-      setValidationErrors({
-        name: '',
-        code: '',
-        grade: '',
-        school_id: '',
-        board_id: '',
-        description: '',
-        max_students: ''
-      });
+    setTimeout(async () => {
       setIsEditDialogOpen(true);
+      setIsUpdating(true); // Use updating state to show loading
+      
+      // Fetch fresh class data to ensure we have ALL teachers and students
+      try {
+        console.log('Fetching fresh class data for edit, class ID:', cls.id);
+        const freshClassData = await ClassService.getClassById(cls.id);
+        const classToEdit = freshClassData || cls; // Fallback to cached if fetch fails
+        
+        console.log('Fresh class data loaded:', {
+          classId: classToEdit.id,
+          className: classToEdit.name,
+          teachers: classToEdit.teachers.map(t => ({ id: t.id, name: `${t.first_name} ${t.last_name}` })),
+          students: classToEdit.students.map(s => ({ id: s.id, name: `${s.first_name} ${s.last_name}` }))
+        });
+        
+        setEditingClass(classToEdit);
+        setFormData({
+          name: classToEdit.name,
+          code: classToEdit.code,
+          grade: classToEdit.grade,
+          school_id: classToEdit.school_id || '',
+          board_id: classToEdit.board_id || '',
+          description: classToEdit.description,
+          max_students: String(classToEdit.max_students || 30),
+          teachers: classToEdit.teachers.map(t => t.id),
+          students: classToEdit.students.map(s => s.id)
+        });
+        
+        console.log('Form data set with teacher IDs:', classToEdit.teachers.map(t => t.id));
+        // Clear validation errors when opening edit dialog
+        setValidationErrors({
+          name: '',
+          code: '',
+          grade: '',
+          school_id: '',
+          board_id: '',
+          description: '',
+          max_students: ''
+        });
+      } catch (error) {
+        console.error('Error fetching fresh class data for edit:', error);
+        // Still allow editing with cached data
+        setEditingClass(cls);
+        setFormData({
+          name: cls.name,
+          code: cls.code,
+          grade: cls.grade,
+          school_id: cls.school_id || '',
+          board_id: cls.board_id || '',
+          description: cls.description,
+          max_students: String(cls.max_students || 30),
+          teachers: cls.teachers.map(t => t.id),
+          students: cls.students.map(s => s.id)
+        });
+        setValidationErrors({
+          name: '',
+          code: '',
+          grade: '',
+          school_id: '',
+          board_id: '',
+          description: '',
+          max_students: ''
+        });
+      } finally {
+        setIsUpdating(false);
+      }
     }, 100);
   };
 
-  const openViewDialog = (cls: ClassWithMembers) => {
+  const openViewDialog = async (cls: ClassWithMembers) => {
     // Small delay to ensure dropdown is fully closed
-    setTimeout(() => {
-      setViewingClass(cls);
+    setTimeout(async () => {
       setIsViewDialogOpen(true);
+      setIsLoadingViewData(true);
+      
+      // Fetch fresh class data to ensure we have the latest information
+      try {
+        const freshClassData = await ClassService.getClassById(cls.id);
+        if (freshClassData) {
+          setViewingClass(freshClassData);
+        } else {
+          setViewingClass(cls); // Fallback to cached data if fetch fails
+        }
+      } catch (error) {
+        console.error('Error fetching fresh class data:', error);
+        setViewingClass(cls); // Fallback to cached data on error
+      } finally {
+        setIsLoadingViewData(false);
+      }
     }, 100);
   };
 
@@ -668,7 +744,9 @@ const ClassManagement: React.FC = () => {
            </CardHeader>
            <CardContent>
              <div className="text-2xl font-bold">{stats.totalClasses}</div>
-             <p className="text-xs text-muted-foreground">All classes in the system</p>
+             <p className="text-xs text-muted-foreground">
+               {isTeacher ? 'Classes you teach' : 'All classes in the system'}
+             </p>
            </CardContent>
          </Card>
 
@@ -679,7 +757,9 @@ const ClassManagement: React.FC = () => {
            </CardHeader>
            <CardContent>
              <div className="text-2xl font-bold">{stats.totalSchools}</div>
-             <p className="text-xs text-muted-foreground">Unique schools</p>
+             <p className="text-xs text-muted-foreground">
+               {isTeacher ? 'Schools you teach at' : 'Unique schools'}
+             </p>
            </CardContent>
          </Card>
 
@@ -690,7 +770,9 @@ const ClassManagement: React.FC = () => {
            </CardHeader>
            <CardContent>
              <div className="text-2xl font-bold">{stats.totalBoards}</div>
-             <p className="text-xs text-muted-foreground">Unique boards</p>
+             <p className="text-xs text-muted-foreground">
+               {isTeacher ? 'Boards you teach in' : 'Unique boards'}
+             </p>
            </CardContent>
          </Card>
 
@@ -702,7 +784,9 @@ const ClassManagement: React.FC = () => {
            </CardHeader>
            <CardContent>
              <div className="text-2xl font-bold">{stats.totalStudents}</div>
-             <p className="text-xs text-muted-foreground">Unique students</p>
+             <p className="text-xs text-muted-foreground">
+               {isTeacher ? 'Students in your classes' : 'Unique students'}
+             </p>
            </CardContent>
          </Card>
        </div>
@@ -852,6 +936,7 @@ const ClassManagement: React.FC = () => {
                     onView={openViewDialog}
                     onEdit={openEditDialog}
                     onDelete={handleClassDeleteCheck}
+                    canDelete={!isTeacher}
                   />
                 </div>
               )}
@@ -1071,6 +1156,7 @@ const ClassManagement: React.FC = () => {
                     onView={openViewDialog}
                     onEdit={openEditDialog}
                     onDelete={handleClassDeleteCheck}
+                    canDelete={!isTeacher}
                   />
                 </div>
               )}
@@ -1082,6 +1168,7 @@ const ClassManagement: React.FC = () => {
                     onView={openViewDialog}
                     onEdit={openEditDialog}
                     onDelete={handleClassDeleteCheck}
+                    canDelete={!isTeacher}
                   />
                 </div>
               )}
@@ -1399,11 +1486,20 @@ const ClassManagement: React.FC = () => {
           <DialogHeader className="flex-shrink-0 border-b border-primary/10 pb-4">
             <DialogTitle className="text-primary text-xl font-semibold">Edit Class</DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Update the information for {editingClass?.name}.
+              Update the information for {editingClass?.name || 'the class'}.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto pr-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 px-2">
+          {isUpdating && !editingClass && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading class details...</p>
+              </div>
+            </div>
+          )}
+          {(!isUpdating || editingClass) && (
+            <div className="flex-1 overflow-y-auto pr-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 px-2">
             <div className="space-y-2">
               <Label htmlFor="edit-name" className={validationErrors.name ? 'text-red-500' : ''}>Class Name *</Label>
               <Input
@@ -1634,20 +1730,21 @@ const ClassManagement: React.FC = () => {
                </div>
              </div>
             </div>
-          </div>
+            </div>
+          )}
           <DialogFooter className="flex-shrink-0 border-t border-primary/10 pt-4">
             <Button 
               variant="outline" 
               onClick={() => setIsEditDialogOpen(false)} 
               className="border-primary/20 text-primary hover:bg-primary/5"
-              disabled={isUpdating}
+              disabled={isUpdating || !editingClass}
             >
               Cancel
             </Button>
             <Button 
               onClick={handleEdit} 
               className="bg-primary hover:bg-primary/90 text-white"
-              disabled={isUpdating || !!validationErrors.name || !!validationErrors.code || !!validationErrors.grade || !!validationErrors.board_id || !!validationErrors.school_id || !!validationErrors.max_students || !!validationErrors.description}
+              disabled={isUpdating || !editingClass || !!validationErrors.name || !!validationErrors.code || !!validationErrors.grade || !!validationErrors.board_id || !!validationErrors.school_id || !!validationErrors.max_students || !!validationErrors.description}
             >
               {isUpdating ? (
                 <>
@@ -1668,10 +1765,18 @@ const ClassManagement: React.FC = () => {
           <DialogHeader className="border-b border-primary/10 pb-4">
             <DialogTitle className="text-primary text-xl font-semibold">Class Details</DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              View detailed information about {viewingClass?.name}.
+              View detailed information about {viewingClass?.name || 'the class'}.
             </DialogDescription>
           </DialogHeader>
-          {viewingClass && (
+          {isLoadingViewData && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading class details...</p>
+              </div>
+            </div>
+          )}
+          {!isLoadingViewData && viewingClass && (
             <div className="space-y-6 py-4 px-2">
               {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

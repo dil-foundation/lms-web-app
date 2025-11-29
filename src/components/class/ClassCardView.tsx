@@ -31,6 +31,7 @@ interface ClassCardViewProps {
   onEdit: (cls: ClassWithMembers) => void;
   onDelete: (cls: ClassWithMembers) => void;
   className?: string;
+  canDelete?: boolean; // Only admins can delete classes
 }
 
 export const ClassCardView: React.FC<ClassCardViewProps> = ({
@@ -39,6 +40,7 @@ export const ClassCardView: React.FC<ClassCardViewProps> = ({
   onEdit,
   onDelete,
   className = "",
+  canDelete = true, // Default to true for backwards compatibility
 }) => {
   const getGradeBadge = (grade: string) => {
     const gradeColors: { [key: string]: string } = {
@@ -129,14 +131,18 @@ export const ClassCardView: React.FC<ClassCardViewProps> = ({
                       <Edit className="w-4 h-4 mr-2" />
                       Edit Class
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      onClick={(e) => handleDelete(e, cls)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete Class
-                    </DropdownMenuItem>
+                    {canDelete && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={(e) => handleDelete(e, cls)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete Class
+                        </DropdownMenuItem>
+                      </>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

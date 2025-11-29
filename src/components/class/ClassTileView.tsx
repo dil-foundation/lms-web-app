@@ -31,6 +31,7 @@ interface ClassTileViewProps {
   onEdit: (cls: ClassWithMembers) => void;
   onDelete: (cls: ClassWithMembers) => void;
   className?: string;
+  canDelete?: boolean; // Only admins can delete classes
 }
 
 export const ClassTileView: React.FC<ClassTileViewProps> = ({
@@ -39,6 +40,7 @@ export const ClassTileView: React.FC<ClassTileViewProps> = ({
   onEdit,
   onDelete,
   className = "",
+  canDelete = true, // Default to true for backwards compatibility
 }) => {
   const getGradeBadge = (grade: string) => {
     const gradeColors: { [key: string]: string } = {
@@ -121,14 +123,18 @@ export const ClassTileView: React.FC<ClassTileViewProps> = ({
                       <Edit className="w-3.5 h-3.5 mr-2" />
                       Edit
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      onClick={(e) => handleDelete(e, cls)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
+                    {canDelete && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={(e) => handleDelete(e, cls)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

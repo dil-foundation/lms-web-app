@@ -74,15 +74,57 @@ const fetchReplies = async (discussionId: string) => {
 };
 
 const fetchDiscussionParticipants = async (discussionId: string) => {
+  console.log('[DEBUG] fetchDiscussionParticipants - Fetching participants for discussion:', discussionId);
+
   const { data, error } = await supabase
     .from('discussion_participants')
-    .select('role')
+    .select('role, user_id')
     .eq('discussion_id', discussionId);
+
+  console.log('[DEBUG] fetchDiscussionParticipants - Raw data from database:', data);
+  console.log('[DEBUG] fetchDiscussionParticipants - Error:', error);
+
   if (error) {
     console.error("Failed to fetch participants", error);
-    return ['admin']; // Fallback
+    return {
+      participants: ['admin'],
+      specificParticipants: { student: [], teacher: [], admin: [] }
+    };
   }
-  return data.map(p => p.role);
+
+  // Separate role-based and specific user participants
+  const roles: string[] = [];
+  const specificParticipants: { [key: string]: string[] } = {
+    student: [],
+    teacher: [],
+    admin: []
+  };
+
+  data.forEach(p => {
+    console.log('[DEBUG] fetchDiscussionParticipants - Processing participant:', p);
+    if (p.user_id === null) {
+      // Role-based participant (all users of this role)
+      console.log('[DEBUG] fetchDiscussionParticipants - Role-based participant for role:', p.role);
+      if (!roles.includes(p.role)) {
+        roles.push(p.role);
+      }
+    } else {
+      // Specific user participant
+      console.log('[DEBUG] fetchDiscussionParticipants - Specific user participant:', p.role, p.user_id);
+      if (!roles.includes(p.role)) {
+        roles.push(p.role);
+      }
+      if (specificParticipants[p.role]) {
+        specificParticipants[p.role].push(p.user_id);
+      }
+    }
+  });
+
+  console.log('[DEBUG] fetchDiscussionParticipants - Parsed participants (roles):', roles);
+  console.log('[DEBUG] fetchDiscussionParticipants - Parsed specificParticipants:', specificParticipants);
+  console.log('[DEBUG] fetchDiscussionParticipants - Returning:', { participants: roles, specificParticipants });
+
+  return { participants: roles, specificParticipants };
 };
 
 const fetchUserCourses = async () => {
@@ -156,6 +198,31 @@ export const DiscussionViewPage = () => {
 
   const updateDiscussionMutation = useMutation({
     mutationFn: async (discussionToUpdate: any) => {
+      // Fetch OLD participants BEFORE deletion for comparison
+      const { data: oldParticipants } = await supabase
+        .from('discussion_participants')
+        .select('role, user_id')
+        .eq('discussion_id', discussionToUpdate.id);
+
+      // Resolve old participants to actual user IDs
+      const oldUserIds = new Set<string>();
+      if (oldParticipants) {
+        for (const participant of oldParticipants) {
+          if (participant.user_id) {
+            oldUserIds.add(participant.user_id);
+          } else {
+            // Role-based participant - get all users of this role
+            const { data: roleUsers } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('role', participant.role);
+            if (roleUsers) {
+              roleUsers.forEach(u => oldUserIds.add(u.id));
+            }
+          }
+        }
+      }
+
       const { data, error } = await supabase
         .from('discussions')
         .update({
@@ -167,65 +234,153 @@ export const DiscussionViewPage = () => {
         .eq('id', discussionToUpdate.id)
         .select()
         .single();
-      
+
       if (error) throw new Error(error.message);
-      
+
       await supabase.from('discussion_participants').delete().eq('discussion_id', discussionToUpdate.id);
-      
-      // Expand 'admin' to include both 'admin' and 'super_user' for complete access
-      const expandedParticipants = discussionToUpdate.participants.flatMap((role: string) => {
+
+      // Build participants to insert with specific users
+      const participantsToInsert: any[] = [];
+
+      discussionToUpdate.participants.forEach((role: string) => {
+        const specificUsers = discussionToUpdate.specificParticipants?.[role] || [];
+
         if (role === 'admin') {
-          return ['admin', 'super_user'];
+          // Admin role expands to both 'admin' and 'super_user'
+          if (specificUsers.length > 0) {
+            // Add specific admin users for BOTH admin and super_user roles
+            specificUsers.forEach((userId: string) => {
+              participantsToInsert.push({
+                discussion_id: discussionToUpdate.id,
+                role: 'admin',
+                user_id: userId
+              });
+              participantsToInsert.push({
+                discussion_id: discussionToUpdate.id,
+                role: 'super_user',
+                user_id: userId
+              });
+            });
+          } else {
+            // No specific users - all admins and super_users can participate
+            participantsToInsert.push({
+              discussion_id: discussionToUpdate.id,
+              role: 'admin',
+              user_id: null
+            });
+            participantsToInsert.push({
+              discussion_id: discussionToUpdate.id,
+              role: 'super_user',
+              user_id: null
+            });
+          }
+        } else {
+          // Non-admin roles
+          if (specificUsers.length > 0) {
+            // Add specific users for this role
+            specificUsers.forEach((userId: string) => {
+              participantsToInsert.push({
+                discussion_id: discussionToUpdate.id,
+                role,
+                user_id: userId
+              });
+            });
+          } else {
+            // No specific users - all users of this role can participate
+            participantsToInsert.push({
+              discussion_id: discussionToUpdate.id,
+              role,
+              user_id: null
+            });
+          }
         }
-        return [role];
       });
-      
-      const participantsToInsert = expandedParticipants.map((role: string) => ({
-        discussion_id: discussionToUpdate.id,
-        role,
-      }));
+
+      console.log('[DEBUG] DiscussionViewPage - participantsToInsert:', participantsToInsert);
 
       await supabase.from('discussion_participants').insert(participantsToInsert);
 
-      // Send notification for discussion update
+      // Resolve NEW participants to actual user IDs
+      const newUserIds = new Set<string>();
+      for (const participant of participantsToInsert) {
+        if (participant.user_id) {
+          newUserIds.add(participant.user_id);
+        } else {
+          // Role-based participant - get all users of this role
+          const { data: roleUsers } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('role', participant.role);
+          if (roleUsers) {
+            roleUsers.forEach(u => newUserIds.add(u.id));
+          }
+        }
+      }
+
+      // Calculate differences (exclude current user from all sets)
+      const addedUserIds = new Set([...newUserIds].filter(id => !oldUserIds.has(id) && id !== user?.id));
+      const removedUserIds = new Set([...oldUserIds].filter(id => !newUserIds.has(id) && id !== user?.id));
+      const existingUserIds = new Set([...newUserIds].filter(id => oldUserIds.has(id) && id !== user?.id));
+
+      // Send notifications
       if (user) {
         try {
-          // Get discussion participants to exclude the updater
-          const { data: updateParticipants, error: updateParticipantsError } = await supabase
-            .from('discussion_participants')
-            .select('role')
-            .eq('discussion_id', discussionToUpdate.id);
-
-          if (!updateParticipantsError && updateParticipants.length > 0) {
-            // Get all users with these roles except the current user
-            const { data: targetUsers, error: usersError } = await supabase
-              .from('profiles')
-              .select('id')
-              .in('role', updateParticipants.map(p => p.role))
-              .neq('id', user.id);
-
-            if (!usersError && targetUsers && targetUsers.length > 0) {
-              await supabase.functions.invoke('send-notification', {
-                body: {
-                  type: 'course_update',
-                  title: 'Discussion Updated',
-                  body: `${user.user_metadata?.first_name || user.email} updated the discussion "${discussionToUpdate.title}".`,
-                  data: {
-                    discussionId: discussionToUpdate.id,
-                    discussionTitle: discussionToUpdate.title,
-                    updateType: 'discussion_updated'
-                  },
-                  targetUsers: targetUsers.map(u => u.id)
+          // Notify ADDED participants
+          if (addedUserIds.size > 0) {
+            await supabase.functions.invoke('send-notification', {
+              body: {
+                type: 'new_discussion',
+                title: 'Added to Discussion',
+                body: `${user.user_metadata?.first_name || user.email} added you to the discussion "${discussionToUpdate.title}".`,
+                data: {
+                  discussionId: discussionToUpdate.id,
+                  discussionTitle: discussionToUpdate.title,
+                  updateType: 'participant_added'
                 },
-              });
-            }
+                targetUsers: Array.from(addedUserIds)
+              },
+            });
+          }
+
+          // Notify EXISTING participants about the update
+          if (existingUserIds.size > 0) {
+            await supabase.functions.invoke('send-notification', {
+              body: {
+                type: 'course_update',
+                title: 'Discussion Updated',
+                body: `${user.user_metadata?.first_name || user.email} updated the discussion "${discussionToUpdate.title}".`,
+                data: {
+                  discussionId: discussionToUpdate.id,
+                  discussionTitle: discussionToUpdate.title,
+                  updateType: 'discussion_updated'
+                },
+                targetUsers: Array.from(existingUserIds)
+              },
+            });
+          }
+
+          // Notify REMOVED participants
+          if (removedUserIds.size > 0) {
+            await supabase.functions.invoke('send-notification', {
+              body: {
+                type: 'course_update',
+                title: 'Removed from Discussion',
+                body: `You have been removed from the discussion "${discussionToUpdate.title}".`,
+                data: {
+                  discussionId: discussionToUpdate.id,
+                  discussionTitle: discussionToUpdate.title,
+                  updateType: 'participant_removed'
+                },
+                targetUsers: Array.from(removedUserIds)
+              },
+            });
           }
         } catch (notificationError) {
           console.error('Failed to send notification:', notificationError);
           // Don't throw error here as the update was successfully completed
         }
       }
-      
+
       return data;
     },
     onSuccess: () => {
@@ -613,13 +768,23 @@ export const DiscussionViewPage = () => {
 
   const openEditDialog = async () => {
     if (!discussion) return;
-    const participants = await fetchDiscussionParticipants(discussion.id);
+    console.log('[DEBUG] DiscussionViewPage - openEditDialog called');
+
+    const { participants, specificParticipants } = await fetchDiscussionParticipants(discussion.id);
+
+    console.log('[DEBUG] DiscussionViewPage - Fetched participants:', participants);
+    console.log('[DEBUG] DiscussionViewPage - Fetched specificParticipants:', specificParticipants);
+
     const discussionForEdit = {
       ...discussion,
       participants,
+      specificParticipants,
       course_id: discussion.course_id,
       discussion_type: discussion.discussion_type
     };
+
+    console.log('[DEBUG] DiscussionViewPage - Setting editingDiscussion to:', discussionForEdit);
+
     setEditingDiscussion(discussionForEdit);
     setIsEditDialogOpen(true);
   };
@@ -896,10 +1061,33 @@ export const DiscussionViewPage = () => {
                               {reply.user_first_name?.[0]}{reply.user_last_name?.[0]}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
-                            <p className="font-semibold text-foreground text-xs sm:text-sm truncate">{reply.user_first_name} {reply.user_last_name}</p>
-                            <span className="text-[10px] sm:text-xs text-muted-foreground flex-shrink-0">•</span>
-                            <p className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">{format(new Date(reply.created_at), 'MMM d, p')}</p>
+                          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 flex-wrap">
+                            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                              <p className="font-semibold text-foreground text-xs sm:text-sm truncate">{reply.user_first_name} {reply.user_last_name}</p>
+                              {reply.user_role && (
+                                <Badge
+                                  variant="outline"
+                                  className={`
+                                    text-[9px] sm:text-[10px] px-1.5 py-0 h-4 sm:h-5 flex-shrink-0 font-medium
+                                    ${reply.user_role === 'admin' || reply.user_role === 'super_user'
+                                      ? 'bg-red-50 text-red-700 border-red-200'
+                                      : reply.user_role === 'teacher' || reply.user_role === 'content_creator'
+                                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                      : 'bg-green-50 text-green-700 border-green-200'
+                                    }
+                                  `}
+                                >
+                                  {reply.user_role === 'super_user' ? 'Super Admin'
+                                    : reply.user_role === 'content_creator' ? 'Content Creator'
+                                    : reply.user_role === 'view_only' ? 'View Only'
+                                    : reply.user_role.charAt(0).toUpperCase() + reply.user_role.slice(1)}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                              <span className="text-[10px] sm:text-xs text-muted-foreground">•</span>
+                              <p className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">{format(new Date(reply.created_at), 'MMM d, p')}</p>
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">

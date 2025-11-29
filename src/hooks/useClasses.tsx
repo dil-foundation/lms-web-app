@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import ClassService, { ClassWithMembers, CreateClassData, UpdateClassData, ClassStats, ClassPaginationParams, ClassPaginationResult } from '@/services/classService';
 
-export const useClasses = (teacherId?: string) => {
+export const useClasses = (teacherId?: string, shouldFetch: boolean = true) => {
   const [classes, setClasses] = useState<ClassWithMembers[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<ClassStats>({
@@ -15,6 +15,10 @@ export const useClasses = (teacherId?: string) => {
 
   // Fetch all classes
   const fetchClasses = useCallback(async () => {
+    if (!shouldFetch) {
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const data = await ClassService.getClasses(teacherId);
@@ -25,13 +29,17 @@ export const useClasses = (teacherId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [teacherId]);
+  }, [teacherId, shouldFetch]);
 
   // Fetch class statistics
   const fetchStats = useCallback(async () => {
+    if (!shouldFetch) {
+      setStatsLoading(false);
+      return;
+    }
     try {
       setStatsLoading(true);
-      const data = await ClassService.getClassStats();
+      const data = await ClassService.getClassStats(teacherId);
       setStats(data);
     } catch (error: any) {
       toast.error('Failed to load class statistics', { description: error.message });
@@ -39,7 +47,7 @@ export const useClasses = (teacherId?: string) => {
     } finally {
       setStatsLoading(false);
     }
-  }, []);
+  }, [teacherId, shouldFetch]);
 
   // Create a new class
   const createClass = useCallback(async (classData: CreateClassData): Promise<ClassWithMembers | null> => {
@@ -117,7 +125,7 @@ export const useClasses = (teacherId?: string) => {
   };
 };
 
-export const useClassesPaginated = (params: ClassPaginationParams) => {
+export const useClassesPaginated = (params: ClassPaginationParams, shouldFetch: boolean = true) => {
   const [paginationResult, setPaginationResult] = useState<ClassPaginationResult>({
     classes: [],
     totalCount: 0,
@@ -127,6 +135,7 @@ export const useClassesPaginated = (params: ClassPaginationParams) => {
     hasPreviousPage: false
   });
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const fetchClassesPaginated = useCallback(async (paginationParams: ClassPaginationParams) => {
     try {
@@ -142,13 +151,19 @@ export const useClassesPaginated = (params: ClassPaginationParams) => {
   }, []);
 
   useEffect(() => {
-    fetchClassesPaginated(params);
-  }, [fetchClassesPaginated, params.page, params.limit, params.search, params.grade, params.school, params.board]);
+    // Only fetch if shouldFetch is true (i.e., profile has loaded or user is admin)
+    if (shouldFetch) {
+      fetchClassesPaginated(params);
+    }
+  }, [fetchClassesPaginated, params.page, params.limit, params.search, params.grade, params.school, params.board, params.teacherId, shouldFetch, refreshKey]);
 
   return {
     ...paginationResult,
-    loading,
-    refetch: () => fetchClassesPaginated(params)
+    loading: !shouldFetch || loading, // Keep loading true until we should fetch
+    refetch: () => {
+      setRefreshKey(prev => prev + 1); // Force a refresh by changing the key
+      return fetchClassesPaginated(params);
+    }
   };
 };
 

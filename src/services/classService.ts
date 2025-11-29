@@ -69,55 +69,114 @@ export interface ClassPaginationResult {
 class ClassService {
   // Get all classes with their members
   async getClasses(teacherId?: string): Promise<ClassWithMembers[]> {
-    // Use inner join only when filtering by teacher to ensure proper filtering
-    const classTeachersJoin = teacherId ? 'class_teachers!inner' : 'class_teachers';
-
-    let query = supabase
-      .from('classes')
-      .select(`
-        *,
-        boards (
-          id,
-          name,
-          code
-        ),
-        schools (
-          id,
-          name,
-          code
-        ),
-        ${classTeachersJoin} (
-          teacher_id,
-          is_primary,
-          profiles (
-            id,
-            first_name,
-            last_name,
-            email,
-            avatar_url
-          )
-        ),
-        class_students (
-          student_id,
-          student_number,
-          seat_number,
-          profiles (
-            id,
-            first_name,
-            last_name,
-            email,
-            avatar_url
-          )
-        )
-      `)
-      .order('created_at', { ascending: false });
-
-    // Apply teacher filter if teacherId is provided
+    let data, error;
+    
     if (teacherId) {
-      query = query.eq('class_teachers.teacher_id', teacherId);
+      // First, get the class IDs where the teacher is assigned
+      const { data: teacherClasses, error: teacherError } = await supabase
+        .from('class_teachers')
+        .select('class_id')
+        .eq('teacher_id', teacherId);
+      
+      if (teacherError) {
+        throw new Error(`Failed to fetch teacher's classes: ${teacherError.message}`);
+      }
+      
+      const classIds = teacherClasses?.map(tc => tc.class_id) || [];
+      
+      if (classIds.length === 0) {
+        return [];
+      }
+      
+      // Then fetch full class details with ALL teachers for those classes
+      const result = await supabase
+        .from('classes')
+        .select(`
+          *,
+          boards (
+            id,
+            name,
+            code
+          ),
+          schools (
+            id,
+            name,
+            code
+          ),
+          class_teachers (
+            teacher_id,
+            is_primary,
+            profiles (
+              id,
+              first_name,
+              last_name,
+              email,
+              avatar_url
+            )
+          ),
+          class_students (
+            student_id,
+            student_number,
+            seat_number,
+            profiles (
+              id,
+              first_name,
+              last_name,
+              email,
+              avatar_url
+            )
+          )
+        `)
+        .in('id', classIds)
+        .order('created_at', { ascending: false});
+      
+      data = result.data;
+      error = result.error;
+    } else {
+      // Regular query for admins (no teacher filter)
+      const result = await supabase
+        .from('classes')
+        .select(`
+          *,
+          boards (
+            id,
+            name,
+            code
+          ),
+          schools (
+            id,
+            name,
+            code
+          ),
+          class_teachers (
+            teacher_id,
+            is_primary,
+            profiles (
+              id,
+              first_name,
+              last_name,
+              email,
+              avatar_url
+            )
+          ),
+          class_students (
+            student_id,
+            student_number,
+            seat_number,
+            profiles (
+              id,
+              first_name,
+              last_name,
+              email,
+              avatar_url
+            )
+          )
+        `)
+        .order('created_at', { ascending: false});
+      
+      data = result.data;
+      error = result.error;
     }
-
-    const { data, error } = await query;
 
     if (error) {
       throw new Error(`Failed to fetch classes: ${error.message}`);
@@ -139,10 +198,34 @@ class ClassService {
     const { page, limit, search, grade, school, board, teacherId } = params;
     const offset = (page - 1) * limit;
 
-    // Use inner join only when filtering by teacher to ensure proper filtering
-    const classTeachersJoin = teacherId ? 'class_teachers!inner' : 'class_teachers';
+    let classIds: string[] | undefined;
+    
+    // If filtering by teacher, first get the class IDs
+    if (teacherId) {
+      const { data: teacherClasses, error: teacherError } = await supabase
+        .from('class_teachers')
+        .select('class_id')
+        .eq('teacher_id', teacherId);
+      
+      if (teacherError) {
+        throw new Error(`Failed to fetch teacher's classes: ${teacherError.message}`);
+      }
+      
+      classIds = teacherClasses?.map(tc => tc.class_id) || [];
+      
+      if (classIds.length === 0) {
+        return {
+          classes: [],
+          totalCount: 0,
+          totalPages: 0,
+          currentPage: page,
+          hasNextPage: false,
+          hasPreviousPage: false
+        };
+      }
+    }
 
-    // Build the query
+    // Build the main query with ALL teachers for each class
     let query = supabase
       .from('classes')
       .select(`
@@ -157,7 +240,7 @@ class ClassService {
           name,
           code
         ),
-        ${classTeachersJoin} (
+        class_teachers (
           teacher_id,
           is_primary,
           profiles (
@@ -182,9 +265,9 @@ class ClassService {
         )
       `, { count: 'exact' });
 
-    // Apply teacher filter if teacherId is provided
-    if (teacherId) {
-      query = query.eq('class_teachers.teacher_id', teacherId);
+    // Apply teacher filter by class IDs if specified
+    if (classIds) {
+      query = query.in('id', classIds);
     }
 
     // Apply search filter
@@ -197,7 +280,7 @@ class ClassService {
       query = query.eq('grade', grade);
     }
 
-    // Apply school filter (need to join with schools table)
+    // Apply school filter
     if (school && school !== 'all') {
       query = query.eq('school_id', school);
     }
@@ -474,63 +557,63 @@ class ClassService {
       throw new Error('Failed to update class information. Please try again.');
     }
 
-    // Remove existing teachers
-    const { error: removeTeachersError } = await supabase
-      .from('class_teachers')
-      .delete()
-      .eq('class_id', classData.id);
-
-    if (removeTeachersError) {
-      throw new Error(`Failed to remove existing teachers: ${removeTeachersError.message}`);
-    }
-
-    // Add new teachers
+    // Use secure RPC functions that bypass RLS with proper authorization
+    // This allows teachers to manage all teachers in classes they're assigned to
+    
+    // Check for duplicate teacher IDs in the input
     if (classData.teacher_ids.length > 0) {
-      const teacherInserts = classData.teacher_ids.map((teacherId, index) => ({
-        class_id: classData.id,
-        teacher_id: teacherId,
-        is_primary: index === 0 // First teacher is primary
-      }));
-
-      const { error: teachersError } = await supabase
-        .from('class_teachers')
-        .insert(teacherInserts);
-
-      if (teachersError) {
-        throw new Error('Failed to assign teachers to class. Please try again.');
+      const uniqueTeacherIds = new Set(classData.teacher_ids);
+      if (uniqueTeacherIds.size !== classData.teacher_ids.length) {
+        throw new Error('Duplicate teachers detected in the selection. Each teacher can only be added once.');
       }
     }
 
-    // Remove existing students
-    const { error: removeStudentsError } = await supabase
-      .from('class_students')
-      .delete()
-      .eq('class_id', classData.id);
+    console.log('Updating class teachers using secure RPC function');
+    console.log('Teacher IDs to set:', classData.teacher_ids);
+    
+    // Update teachers using the secure function
+    const { error: teachersError } = await supabase
+      .rpc('update_class_teachers', {
+        p_class_id: classData.id,
+        p_teacher_ids: classData.teacher_ids
+      });
 
-    if (removeStudentsError) {
-      throw new Error('Failed to update student assignments. Please try again.');
+    if (teachersError) {
+      console.error('❌ Error updating teachers:', teachersError);
+      throw new Error(`Failed to update teachers: ${teachersError.message}`);
     }
+    
+    console.log('✓ Successfully updated teachers');
 
-    // Add new students
+    // Check for duplicate student IDs in the input
     if (classData.student_ids.length > 0) {
-      const studentInserts = classData.student_ids.map((studentId, index) => ({
-        class_id: classData.id,
-        student_id: studentId,
-        student_number: index + 1
-      }));
-
-      const { error: studentsError } = await supabase
-        .from('class_students')
-        .insert(studentInserts);
-
-      if (studentsError) {
-        // Check for specific constraint violations
-        if (studentsError.message.includes('check_current_students_limit')) {
-          throw new Error('Cannot add students: The number of students exceeds the maximum allowed limit. Please reduce the number of students or increase the maximum student limit.');
-        }
-        throw new Error('Failed to assign students to class. Please try again.');
+      const uniqueStudentIds = new Set(classData.student_ids);
+      if (uniqueStudentIds.size !== classData.student_ids.length) {
+        throw new Error('Duplicate students detected in the selection. Each student can only be added once.');
       }
     }
+
+    console.log('Updating class students using secure RPC function');
+    console.log('Student IDs to set:', classData.student_ids);
+    
+    // Update students using the secure function
+    const { error: studentsError } = await supabase
+      .rpc('update_class_students', {
+        p_class_id: classData.id,
+        p_student_ids: classData.student_ids
+      });
+
+    if (studentsError) {
+      console.error('❌ Error updating students:', studentsError);
+      
+      // Check for specific constraint violations
+      if (studentsError.message.includes('check_current_students_limit')) {
+        throw new Error('Cannot add students: The number of students exceeds the maximum allowed limit. Please reduce the number of students or increase the maximum student limit.');
+      }
+      throw new Error(`Failed to update students: ${studentsError.message}`);
+    }
+    
+    console.log('✓ Successfully updated students');
 
     // Send notifications for member changes
     try {
@@ -715,25 +798,92 @@ class ClassService {
   }
 
   // Get class statistics
-  async getClassStats(): Promise<ClassStats> {
+  async getClassStats(teacherId?: string): Promise<ClassStats> {
     try {
-      // Get statistics from the view
-      const { data: statsData, error: statsError } = await supabase
-        .from('class_statistics')
-        .select('*')
-        .single();
+      if (teacherId) {
+        // First, get the class IDs where the teacher is assigned
+        const { data: teacherClasses, error: teacherError } = await supabase
+          .from('class_teachers')
+          .select('class_id')
+          .eq('teacher_id', teacherId);
+        
+        if (teacherError) {
+          console.warn('Failed to fetch teacher classes for stats:', teacherError);
+          return {
+            totalClasses: 0,
+            totalSchools: 0,
+            totalBoards: 0,
+            totalStudents: 0
+          };
+        }
+        
+        const classIds = teacherClasses?.map(tc => tc.class_id) || [];
+        
+        if (classIds.length === 0) {
+          return {
+            totalClasses: 0,
+            totalSchools: 0,
+            totalBoards: 0,
+            totalStudents: 0
+          };
+        }
+        
+        // Then fetch full class details for stats
+        const { data: classesData, error: classesError } = await supabase
+          .from('classes')
+          .select(`
+            id,
+            school_id,
+            board_id,
+            class_students(student_id)
+          `)
+          .in('id', classIds);
 
-      if (statsError) {
-        console.warn('Failed to fetch from class_statistics view:', statsError);
+        if (classesError) {
+          console.warn('Failed to fetch teacher classes for stats:', classesError);
+          return {
+            totalClasses: 0,
+            totalSchools: 0,
+            totalBoards: 0,
+            totalStudents: 0
+          };
+        }
+
+        const classes = classesData || [];
+        const uniqueSchools = new Set(classes.map(c => c.school_id).filter(Boolean));
+        const uniqueBoards = new Set(classes.map(c => c.board_id).filter(Boolean));
+        
+        // Count unique students across all teacher's classes
+        const allStudentIds = classes.flatMap(c => 
+          (c.class_students || []).map((cs: any) => cs.student_id)
+        );
+        const uniqueStudents = new Set(allStudentIds.filter(Boolean));
+
+        return {
+          totalClasses: classes.length,
+          totalSchools: uniqueSchools.size,
+          totalBoards: uniqueBoards.size,
+          totalStudents: uniqueStudents.size
+        };
+      } else {
+        // For admins, use the system-wide statistics view
+        const { data: statsData, error: statsError } = await supabase
+          .from('class_statistics')
+          .select('*')
+          .single();
+
+        if (statsError) {
+          console.warn('Failed to fetch from class_statistics view:', statsError);
+        }
+
+        // Map the view data to our interface
+        return {
+          totalClasses: statsData?.total_classes || 0,
+          totalSchools: statsData?.schools_with_classes || 0,
+          totalBoards: statsData?.boards_with_classes || 0,
+          totalStudents: statsData?.total_enrolled_students || 0
+        };
       }
-
-      // Map the view data to our interface
-      return {
-        totalClasses: statsData?.total_classes || 0,
-        totalSchools: statsData?.schools_with_classes || 0,
-        totalBoards: statsData?.boards_with_classes || 0,
-        totalStudents: statsData?.total_enrolled_students || 0
-      };
     } catch (error: any) {
       throw new Error(`Failed to fetch class statistics: ${error.message}`);
     }
