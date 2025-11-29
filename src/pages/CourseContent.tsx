@@ -63,6 +63,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { getCourseDataLayer } from '@/services/courseDataLayer';
 import StripeService from '@/services/stripeService';
+import { contentTimeTrackingService } from '@/services/contentTimeTrackingService';
 
 interface CourseContentProps {
   courseId?: string;
@@ -263,6 +264,12 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
   const [imageLoading, setImageLoading] = useState(false);
+
+  // Time tracking state
+  const [videoSessionId, setVideoSessionId] = useState<string | null>(null);
+  const [quizSessionId, setQuizSessionId] = useState<string | null>(null);
+  const lastVideoPositionRef = useRef(0);
+  const videoPlayingRef = useRef(false);
 
   // Memoized function to handle drawing changes
   const handleDrawingChange = useCallback((questionId: string, drawingData: string) => {
@@ -765,6 +772,86 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     });
   }, [user]);
 
+  // Video event handlers for time tracking
+  const handleVideoPlay = useCallback(async () => {
+    if (!videoSessionId || !user || !currentContentItem || !videoRef.current) return;
+    if (profile?.role === 'view_only') return;
+
+    videoPlayingRef.current = true;
+    const currentPosition = videoRef.current.currentTime;
+
+    // Record resume event
+    await contentTimeTrackingService.recordVideoResume({
+      sessionId: videoSessionId,
+      userId: user.id,
+      lessonContentId: currentContentItem.id,
+      position: currentPosition,
+    });
+
+    console.log('[VIDEO TIME TRACKING] Video played at position:', currentPosition);
+  }, [videoSessionId, user, currentContentItem, profile]);
+
+  const handleVideoPause = useCallback(async () => {
+    if (!videoSessionId || !user || !currentContentItem || !videoRef.current) return;
+    if (profile?.role === 'view_only') return;
+
+    videoPlayingRef.current = false;
+    const currentPosition = videoRef.current.currentTime;
+
+    // Record pause event
+    await contentTimeTrackingService.recordVideoPause({
+      sessionId: videoSessionId,
+      userId: user.id,
+      lessonContentId: currentContentItem.id,
+      position: currentPosition,
+    });
+
+    console.log('[VIDEO TIME TRACKING] Video paused at position:', currentPosition);
+  }, [videoSessionId, user, currentContentItem, profile]);
+
+  const handleVideoSeeked = useCallback(async () => {
+    if (!videoSessionId || !user || !currentContentItem || !videoRef.current) return;
+    if (profile?.role === 'view_only') return;
+
+    const newPosition = videoRef.current.currentTime;
+    const oldPosition = lastVideoPositionRef.current;
+
+    // Only record significant seeks (more than 2 seconds difference)
+    if (Math.abs(newPosition - oldPosition) > 2) {
+      await contentTimeTrackingService.recordVideoSeek({
+        sessionId: videoSessionId,
+        userId: user.id,
+        lessonContentId: currentContentItem.id,
+        fromPosition: oldPosition,
+        toPosition: newPosition,
+      });
+
+      console.log('[VIDEO TIME TRACKING] Video seeked from', oldPosition, 'to', newPosition);
+    }
+
+    lastVideoPositionRef.current = newPosition;
+  }, [videoSessionId, user, currentContentItem, profile]);
+
+  const handleVideoEnd = useCallback(async () => {
+    if (!videoSessionId || !user || !currentContentItem || !currentLesson) return;
+    if (profile?.role === 'view_only') return;
+
+    const videoNode = videoRef.current;
+    if (!videoNode) return;
+
+    // End the time tracking session
+    await contentTimeTrackingService.endSession({
+      sessionId: videoSessionId,
+      userId: user.id,
+      lessonContentId: currentContentItem.id,
+      videoPosition: videoNode.duration,
+      completed: true,
+    });
+
+    console.log('[VIDEO TIME TRACKING] Video ended, session closed');
+    setVideoSessionId(null);
+  }, [videoSessionId, user, currentContentItem, currentLesson, profile]);
+
   const handleTimeUpdate = useCallback(() => {
     const videoNode = videoRef.current;
     if (!videoNode || !user || !currentContentItem || !currentLesson) return;
@@ -776,16 +863,20 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       return;
     }
 
+    // Update position ref for seek detection
+    lastVideoPositionRef.current = currentTime;
+
     const now = Date.now();
     if (now - lastUpdateTimeRef.current > 15000) {
       lastUpdateTimeRef.current = now;
-      
+
       // Skip database update when offline
       if (!navigator.onLine) {
         console.log('🔴 CourseContent: Offline - skipping video progress update');
         return;
       }
-      
+
+      // Update both progress and time tracking
       supabase.from('user_content_item_progress').upsert({
         user_id: user.id,
         course_id: actualCourseId,
@@ -796,12 +887,22 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       }, { onConflict: 'user_id,lesson_content_id' }).then(({ error }) => {
         if (error) toast.error("Failed to save progress", { description: error.message });
       });
+
+      // Update time tracking session with current position
+      if (videoSessionId) {
+        contentTimeTrackingService.updateSession({
+          sessionId: videoSessionId,
+          userId: user.id,
+          lessonContentId: currentContentItem.id,
+          videoPosition: currentTime,
+        });
+      }
     }
 
     if ((currentTime / duration) >= 0.95 && !currentContentItem.completed) {
       markContentAsComplete(currentContentItem.id, currentLesson.id, actualCourseId, duration);
     }
-  }, [user, actualCourseId, currentContentItem, currentLesson, markContentAsComplete]);
+  }, [user, actualCourseId, currentContentItem, currentLesson, markContentAsComplete, profile, videoSessionId]);
 
   const handleQuizSubmit = async (retryReason?: string) => {
     if (!user || !currentContentItem || !currentLesson || !course) return;
@@ -1209,7 +1310,25 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       console.error('Error sending quiz submission notification:', notificationError);
       // Don't fail the submission if notification fails
     }
-    
+
+    // End quiz time tracking session
+    if (quizSessionId && profile?.role !== 'view_only') {
+      try {
+        await contentTimeTrackingService.endSession({
+          sessionId: quizSessionId,
+          userId: user.id,
+          lessonContentId: currentContentItem.id,
+          quizSubmitted: true,
+          quizAttemptNumber: newSubmission?.attempt_number || 1,
+          completed: true,
+        });
+        setQuizSessionId(null);
+        console.log('[QUIZ TIME TRACKING] Session ended on submission');
+      } catch (trackingError) {
+        console.error('[QUIZ TIME TRACKING] Error ending session:', trackingError);
+      }
+    }
+
     if (hasTextAnswers) {
       const autoGradedCount = autoGradedQuestions.length;
       const textAnswerCount = questions.length - autoGradedCount;
@@ -1526,12 +1645,40 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     checkPaymentAccess();
   }, [actualCourseId, user, course, profile, navigate]);
 
-  const handleLoadedMetadata = useCallback(() => {
+  const handleLoadedMetadata = useCallback(async () => {
     const videoNode = videoRef.current;
-    if (videoNode && currentContentItem && currentContentItem.progressSeconds > 0 && videoNode.duration > currentContentItem.progressSeconds) {
+    if (!videoNode || !currentContentItem || !user || !currentLesson) return;
+
+    // Resume from last position
+    if (currentContentItem.progressSeconds > 0 && videoNode.duration > currentContentItem.progressSeconds) {
       videoNode.currentTime = currentContentItem.progressSeconds;
     }
-  }, [currentContentItem]);
+
+    // Skip time tracking for view_only users
+    if (profile?.role === 'view_only') {
+      return;
+    }
+
+    // Close any orphaned sessions first
+    await contentTimeTrackingService.closeOrphanedSessions(user.id, currentContentItem.id);
+
+    // Start a new time tracking session
+    const { sessionId } = await contentTimeTrackingService.startSession({
+      userId: user.id,
+      courseId: actualCourseId,
+      lessonId: currentLesson.id,
+      lessonContentId: currentContentItem.id,
+      contentType: 'video',
+      videoPosition: currentContentItem.progressSeconds || 0,
+      videoTotalLength: videoNode.duration,
+    });
+
+    if (sessionId) {
+      setVideoSessionId(sessionId);
+      lastVideoPositionRef.current = currentContentItem.progressSeconds || 0;
+      console.log('[VIDEO TIME TRACKING] Started session:', sessionId);
+    }
+  }, [currentContentItem, user, currentLesson, actualCourseId, profile]);
   const currentIndex = useMemo(() => allContentItems.findIndex((item: any) => item.id === currentContentItemId), [allContentItems, currentContentItemId]);
   const nextContentItem = currentIndex !== -1 ? allContentItems[currentIndex + 1] : null;
   const prevContentItem = currentIndex !== -1 ? allContentItems[currentIndex - 1] : null;
@@ -1625,6 +1772,68 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       window.removeEventListener('offline', handleOnlineStatusChange);
     };
   }, [actualCourseId, dataLayer, isOfflineMode, navigate]);
+
+  // Quiz session tracking - start session when quiz is displayed
+  useEffect(() => {
+    const startQuizSession = async () => {
+      if (!currentContentItem || currentContentItem.content_type !== 'quiz') return;
+      if (!user || !currentLesson) return;
+      if (profile?.role === 'view_only') return;
+
+      // Don't start a new session if quiz is already submitted
+      const hasSubmitted = isQuizSubmitted || !!(currentContentItem.submission && currentContentItem.submission.id);
+      if (hasSubmitted) return;
+
+      // Close any orphaned sessions first
+      await contentTimeTrackingService.closeOrphanedSessions(user.id, currentContentItem.id);
+
+      // Start quiz time tracking session
+      const { sessionId } = await contentTimeTrackingService.startSession({
+        userId: user.id,
+        courseId: actualCourseId,
+        lessonId: currentLesson.id,
+        lessonContentId: currentContentItem.id,
+        contentType: 'quiz',
+      });
+
+      if (sessionId) {
+        setQuizSessionId(sessionId);
+        console.log('[QUIZ TIME TRACKING] Started session:', sessionId);
+      }
+    };
+
+    startQuizSession();
+  }, [currentContentItem, user, currentLesson, actualCourseId, profile, isQuizSubmitted]);
+
+  // Cleanup time tracking sessions when content changes or component unmounts
+  useEffect(() => {
+    return () => {
+      // Close video session if exists
+      if (videoSessionId && user && currentContentItem) {
+        contentTimeTrackingService.endSession({
+          sessionId: videoSessionId,
+          userId: user.id,
+          lessonContentId: currentContentItem.id,
+          videoPosition: videoRef.current?.currentTime || 0,
+          completed: false,
+        }).then(() => {
+          console.log('[VIDEO TIME TRACKING] Cleanup: Session ended on unmount');
+        });
+      }
+
+      // Close quiz session if exists
+      if (quizSessionId && user && currentContentItem) {
+        contentTimeTrackingService.endSession({
+          sessionId: quizSessionId,
+          userId: user.id,
+          lessonContentId: currentContentItem.id,
+          completed: false,
+        }).then(() => {
+          console.log('[QUIZ TIME TRACKING] Cleanup: Session ended on unmount');
+        });
+      }
+    };
+  }, [videoSessionId, quizSessionId, user, currentContentItem]);
 
   const handleNavigation = (item: any) => {
     if (!item) return;
@@ -1842,14 +2051,18 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           <div className="space-y-4 sm:space-y-6">
             {currentContentItem.signedUrl ? (
               <div className="relative aspect-video bg-black rounded-xl sm:rounded-2xl md:rounded-3xl overflow-hidden shadow-xl sm:shadow-2xl">
-                 <video 
-                   ref={videoRef} 
-                   controls 
-                   className="w-full h-full object-contain" 
-                   key={currentContentItem.id} 
-                   src={currentContentItem.signedUrl} 
-                   onTimeUpdate={handleTimeUpdate} 
+                 <video
+                   ref={videoRef}
+                   controls
+                   className="w-full h-full object-contain"
+                   key={currentContentItem.id}
+                   src={currentContentItem.signedUrl}
+                   onTimeUpdate={handleTimeUpdate}
                    onLoadedMetadata={handleLoadedMetadata}
+                   onPlay={handleVideoPlay}
+                   onPause={handleVideoPause}
+                   onSeeked={handleVideoSeeked}
+                   onEnded={handleVideoEnd}
                    onError={(e) => {
                      console.error('🎥 Video playback error:', e);
                      console.error('🎥 Video src:', currentContentItem.signedUrl);
