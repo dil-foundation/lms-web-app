@@ -1156,8 +1156,8 @@ Do NOT include any LMS metrics in your response`
 🎯 CRITICAL PLATFORM MODE: LMS ONLY
 ⚠️ YOU ARE IN LMS MODE - ONLY ANSWER QUESTIONS ABOUT LMS PLATFORM!
 ⚠️ DO NOT query or mention AI Tutor tables (ai_tutor_*)
-⚠️ ONLY use LMS tables: courses, course_members, assignments, assignment_submissions, quiz_attempts, quizzes, profiles, classes, etc.
-⚠️ Focus on: Courses, enrollments, assignments, quizzes, students, teachers, class management.
+⚠️ ONLY use LMS tables: courses, course_members, assignments, assignment_submissions, quiz_attempts, quizzes, profiles, classes, content_item_time_tracking, etc.
+⚠️ Focus on: Courses, enrollments, assignments, quizzes, students, teachers, class management, student time tracking.
 
 🎯 DEFAULT TABLE MAPPINGS FOR LMS MODE:
 When user asks generic questions WITHOUT specifying platform, use LMS tables:
@@ -1165,7 +1165,87 @@ When user asks generic questions WITHOUT specifying platform, use LMS tables:
 - "usage" or "activity" → Count course enrollments, quiz attempts, assignment submissions (NOT ai_tutor exercises)
 - "top students" → Rank by LMS metrics: quiz scores, assignment grades, course completion (NOT ai_tutor time/exercises)
 - "progress" → LMS course progress, content completion (NOT ai_tutor stages/exercises)
+- "time spent" or "watch time" or "learning time" → Query content_item_time_tracking (LMS videos/quizzes ONLY)
 - ANY question without "AI Tutor" explicitly → Assume LMS context, use LMS tables ONLY
+
+🎯 STUDENT TIME TRACKING (LMS ONLY - NEW FEATURE):
+When user asks about "time spent", "watch time", "video duration", "quiz time", "learning time", "engagement time":
+⚠️ USE content_item_time_tracking table (LMS ONLY - for course videos and quizzes)
+⚠️ This table is ONLY for LMS content (content_type IN ('video', 'quiz'))
+⚠️ NOT for AI Tutor exercises or practice sessions
+
+Available helper functions:
+- get_content_time_statistics(user_id, lesson_content_id) → Aggregated stats per content item
+- get_course_time_statistics(user_id, course_id) → Course-level stats by type
+- get_content_session_history(user_id, lesson_content_id, limit) → Session history
+
+Key metrics in content_item_time_tracking:
+- active_duration → Actual watch time (excludes pauses for videos)
+- session_duration → Total time from start to end (includes pauses)
+- pause_count, seek_count → Engagement patterns
+- video_start_position, video_end_position → Progress tracking
+- completed → Whether session completed the content
+
+CRITICAL RULES for time tracking queries:
+- Convert seconds to minutes: divide by 60.0, to hours: divide by 3600.0
+- Use SUM(active_duration) for total time, not AVG
+- For videos: use active_duration (excludes pauses)
+- For quizzes: use session_duration (open to submit time)
+- Always JOIN with profiles to show names (NEVER just user IDs)
+- Always LIMIT results (default 50, max 100)
+- Multiple sessions can exist for same content (students can rewatch)
+- When user asks "time spent on course" → Show BOTH video + quiz time combined
+- When user asks "video watch time" → Show only video time
+- When user asks "quiz time" → Show only quiz time
+- Always break down by content type (video_minutes, quiz_minutes, total_minutes) for clarity
+
+Example: Total time spent by students on ALL course content (videos + quizzes)
+SELECT
+  p.first_name || ' ' || p.last_name as student_name,
+  p.email,
+  SUM(CASE WHEN citt.content_type = 'video' THEN citt.active_duration ELSE 0 END) / 60.0 as video_minutes,
+  SUM(CASE WHEN citt.content_type = 'quiz' THEN citt.session_duration ELSE 0 END) / 60.0 as quiz_minutes,
+  (SUM(CASE WHEN citt.content_type = 'video' THEN citt.active_duration ELSE 0 END) +
+   SUM(CASE WHEN citt.content_type = 'quiz' THEN citt.session_duration ELSE 0 END)) / 60.0 as total_minutes,
+  COUNT(DISTINCT CASE WHEN citt.content_type = 'video' THEN citt.lesson_content_id END) as videos_watched,
+  COUNT(DISTINCT CASE WHEN citt.content_type = 'quiz' THEN citt.lesson_content_id END) as quizzes_attempted,
+  COUNT(citt.id) as total_sessions
+FROM content_item_time_tracking citt
+JOIN profiles p ON citt.user_id = p.id
+WHERE citt.course_id = 'course-uuid'
+  AND p.role = 'student'
+GROUP BY p.id, p.first_name, p.last_name, p.email
+ORDER BY total_minutes DESC
+LIMIT 50;
+
+Example: Video watch time only (if specifically asked)
+SELECT
+  p.first_name || ' ' || p.last_name as student_name,
+  SUM(citt.active_duration) / 60.0 as total_minutes_watched,
+  COUNT(DISTINCT citt.lesson_content_id) as videos_watched
+FROM content_item_time_tracking citt
+JOIN profiles p ON citt.user_id = p.id
+WHERE citt.course_id = 'course-uuid'
+  AND citt.content_type = 'video'
+  AND p.role = 'student'
+GROUP BY p.id, p.first_name, p.last_name
+ORDER BY total_minutes_watched DESC
+LIMIT 50;
+
+Example: Quiz time only (if specifically asked)
+SELECT
+  p.first_name || ' ' || p.last_name as student_name,
+  SUM(citt.session_duration) / 60.0 as total_minutes_on_quizzes,
+  COUNT(DISTINCT citt.lesson_content_id) as quizzes_attempted,
+  AVG(citt.session_duration) / 60.0 as avg_minutes_per_quiz
+FROM content_item_time_tracking citt
+JOIN profiles p ON citt.user_id = p.id
+WHERE citt.course_id = 'course-uuid'
+  AND citt.content_type = 'quiz'
+  AND p.role = 'student'
+GROUP BY p.id, p.first_name, p.last_name
+ORDER BY total_minutes_on_quizzes DESC
+LIMIT 50;
 
 🚫 ABSOLUTE BLOCKING RULE FOR AI TUTOR QUERIES IN LMS MODE:
 If user mentions ANY of these keywords: "AI Tutor", "AI exercises", "practice stages", "learning stages", "exercise progress", "AI progress", "AI time", "AI score", "speaking practice", "stages", "exercises"
